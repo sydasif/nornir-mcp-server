@@ -1,0 +1,13 @@
+---
+username: ${NETWORK_USER}
+password: ${NETWORK_PASS}
+
+connection_options:
+  napalm:
+    extras:
+      timeout: 30
+  netmiko:
+    extras:
+      timeout: 30
+      session_timeout: 60
+      auth_timeout: 30
