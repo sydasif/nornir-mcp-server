@@ -128,16 +128,16 @@ The server provides the following MCP tools:
 
 ### NAPALM Tools (Normalized Multi-Vendor)
 
-- `get_facts`: Basic device information (vendor, model, OS, uptime) - accepts structured request
+- `get_facts`: Basic device information (vendor, model, OS, uptime) - accepts direct parameters
 - `get_interfaces`: Interface status, IP addresses, speed, errors
-- `get_bgp_neighbors`: BGP neighbor status and statistics - accepts structured request
-- `get_lldp_neighbors`: Network topology via LLDP - accepts structured request
-- `get_config`: Device configuration retrieval with sanitization - accepts structured request
+- `get_bgp_neighbors`: BGP neighbor status and statistics - accepts direct parameters
+- `get_lldp_neighbors`: Network topology via LLDP - accepts direct parameters
+- `get_config`: Device configuration retrieval with sanitization - accepts direct parameters
 
 ### Netmiko Tools (Flexible Command Execution)
 
-- `run_show_commands`: Execute show/display commands with optional parsing - accepts structured request
-- `check_connectivity`: Ping or traceroute from network devices - accepts structured request
+- `run_show_commands`: Execute show/display commands with optional parsing - accepts direct parameters
+- `check_connectivity`: Ping or traceroute from network devices - accepts direct parameters
 
 ## Usage
 

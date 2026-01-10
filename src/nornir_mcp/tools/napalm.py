@@ -33,7 +33,7 @@ def sanitize_configs(configs):
 
 
 @mcp.tool()
-async def get_facts(request: NapalmGetterRequest) -> dict:
+async def get_facts(devices: str) -> dict:
     """
     Retrieve basic device information including vendor, model, OS version,
     uptime, serial number, and hostname.
@@ -43,7 +43,7 @@ async def get_facts(request: NapalmGetterRequest) -> dict:
     """
     # Filter devices based on request
     nr = get_nr()
-    filtered_nr = filter_devices(nr, request.devices)
+    filtered_nr = filter_devices(nr, devices)
 
     # Run NAPALM getter
     result = filtered_nr.run(task=napalm_get, getters=["facts"])
@@ -79,46 +79,46 @@ async def get_interfaces(devices: str, interface: str | None = None) -> dict:
 
 
 @mcp.tool()
-async def get_bgp_neighbors(request: NapalmGetterRequest) -> dict:
+async def get_bgp_neighbors(devices: str) -> dict:
     """
     Get BGP neighbor status and statistics including state, uptime,
     remote AS, and prefix counts.
     """
     nr = get_nr()
-    filtered_nr = filter_devices(nr, request.devices)
+    filtered_nr = filter_devices(nr, devices)
     result = filtered_nr.run(task=napalm_get, getters=["bgp_neighbors"])
     return format_nornir_results(result, "bgp_neighbors")
 
 
 @mcp.tool()
-async def get_lldp_neighbors(request: NapalmGetterRequest) -> dict:
+async def get_lldp_neighbors(devices: str) -> dict:
     """
     Discover network topology via LLDP, showing connected devices
     and ports for each interface.
     """
     nr = get_nr()
-    filtered_nr = filter_devices(nr, request.devices)
+    filtered_nr = filter_devices(nr, devices)
     result = filtered_nr.run(task=napalm_get, getters=["lldp_neighbors"])
     return format_nornir_results(result, "lldp_neighbors")
 
 
 @mcp.tool()
-async def get_config(request: ConfigRequest) -> dict:
+async def get_config(devices: str, retrieve: str = "running", sanitized: bool = True) -> dict:
     """
     Retrieve device configuration (running, startup, or candidate).
     Sensitive information like passwords is removed by default.
     """
     nr = get_nr()
-    filtered_nr = filter_devices(nr, request.devices)
+    filtered_nr = filter_devices(nr, devices)
 
     result = filtered_nr.run(
-        task=napalm_get, getters=["config"], retrieve=request.retrieve
+        task=napalm_get, getters=["config"], retrieve=retrieve
     )
 
     formatted = format_nornir_results(result, "config")
 
     # Sanitize if requested
-    if request.sanitized:
+    if sanitized:
         formatted = sanitize_configs(formatted)
 
     return formatted

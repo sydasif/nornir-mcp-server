@@ -55,7 +55,7 @@ def build_ping_cmd(
 
 
 @mcp.tool()
-async def run_show_commands(request: NetmikoCommandRequest) -> dict:
+async def run_show_commands(devices: str, commands: list[str], use_textfsm: bool = False, use_genie: bool = False) -> dict:
     """
     Execute show/display commands on network devices via SSH.
 
@@ -69,15 +69,15 @@ async def run_show_commands(request: NetmikoCommandRequest) -> dict:
     - Juniper: show interfaces terse, show route
     """
     nr = get_nr()
-    filtered_nr = filter_devices(nr, request.devices)
+    filtered_nr = filter_devices(nr, devices)
 
     results = {}
-    for command in request.commands:
+    for command in commands:
         result = filtered_nr.run(
             task=netmiko_send_command,
             command_string=command,
-            use_textfsm=request.use_textfsm,
-            use_genie=request.use_genie,
+            use_textfsm=use_textfsm,
+            use_genie=use_genie,
         )
         results[command] = format_command_results(result)
 
@@ -85,7 +85,7 @@ async def run_show_commands(request: NetmikoCommandRequest) -> dict:
 
 
 @mcp.tool()
-async def check_connectivity(request: ConnectivityRequest) -> dict:
+async def check_connectivity(devices: str, target: str, test_type: str = "ping", count: int = 5, vrf: str | None = None) -> dict:
     """
     Execute ping or traceroute from network devices to test reachability.
 
@@ -93,13 +93,13 @@ async def check_connectivity(request: ConnectivityRequest) -> dict:
     and test type. Supports VRF-aware testing.
     """
     nr = get_nr()
-    filtered_nr = filter_devices(nr, request.devices)
+    filtered_nr = filter_devices(nr, devices)
 
     # Build platform-specific command
     def build_ping_command(task):
         platform = task.host.platform
         cmd = build_ping_cmd(
-            platform, request.target, request.test_type, request.count, request.vrf
+            platform, target, test_type, count, vrf
         )
         return task.run(task=netmiko_send_command, command_string=cmd)
 
