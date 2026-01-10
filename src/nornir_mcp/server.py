@@ -61,21 +61,7 @@ def get_nr():
 
 # Import all tool modules (they register via @mcp.tool()) after mcp is defined
 # This happens after mcp is created to avoid circular imports
-try:
-    from .tools import inventory, napalm, netmiko  # noqa: F401
-except ImportError:
-    # Handle direct execution
-    import importlib
-    import sys
-    from pathlib import Path
-
-    # Add the src directory to the path to allow imports
-    src_dir = Path(__file__).parent.parent.parent
-    sys.path.insert(0, str(src_dir))
-
-    importlib.import_module(".tools.inventory", package="nornir_mcp")
-    importlib.import_module(".tools.napalm", package="nornir_mcp")
-    importlib.import_module(".tools.netmiko", package="nornir_mcp")
+from .tools import inventory, napalm, netmiko  # noqa: F401
 
 
 def main():

@@ -21,19 +21,24 @@ def sanitize_configs(configs):
 
     """
     sanitized = {}
+    import re
+
     for device, data in configs.items():
         if data.get("success") and data.get("result"):
             config = data["result"]
-            # Remove passwords and other sensitive info
-            if "running" in config:
-                # Remove common sensitive patterns
-                import re
-
-                running_config = config["running"]
-                # Remove password lines
-                running_config = re.sub(r"password \S+", "password <removed>", running_config)
-                running_config = re.sub(r"secret \S+", "secret <removed>", running_config)
-                config["running"] = running_config
+            # Remove passwords and other sensitive info from all config types
+            for config_type in ["running", "startup", "candidate"]:
+                if config_type in config:
+                    # Remove common sensitive patterns
+                    config_content = config[config_type]
+                    # Remove password lines
+                    config_content = re.sub(
+                        r"password \S+", "password <removed>", config_content
+                    )
+                    config_content = re.sub(
+                        r"secret \S+", "secret <removed>", config_content
+                    )
+                    config[config_type] = config_content
             sanitized[device] = {"success": True, "result": config}
         else:
             sanitized[device] = data
@@ -146,7 +151,9 @@ async def get_lldp_neighbors(devices: str) -> dict:
 
 
 @mcp.tool()
-async def get_config(devices: str, retrieve: str = "running", sanitized: bool = True) -> dict:
+async def get_config(
+    devices: str, retrieve: str = "running", sanitized: bool = True
+) -> dict:
     """Retrieve device configuration (running, startup, or candidate). Sensitive information like passwords is removed by default.
 
     Args:
