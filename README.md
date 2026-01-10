@@ -248,9 +248,8 @@ pytest --cov=nornir_mcp
 To add new tools:
 
 1. Create a new module in `src/nornir_mcp/tools/`
-2. Define Pydantic models in `src/nornir_mcp/models.py` if needed
-3. Implement the tool using the `@mcp.tool()` decorator
-4. Add tests in the `tests/` directory
+2. Implement the tool using the `@mcp.tool()` decorator with direct parameters
+3. Add tests in the `tests/` directory
 
 ## License
 
