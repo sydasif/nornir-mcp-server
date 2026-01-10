@@ -1,7 +1,7 @@
 from nornir_napalm.plugins.tasks import napalm_get
 
 from ..models import ConfigRequest, NapalmGetterRequest
-from ..server import mcp, nr
+from ..server import mcp, get_nr
 from ..utils.filters import filter_devices
 from ..utils.formatters import format_nornir_results
 
@@ -42,6 +42,7 @@ async def get_facts(request: NapalmGetterRequest) -> dict:
     output across different vendor platforms.
     """
     # Filter devices based on request
+    nr = get_nr()
     filtered_nr = filter_devices(nr, request.devices)
 
     # Run NAPALM getter
@@ -61,6 +62,7 @@ async def get_interfaces(devices: str, interface: str | None = None) -> dict:
         devices: Device filter expression
         interface: Optional specific interface name to query
     """
+    nr = get_nr()
     filtered_nr = filter_devices(nr, devices)
 
     result = filtered_nr.run(task=napalm_get, getters=["interfaces"])
@@ -82,6 +84,7 @@ async def get_bgp_neighbors(request: NapalmGetterRequest) -> dict:
     Get BGP neighbor status and statistics including state, uptime,
     remote AS, and prefix counts.
     """
+    nr = get_nr()
     filtered_nr = filter_devices(nr, request.devices)
     result = filtered_nr.run(task=napalm_get, getters=["bgp_neighbors"])
     return format_nornir_results(result, "bgp_neighbors")
@@ -93,6 +96,7 @@ async def get_lldp_neighbors(request: NapalmGetterRequest) -> dict:
     Discover network topology via LLDP, showing connected devices
     and ports for each interface.
     """
+    nr = get_nr()
     filtered_nr = filter_devices(nr, request.devices)
     result = filtered_nr.run(task=napalm_get, getters=["lldp_neighbors"])
     return format_nornir_results(result, "lldp_neighbors")
@@ -104,6 +108,7 @@ async def get_config(request: ConfigRequest) -> dict:
     Retrieve device configuration (running, startup, or candidate).
     Sensitive information like passwords is removed by default.
     """
+    nr = get_nr()
     filtered_nr = filter_devices(nr, request.devices)
 
     result = filtered_nr.run(

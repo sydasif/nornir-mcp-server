@@ -1,4 +1,4 @@
-from ..server import mcp, nr
+from ..server import mcp, get_nr
 from ..utils.filters import filter_devices
 
 
@@ -15,6 +15,7 @@ async def list_devices(filter: str | None = None, details: bool = False) -> dict
     - 'site=dc1' - devices at datacenter 1
     - 'edge_routers' - devices in edge_routers group
     """
+    nr = get_nr()
     if filter:
         filtered_nr = filter_devices(nr, filter)
     else:
@@ -45,6 +46,7 @@ async def get_device_groups() -> dict:
     Useful for discovering available device groupings like roles,
     sites, or device types.
     """
+    nr = get_nr()
     groups = {}
     for group_name, group in nr.inventory.groups.items():
         members = [h.name for h in nr.inventory.hosts.values() if group in h.groups]

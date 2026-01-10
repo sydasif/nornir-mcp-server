@@ -1,7 +1,7 @@
 from nornir_netmiko.tasks import netmiko_send_command
 
 from ..models import ConnectivityRequest, NetmikoCommandRequest
-from ..server import mcp, nr
+from ..server import mcp, get_nr
 from ..utils.filters import filter_devices
 from ..utils.formatters import format_command_results
 
@@ -68,6 +68,7 @@ async def run_show_commands(request: NetmikoCommandRequest) -> dict:
     - Arista: show interfaces status, show ip route
     - Juniper: show interfaces terse, show route
     """
+    nr = get_nr()
     filtered_nr = filter_devices(nr, request.devices)
 
     results = {}
@@ -91,6 +92,7 @@ async def check_connectivity(request: ConnectivityRequest) -> dict:
     Automatically formats the correct command based on device platform
     and test type. Supports VRF-aware testing.
     """
+    nr = get_nr()
     filtered_nr = filter_devices(nr, request.devices)
 
     # Build platform-specific command
