@@ -6,12 +6,15 @@ Contains functions to format Nornir results into standard response formats.
 from nornir.core.task import AggregatedResult
 
 
-def format_nornir_results(result: AggregatedResult, getter_name: str = None) -> dict:
+def format_results(
+    result: AggregatedResult, key: str = "result", getter_name: str | None = None
+) -> dict:
     """Format Nornir results into standard response format.
 
     Args:
         result: The aggregated result from Nornir task execution
-        getter_name: Optional name of the getter to extract specific data
+        key: The dictionary key to use for the success data (default: "result")
+        getter_name: Optional name of the getter to extract specific data (nested dict)
 
     Returns:
         Dictionary containing formatted results with success/error information
@@ -24,47 +27,21 @@ def format_nornir_results(result: AggregatedResult, getter_name: str = None) -> 
             formatted[host] = {
                 "success": False,
                 "error": {
-                    "type": "CommandError",
+                    "type": type(multi_result.exception).__name__,
                     "message": str(multi_result.exception),
                     "details": {
-                        "platform": multi_result.host.platform,
-                        "exception": type(multi_result.exception).__name__,
+                        "platform": getattr(multi_result.host, "platform", "unknown"),
                     },
                 },
             }
         else:
             # Extract result data
             data = multi_result[0].result
+
+            # If a specific getter key is requested (e.g. for NAPALM)
             if getter_name and isinstance(data, dict):
                 data = data.get(getter_name, data)
 
-            formatted[host] = {"success": True, "result": data}
-
-    return formatted
-
-
-def format_command_results(result: AggregatedResult) -> dict:
-    """Format command execution results.
-
-    Args:
-        result: The aggregated result from command execution task
-
-    Returns:
-        Dictionary containing formatted command results with success/output information
-
-    """
-    formatted = {}
-
-    for host, multi_result in result.items():
-        if multi_result.failed:
-            formatted[host] = {
-                "success": False,
-                "error": {
-                    "type": type(multi_result.exception).__name__,
-                    "message": str(multi_result.exception),
-                },
-            }
-        else:
-            formatted[host] = {"success": True, "output": multi_result[0].result}
+            formatted[host] = {"success": True, key: data}
 
     return formatted

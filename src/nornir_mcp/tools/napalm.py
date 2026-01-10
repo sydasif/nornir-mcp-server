@@ -3,11 +3,13 @@
 Provides tools for network device management using NAPALM for normalized multi-vendor support.
 """
 
+import re
+
 from nornir_napalm.plugins.tasks import napalm_get
 
 from ..server import get_nr, mcp
 from ..utils.filters import filter_devices
-from ..utils.formatters import format_nornir_results
+from ..utils.formatters import format_results
 
 
 def sanitize_configs(configs):
@@ -21,25 +23,22 @@ def sanitize_configs(configs):
 
     """
     sanitized = {}
-    import re
-
     for device, data in configs.items():
         if data.get("success") and data.get("result"):
-            config = data["result"]
-            # Remove passwords and other sensitive info from all config types
-            for config_type in ["running", "startup", "candidate"]:
-                if config_type in config:
-                    # Remove common sensitive patterns
-                    config_content = config[config_type]
+            config_data = data["result"]
+
+            # Iterate through all config types returned (running, startup, candidate)
+            # instead of hardcoding just "running"
+            for config_type, config_content in config_data.items():
+                if isinstance(config_content, str):
                     # Remove password lines
-                    config_content = re.sub(
+                    cleaned = re.sub(
                         r"password \S+", "password <removed>", config_content
                     )
-                    config_content = re.sub(
-                        r"secret \S+", "secret <removed>", config_content
-                    )
-                    config[config_type] = config_content
-            sanitized[device] = {"success": True, "result": config}
+                    cleaned = re.sub(r"secret \S+", "secret <removed>", cleaned)
+                    config_data[config_type] = cleaned
+
+            sanitized[device] = {"success": True, "result": config_data}
         else:
             sanitized[device] = data
     return sanitized
@@ -71,7 +70,7 @@ async def get_facts(devices: str) -> dict:
     result = filtered_nr.run(task=napalm_get, getters=["facts"])
 
     # Format results
-    return format_nornir_results(result, "facts")
+    return format_results(result, getter_name="facts")
 
 
 @mcp.tool()
@@ -96,7 +95,7 @@ async def get_interfaces(devices: str, interface: str | None = None) -> dict:
     filtered_nr = filter_devices(nr, devices)
 
     result = filtered_nr.run(task=napalm_get, getters=["interfaces"])
-    formatted = format_nornir_results(result, "interfaces")
+    formatted = format_results(result, getter_name="interfaces")
 
     # Filter to specific interface if requested
     if interface:
@@ -126,7 +125,7 @@ async def get_bgp_neighbors(devices: str) -> dict:
     nr = get_nr()
     filtered_nr = filter_devices(nr, devices)
     result = filtered_nr.run(task=napalm_get, getters=["bgp_neighbors"])
-    return format_nornir_results(result, "bgp_neighbors")
+    return format_results(result, getter_name="bgp_neighbors")
 
 
 @mcp.tool()
@@ -147,7 +146,7 @@ async def get_lldp_neighbors(devices: str) -> dict:
     nr = get_nr()
     filtered_nr = filter_devices(nr, devices)
     result = filtered_nr.run(task=napalm_get, getters=["lldp_neighbors"])
-    return format_nornir_results(result, "lldp_neighbors")
+    return format_results(result, getter_name="lldp_neighbors")
 
 
 @mcp.tool()
@@ -180,7 +179,7 @@ async def get_config(
         getters_options={"config": {"retrieve": retrieve}},
     )
 
-    formatted = format_nornir_results(result, "config")
+    formatted = format_results(result, getter_name="config")
 
     # Sanitize if requested
     if sanitized:
