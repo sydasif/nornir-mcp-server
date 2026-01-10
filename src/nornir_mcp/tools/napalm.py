@@ -1,7 +1,6 @@
 from nornir_napalm.plugins.tasks import napalm_get
 
-from ..models import ConfigRequest, NapalmGetterRequest
-from ..server import mcp, get_nr
+from ..server import get_nr, mcp
 from ..utils.filters import filter_devices
 from ..utils.formatters import format_nornir_results
 
@@ -103,7 +102,9 @@ async def get_lldp_neighbors(devices: str) -> dict:
 
 
 @mcp.tool()
-async def get_config(devices: str, retrieve: str = "running", sanitized: bool = True) -> dict:
+async def get_config(
+    devices: str, retrieve: str = "running", sanitized: bool = True
+) -> dict:
     """
     Retrieve device configuration (running, startup, or candidate).
     Sensitive information like passwords is removed by default.
@@ -111,9 +112,7 @@ async def get_config(devices: str, retrieve: str = "running", sanitized: bool = 
     nr = get_nr()
     filtered_nr = filter_devices(nr, devices)
 
-    result = filtered_nr.run(
-        task=napalm_get, getters=["config"], retrieve=retrieve
-    )
+    result = filtered_nr.run(task=napalm_get, getters=["config"], retrieve=retrieve)
 
     formatted = format_nornir_results(result, "config")
 

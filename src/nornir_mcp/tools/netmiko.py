@@ -1,7 +1,6 @@
 from nornir_netmiko.tasks import netmiko_send_command
 
-from ..models import ConnectivityRequest, NetmikoCommandRequest
-from ..server import mcp, get_nr
+from ..server import get_nr, mcp
 from ..utils.filters import filter_devices
 from ..utils.formatters import format_command_results
 
@@ -55,7 +54,12 @@ def build_ping_cmd(
 
 
 @mcp.tool()
-async def run_show_commands(devices: str, commands: list[str], use_textfsm: bool = False, use_genie: bool = False) -> dict:
+async def run_show_commands(
+    devices: str,
+    commands: list[str],
+    use_textfsm: bool = False,
+    use_genie: bool = False,
+) -> dict:
     """
     Execute show/display commands on network devices via SSH.
 
@@ -85,7 +89,13 @@ async def run_show_commands(devices: str, commands: list[str], use_textfsm: bool
 
 
 @mcp.tool()
-async def check_connectivity(devices: str, target: str, test_type: str = "ping", count: int = 5, vrf: str | None = None) -> dict:
+async def check_connectivity(
+    devices: str,
+    target: str,
+    test_type: str = "ping",
+    count: int = 5,
+    vrf: str | None = None,
+) -> dict:
     """
     Execute ping or traceroute from network devices to test reachability.
 
@@ -98,9 +108,7 @@ async def check_connectivity(devices: str, target: str, test_type: str = "ping",
     # Build platform-specific command
     def build_ping_command(task):
         platform = task.host.platform
-        cmd = build_ping_cmd(
-            platform, target, test_type, count, vrf
-        )
+        cmd = build_ping_cmd(platform, target, test_type, count, vrf)
         return task.run(task=netmiko_send_command, command_string=cmd)
 
     result = filtered_nr.run(task=build_ping_command)

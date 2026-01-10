@@ -35,7 +35,7 @@ def get_nornir():
 
 # Global Nornir instance (deferred initialization)
 def get_nr():
-    if not hasattr(get_nr, '_instance'):
+    if not hasattr(get_nr, "_instance"):
         get_nr._instance = get_nornir()
     return get_nr._instance
 
@@ -54,10 +54,10 @@ except ImportError:
     src_dir = Path(__file__).parent.parent.parent
     sys.path.insert(0, str(src_dir))
 
-    importlib.import_module('.tools.config_mgmt', package='nornir_mcp')
-    importlib.import_module('.tools.inventory', package='nornir_mcp')
-    importlib.import_module('.tools.napalm', package='nornir_mcp')
-    importlib.import_module('.tools.netmiko', package='nornir_mcp')
+    importlib.import_module(".tools.config_mgmt", package="nornir_mcp")
+    importlib.import_module(".tools.inventory", package="nornir_mcp")
+    importlib.import_module(".tools.napalm", package="nornir_mcp")
+    importlib.import_module(".tools.netmiko", package="nornir_mcp")
 
 
 def main():

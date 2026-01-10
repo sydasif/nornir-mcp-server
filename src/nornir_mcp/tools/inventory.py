@@ -1,4 +1,4 @@
-from ..server import mcp, get_nr
+from ..server import get_nr, mcp
 from ..utils.filters import filter_devices
 
 
