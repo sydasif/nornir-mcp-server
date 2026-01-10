@@ -1,3 +1,8 @@
+"""Nornir MCP Server device filtering utilities.
+
+Contains functions to filter Nornir inventory based on various criteria.
+"""
+
 import fnmatch
 
 from nornir.core import Nornir
@@ -5,8 +10,7 @@ from nornir.core.filter import F
 
 
 def filter_devices(nr: Nornir, filter_str: str) -> Nornir:
-    """
-    Filter Nornir inventory based on filter expression.
+    """Filter Nornir inventory based on filter expression.
 
     Supports:
     - Exact hostname: 'router-01'

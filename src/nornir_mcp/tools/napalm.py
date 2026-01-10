@@ -1,3 +1,8 @@
+"""Nornir MCP Server NAPALM tools.
+
+Provides tools for network device management using NAPALM for normalized multi-vendor support.
+"""
+
 from nornir_napalm.plugins.tasks import napalm_get
 
 from ..server import get_nr, mcp
@@ -6,7 +11,15 @@ from ..utils.formatters import format_nornir_results
 
 
 def sanitize_configs(configs):
-    """Remove sensitive information from configurations."""
+    """Remove sensitive information from configurations.
+
+    Args:
+        configs: Dictionary containing configuration data that may contain sensitive information
+
+    Returns:
+        Dictionary with sanitized configuration data with sensitive information removed
+
+    """
     sanitized = {}
     for device, data in configs.items():
         if data.get("success") and data.get("result"):
@@ -18,12 +31,8 @@ def sanitize_configs(configs):
 
                 running_config = config["running"]
                 # Remove password lines
-                running_config = re.sub(
-                    r"password \S+", "password <removed>", running_config
-                )
-                running_config = re.sub(
-                    r"secret \S+", "secret <removed>", running_config
-                )
+                running_config = re.sub(r"password \S+", "password <removed>", running_config)
+                running_config = re.sub(r"secret \S+", "secret <removed>", running_config)
                 config["running"] = running_config
             sanitized[device] = {"success": True, "result": config}
         else:
@@ -33,12 +42,21 @@ def sanitize_configs(configs):
 
 @mcp.tool()
 async def get_facts(devices: str) -> dict:
-    """
-    Retrieve basic device information including vendor, model, OS version,
-    uptime, serial number, and hostname.
+    """Retrieve basic device information including vendor, model, OS version, uptime, serial number, and hostname.
 
     This tool uses NAPALM's get_facts getter which provides normalized
     output across different vendor platforms.
+
+    Args:
+        devices: Device filter expression (hostname, group, or pattern)
+
+    Returns:
+        Dictionary containing device facts for each targeted device
+
+    Example:
+        >>> await get_facts("router-01")
+        {'router-01': {'success': True, 'result': {...}}}
+
     """
     # Filter devices based on request
     nr = get_nr()
@@ -53,13 +71,21 @@ async def get_facts(devices: str) -> dict:
 
 @mcp.tool()
 async def get_interfaces(devices: str, interface: str | None = None) -> dict:
-    """
-    Get detailed interface information including status, IP addresses,
-    MAC address, speed, MTU, and error counters.
+    """Get detailed interface information including status, IP addresses, MAC address, speed, MTU, and error counters.
 
     Args:
-        devices: Device filter expression
+        devices: Device filter expression (hostname, group, or pattern)
         interface: Optional specific interface name to query
+
+    Returns:
+        Dictionary containing interface information for each targeted device
+
+    Example:
+        >>> await get_interfaces("router-01")
+        {'router-01': {'success': True, 'result': {...}}}
+        >>> await get_interfaces("router-01", interface="GigabitEthernet0/0")
+        {'router-01': {'success': True, 'result': {...}}}
+
     """
     nr = get_nr()
     filtered_nr = filter_devices(nr, devices)
@@ -79,9 +105,18 @@ async def get_interfaces(devices: str, interface: str | None = None) -> dict:
 
 @mcp.tool()
 async def get_bgp_neighbors(devices: str) -> dict:
-    """
-    Get BGP neighbor status and statistics including state, uptime,
-    remote AS, and prefix counts.
+    """Get BGP neighbor status and statistics including state, uptime, remote AS, and prefix counts.
+
+    Args:
+        devices: Device filter expression (hostname, group, or pattern)
+
+    Returns:
+        Dictionary containing BGP neighbor information for each targeted device
+
+    Example:
+        >>> await get_bgp_neighbors("router-01")
+        {'router-01': {'success': True, 'result': {...}}}
+
     """
     nr = get_nr()
     filtered_nr = filter_devices(nr, devices)
@@ -91,9 +126,18 @@ async def get_bgp_neighbors(devices: str) -> dict:
 
 @mcp.tool()
 async def get_lldp_neighbors(devices: str) -> dict:
-    """
-    Discover network topology via LLDP, showing connected devices
-    and ports for each interface.
+    """Discover network topology via LLDP, showing connected devices and ports for each interface.
+
+    Args:
+        devices: Device filter expression (hostname, group, or pattern)
+
+    Returns:
+        Dictionary containing LLDP neighbor information for each targeted device
+
+    Example:
+        >>> await get_lldp_neighbors("switch-01")
+        {'switch-01': {'success': True, 'result': {...}}}
+
     """
     nr = get_nr()
     filtered_nr = filter_devices(nr, devices)
@@ -102,12 +146,23 @@ async def get_lldp_neighbors(devices: str) -> dict:
 
 
 @mcp.tool()
-async def get_config(
-    devices: str, retrieve: str = "running", sanitized: bool = True
-) -> dict:
-    """
-    Retrieve device configuration (running, startup, or candidate).
-    Sensitive information like passwords is removed by default.
+async def get_config(devices: str, retrieve: str = "running", sanitized: bool = True) -> dict:
+    """Retrieve device configuration (running, startup, or candidate). Sensitive information like passwords is removed by default.
+
+    Args:
+        devices: Device filter expression (hostname, group, or pattern)
+        retrieve: Type of configuration to retrieve ('running', 'startup', 'candidate')
+        sanitized: Whether to remove sensitive information like passwords
+
+    Returns:
+        Dictionary containing device configuration for each targeted device
+
+    Example:
+        >>> await get_config("router-01")
+        {'router-01': {'success': True, 'result': {...}}}
+        >>> await get_config("router-01", retrieve="startup", sanitized=False)
+        {'router-01': {'success': True, 'result': {...}}}
+
     """
     nr = get_nr()
     filtered_nr = filter_devices(nr, devices)

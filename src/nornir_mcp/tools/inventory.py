@@ -1,19 +1,34 @@
+"""Nornir MCP Server inventory tools.
+
+Provides tools for querying and managing network device inventory.
+"""
+
 from ..server import get_nr, mcp
 from ..utils.filters import filter_devices
 
 
 @mcp.tool()
 async def list_devices(filter: str | None = None, details: bool = False) -> dict:
-    """
-    Query network inventory with optional filters.
+    """Query network inventory with optional filters.
 
     Returns device names, IPs, platforms, and groups. Use 'details=true'
     for full inventory attributes.
 
-    Filter examples:
-    - 'role=core' - devices where data.role is 'core'
-    - 'site=dc1' - devices at datacenter 1
-    - 'edge_routers' - devices in edge_routers group
+    Args:
+        filter: Optional filter expression (hostname, group, or data attribute)
+        details: Whether to return full inventory attributes
+
+    Returns:
+        Dictionary containing device inventory information
+
+    Example:
+        >>> await list_devices()
+        {'total_devices': 2, 'devices': [...]}
+        >>> await list_devices(filter="role=core")
+        {'total_devices': 1, 'devices': [...]}
+        >>> await list_devices(filter="router-01", details=True)
+        {'total_devices': 1, 'devices': [...]}
+
     """
     nr = get_nr()
     if filter:
@@ -40,11 +55,18 @@ async def list_devices(filter: str | None = None, details: bool = False) -> dict
 
 @mcp.tool()
 async def get_device_groups() -> dict:
-    """
-    List all inventory groups and their member counts.
+    """List all inventory groups and their member counts.
 
     Useful for discovering available device groupings like roles,
     sites, or device types.
+
+    Returns:
+        Dictionary containing all inventory groups and their member counts
+
+    Example:
+        >>> await get_device_groups()
+        {'groups': {'core_routers': {'count': 2, 'members': [...]}}}
+
     """
     nr = get_nr()
     groups = {}
