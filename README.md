@@ -61,6 +61,7 @@ logging:
 ### Example Inventory Files
 
 **inventory/hosts.yaml**:
+
 ```yaml
 router-01:
   hostname: 192.168.1.1
@@ -89,6 +90,7 @@ switch-01:
 ```
 
 **inventory/groups.yaml**:
+
 ```yaml
 edge_routers:
   data:
@@ -120,10 +122,12 @@ export NETWORK_PASS=your_password
 The server provides the following MCP tools:
 
 ### Inventory Tools
+
 - `list_devices`: Query network inventory with optional filters
 - `get_device_groups`: List all inventory groups and their member counts
 
 ### NAPALM Tools (Normalized Multi-Vendor)
+
 - `get_facts`: Basic device information (vendor, model, OS, uptime)
 - `get_interfaces`: Interface status, IP addresses, speed, errors
 - `get_bgp_neighbors`: BGP neighbor status and statistics
@@ -131,6 +135,7 @@ The server provides the following MCP tools:
 - `get_config`: Device configuration retrieval with sanitization
 
 ### Netmiko Tools (Flexible Command Execution)
+
 - `run_show_commands`: Execute show/display commands with optional parsing
 - `check_connectivity`: Ping or traceroute from network devices
 
@@ -187,11 +192,13 @@ The server supports multiple filtering methods:
 ## Supported Platforms
 
 **NAPALM** (normalized multi-vendor):
+
 - `cisco_ios`, `cisco_nxos`, `cisco_iosxr`
 - `arista_eos`
 - `juniper_junos`
 
 **Netmiko** (100+ platforms):
+
 - All NAPALM platforms above
 - `cisco_asa`, `cisco_ftd`
 - `hp_comware`, `huawei`
@@ -219,6 +226,7 @@ The server supports multiple filtering methods:
 ### Debugging
 
 Enable debug logging by setting the environment variable:
+
 ```bash
 export LOG_LEVEL=DEBUG
 ```
@@ -238,6 +246,7 @@ pytest --cov=nornir_mcp
 ### Adding New Tools
 
 To add new tools:
+
 1. Create a new module in `src/nornir_mcp/tools/`
 2. Define Pydantic models in `src/nornir_mcp/models.py` if needed
 3. Implement the tool using the `@mcp.tool()` decorator
