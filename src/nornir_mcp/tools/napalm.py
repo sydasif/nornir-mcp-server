@@ -53,6 +53,28 @@ async def get_facts(request: NapalmGetterRequest) -> dict:
 
 
 @mcp.tool()
+async def get_facts_simple(devices: str) -> dict:
+    """
+    Simplified version of get_facts that accepts a direct devices parameter.
+
+    Retrieve basic device information including vendor, model, OS version,
+    uptime, serial number, and hostname.
+
+    This tool uses NAPALM's get_facts getter which provides normalized
+    output across different vendor platforms.
+    """
+    # Filter devices based on request
+    nr = get_nr()
+    filtered_nr = filter_devices(nr, devices)
+
+    # Run NAPALM getter
+    result = filtered_nr.run(task=napalm_get, getters=["facts"])
+
+    # Format results
+    return format_nornir_results(result, "facts")
+
+
+@mcp.tool()
 async def get_interfaces(devices: str, interface: str | None = None) -> dict:
     """
     Get detailed interface information including status, IP addresses,
@@ -91,6 +113,20 @@ async def get_bgp_neighbors(request: NapalmGetterRequest) -> dict:
 
 
 @mcp.tool()
+async def get_bgp_neighbors_simple(devices: str) -> dict:
+    """
+    Simplified version of get_bgp_neighbors that accepts a direct devices parameter.
+
+    Get BGP neighbor status and statistics including state, uptime,
+    remote AS, and prefix counts.
+    """
+    nr = get_nr()
+    filtered_nr = filter_devices(nr, devices)
+    result = filtered_nr.run(task=napalm_get, getters=["bgp_neighbors"])
+    return format_nornir_results(result, "bgp_neighbors")
+
+
+@mcp.tool()
 async def get_lldp_neighbors(request: NapalmGetterRequest) -> dict:
     """
     Discover network topology via LLDP, showing connected devices
@@ -98,6 +134,20 @@ async def get_lldp_neighbors(request: NapalmGetterRequest) -> dict:
     """
     nr = get_nr()
     filtered_nr = filter_devices(nr, request.devices)
+    result = filtered_nr.run(task=napalm_get, getters=["lldp_neighbors"])
+    return format_nornir_results(result, "lldp_neighbors")
+
+
+@mcp.tool()
+async def get_lldp_neighbors_simple(devices: str) -> dict:
+    """
+    Simplified version of get_lldp_neighbors that accepts a direct devices parameter.
+
+    Discover network topology via LLDP, showing connected devices
+    and ports for each interface.
+    """
+    nr = get_nr()
+    filtered_nr = filter_devices(nr, devices)
     result = filtered_nr.run(task=napalm_get, getters=["lldp_neighbors"])
     return format_nornir_results(result, "lldp_neighbors")
 
@@ -119,6 +169,30 @@ async def get_config(request: ConfigRequest) -> dict:
 
     # Sanitize if requested
     if request.sanitized:
+        formatted = sanitize_configs(formatted)
+
+    return formatted
+
+
+@mcp.tool()
+async def get_config_simple(devices: str, retrieve: str = "running", sanitized: bool = True) -> dict:
+    """
+    Simplified version of get_config that accepts direct parameters.
+
+    Retrieve device configuration (running, startup, or candidate).
+    Sensitive information like passwords is removed by default.
+    """
+    nr = get_nr()
+    filtered_nr = filter_devices(nr, devices)
+
+    result = filtered_nr.run(
+        task=napalm_get, getters=["config"], retrieve=retrieve
+    )
+
+    formatted = format_nornir_results(result, "config")
+
+    # Sanitize if requested
+    if sanitized:
         formatted = sanitize_configs(formatted)
 
     return formatted
