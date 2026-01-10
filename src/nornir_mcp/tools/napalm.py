@@ -112,7 +112,11 @@ async def get_config(
     nr = get_nr()
     filtered_nr = filter_devices(nr, devices)
 
-    result = filtered_nr.run(task=napalm_get, getters=["config"], retrieve=retrieve)
+    result = filtered_nr.run(
+        task=napalm_get,
+        getters=["config"],
+        getters_options={"config": {"retrieve": retrieve}},
+    )
 
     formatted = format_nornir_results(result, "config")
 
