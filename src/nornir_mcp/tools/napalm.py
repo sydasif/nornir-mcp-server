@@ -99,26 +99,7 @@ async def get_interfaces(
     data_role: str | None = None,
     data_site: str | None = None,
 ) -> dict:
-    """Get detailed interface information including status, configuration, IP addresses, MAC address, speed, MTU, and error counters.
-
-    Args:
-        interface: Optional specific interface name to query
-        hostname: Optional hostname to filter by
-        group: Optional group name to filter by
-        platform: Optional platform to filter by
-        data_role: Optional role in data to filter by (e.g., "core", "edge")
-        data_site: Optional site in data to filter by
-
-    Returns:
-        Dictionary containing interface information for each targeted device.
-        Each interface includes basic properties and an 'ip_addresses' field with IP configuration details.
-
-    Example:
-        >>> await get_interfaces(hostname="router-01")
-        {'router-01': {'success': True, 'result': {...}}}
-        >>> await get_interfaces(hostname="router-01", interface="GigabitEthernet0/0")
-        {'router-01': {'success': True, 'result': {...}}}
-    """
+    """Return interface state and IP information merged per interface."""
     nr = get_nr()
     filters = build_filters_dict(
         hostname=hostname,
@@ -129,40 +110,36 @@ async def get_interfaces(
     )
     nr = apply_filters(nr, **filters)
 
-    result = nr.run(task=napalm_get, getters=["interfaces", "interfaces_ip"])
-    formatted = format_results(result, getter_name=None)  # Will return combined results
+    # Run NAPALM getters in a single call
+    result = nr.run(
+        task=napalm_get,
+        getters=["interfaces", "interfaces_ip"],
+    )
 
-    # Merge interfaces and interfaces_ip data
-    for device_name, device_data in formatted.items():
-        if device_data.get("success") and device_data.get("result"):
-            interfaces = device_data["result"].get("interfaces", {})
-            interfaces_ip = device_data["result"].get("interfaces_ip", {})
+    formatted = format_results(result, getter_name=None)
 
-            # Combine the data by adding IP information to each interface
-            merged_result = {}
-            all_interface_names = set(interfaces.keys()) | set(interfaces_ip.keys())
+    for _, data in formatted.items():
+        if not data.get("success"):
+            continue
 
-            for iface_name in all_interface_names:
-                merged_iface = {}
+        raw = data["result"]
 
-                # Add basic interface information if available
-                if iface_name in interfaces:
-                    merged_iface.update(interfaces[iface_name])
+        interfaces = raw.get("interfaces", {})
+        interfaces_ip = raw.get("interfaces_ip", {})
 
-                # Add IP address information if available
-                if iface_name in interfaces_ip:
-                    merged_iface["ip_addresses"] = interfaces_ip[iface_name]
+        merged = {}
 
-                merged_result[iface_name] = merged_iface
+        for name in set(interfaces) | set(interfaces_ip):
+            merged[name] = {
+                "state": interfaces.get(name, {}),
+                "ip": interfaces_ip.get(name, {}),
+            }
 
-            device_data["result"] = merged_result
+        # Optional single-interface filter
+        if interface:
+            merged = {k: v for k, v in merged.items() if k == interface}
 
-    # Filter to specific interface if requested
-    if interface:
-        for _, data in formatted.items():
-            if data.get("success") and data.get("result"):
-                interfaces = data["result"]
-                data["result"] = {k: v for k, v in interfaces.items() if k == interface}
+        data["result"] = merged
 
     return formatted
 
