@@ -43,8 +43,48 @@ def sanitize_configs(configs):
     return sanitized
 
 
+def _build_filters_dict(
+    hostname: str | None = None,
+    group: str | None = None,
+    platform: str | None = None,
+    data_role: str | None = None,
+    data_site: str | None = None,
+) -> dict:
+    """Helper function to build filters dict from individual parameters.
+
+    Args:
+        hostname: Optional hostname to filter by
+        group: Optional group name to filter by
+        platform: Optional platform to filter by
+        data_role: Optional role in data to filter by (e.g., "core", "edge")
+        data_site: Optional site in data to filter by
+
+    Returns:
+        Dictionary of filters to pass to apply_filters
+    """
+    filters = {}
+    if hostname is not None:
+        filters["hostname"] = hostname
+    if group is not None:
+        filters["group"] = group
+    if platform is not None:
+        filters["platform"] = platform
+    if data_role is not None:
+        filters["data__role"] = data_role
+    if data_site is not None:
+        filters["data__site"] = data_site
+
+    return filters
+
+
 @mcp.tool()
-async def get_facts(**filters) -> dict:
+async def get_facts(
+    hostname: str | None = None,
+    group: str | None = None,
+    platform: str | None = None,
+    data_role: str | None = None,
+    data_site: str | None = None,
+) -> dict:
     """Retrieve basic device information including vendor, model, OS version, uptime, serial number, and hostname.
 
     This tool uses NAPALM's get_facts getter which provides normalized
@@ -53,8 +93,11 @@ async def get_facts(**filters) -> dict:
     If no filters are provided, retrieves facts from all devices in the inventory.
 
     Args:
-        **filters: Optional filter criteria (hostname, group, platform, data__role, data__site, etc.)
-                  If omitted, targets all hosts in the inventory.
+        hostname: Optional hostname to filter by
+        group: Optional group name to filter by
+        platform: Optional platform to filter by
+        data_role: Optional role in data to filter by (e.g., "core", "edge")
+        data_site: Optional site in data to filter by
 
     Returns:
         Dictionary containing device facts for each targeted device
@@ -68,6 +111,7 @@ async def get_facts(**filters) -> dict:
         {'router-01': {'success': True, 'result': {...}}, ...}
     """
     nr = get_nr()
+    filters = _build_filters_dict(hostname, group, platform, data_role, data_site)
     nr = apply_filters(nr, **filters)
 
     result = nr.run(task=napalm_get, getters=["facts"])
@@ -75,12 +119,23 @@ async def get_facts(**filters) -> dict:
 
 
 @mcp.tool()
-async def get_interfaces(interface: str | None = None, **filters) -> dict:
+async def get_interfaces(
+    interface: str | None = None,
+    hostname: str | None = None,
+    group: str | None = None,
+    platform: str | None = None,
+    data_role: str | None = None,
+    data_site: str | None = None,
+) -> dict:
     """Get detailed interface information including status, IP addresses, MAC address, speed, MTU, and error counters.
 
     Args:
         interface: Optional specific interface name to query
-        **filters: Filter criteria (hostname, group, platform, data__role, data__site, etc.)
+        hostname: Optional hostname to filter by
+        group: Optional group name to filter by
+        platform: Optional platform to filter by
+        data_role: Optional role in data to filter by (e.g., "core", "edge")
+        data_site: Optional site in data to filter by
 
     Returns:
         Dictionary containing interface information for each targeted device
@@ -92,6 +147,7 @@ async def get_interfaces(interface: str | None = None, **filters) -> dict:
         {'router-01': {'success': True, 'result': {...}}}
     """
     nr = get_nr()
+    filters = _build_filters_dict(hostname, group, platform, data_role, data_site)
     nr = apply_filters(nr, **filters)
 
     result = nr.run(task=napalm_get, getters=["interfaces"])
@@ -108,11 +164,21 @@ async def get_interfaces(interface: str | None = None, **filters) -> dict:
 
 
 @mcp.tool()
-async def get_bgp_neighbors(**filters) -> dict:
+async def get_bgp_neighbors(
+    hostname: str | None = None,
+    group: str | None = None,
+    platform: str | None = None,
+    data_role: str | None = None,
+    data_site: str | None = None,
+) -> dict:
     """Get BGP neighbor status and statistics including state, uptime, remote AS, and prefix counts.
 
     Args:
-        **filters: Filter criteria (hostname, group, platform, data__role, data__site, etc.)
+        hostname: Optional hostname to filter by
+        group: Optional group name to filter by
+        platform: Optional platform to filter by
+        data_role: Optional role in data to filter by (e.g., "core", "edge")
+        data_site: Optional site in data to filter by
 
     Returns:
         Dictionary containing BGP neighbor information for each targeted device
@@ -124,6 +190,7 @@ async def get_bgp_neighbors(**filters) -> dict:
         {'router-01': {'success': True, 'result': {...}}, ...}
     """
     nr = get_nr()
+    filters = _build_filters_dict(hostname, group, platform, data_role, data_site)
     nr = apply_filters(nr, **filters)
 
     result = nr.run(task=napalm_get, getters=["bgp_neighbors"])
@@ -131,11 +198,21 @@ async def get_bgp_neighbors(**filters) -> dict:
 
 
 @mcp.tool()
-async def get_lldp_neighbors(**filters) -> dict:
+async def get_lldp_neighbors(
+    hostname: str | None = None,
+    group: str | None = None,
+    platform: str | None = None,
+    data_role: str | None = None,
+    data_site: str | None = None,
+) -> dict:
     """Discover network topology via LLDP, showing connected devices and ports for each interface.
 
     Args:
-        **filters: Filter criteria (hostname, group, platform, data__role, data__site, etc.)
+        hostname: Optional hostname to filter by
+        group: Optional group name to filter by
+        platform: Optional platform to filter by
+        data_role: Optional role in data to filter by (e.g., "core", "edge")
+        data_site: Optional site in data to filter by
 
     Returns:
         Dictionary containing LLDP neighbor information for each targeted device
@@ -143,10 +220,11 @@ async def get_lldp_neighbors(**filters) -> dict:
     Example:
         >>> await get_lldp_neighbors(hostname="switch-01")
         {'switch-01': {'success': True, 'result': {...}}}
-        >>> await get_lldp_neighbors(data__role="core")
+        >>> await get_lldp_neighbors(data_role="core")
         {'switch-01': {'success': True, 'result': {...}}, ...}
     """
     nr = get_nr()
+    filters = _build_filters_dict(hostname, group, platform, data_role, data_site)
     nr = apply_filters(nr, **filters)
 
     result = nr.run(task=napalm_get, getters=["lldp_neighbors"])
@@ -157,14 +235,22 @@ async def get_lldp_neighbors(**filters) -> dict:
 async def get_config(
     retrieve: str = "running",
     sanitized: bool = True,
-    **filters
+    hostname: str | None = None,
+    group: str | None = None,
+    platform: str | None = None,
+    data_role: str | None = None,
+    data_site: str | None = None,
 ) -> dict:
     """Retrieve device configuration (running, startup, or candidate). Sensitive information like passwords is removed by default.
 
     Args:
         retrieve: Type of configuration to retrieve ('running', 'startup', 'candidate')
         sanitized: Whether to remove sensitive information like passwords
-        **filters: Filter criteria (hostname, group, platform, data__role, data__site, etc.)
+        hostname: Optional hostname to filter by
+        group: Optional group name to filter by
+        platform: Optional platform to filter by
+        data_role: Optional role in data to filter by (e.g., "core", "edge")
+        data_site: Optional site in data to filter by
 
     Returns:
         Dictionary containing device configuration for each targeted device
@@ -176,6 +262,7 @@ async def get_config(
         {'router-01': {'success': True, 'result': {...}}, ...}
     """
     nr = get_nr()
+    filters = _build_filters_dict(hostname, group, platform, data_role, data_site)
     nr = apply_filters(nr, **filters)
 
     result = nr.run(

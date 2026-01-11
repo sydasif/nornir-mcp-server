@@ -10,8 +10,49 @@ from ..utils.filters import apply_filters
 from ..utils.formatters import format_results
 
 
+def _build_filters_dict(
+    hostname: str | None = None,
+    group: str | None = None,
+    platform: str | None = None,
+    data_role: str | None = None,
+    data_site: str | None = None,
+) -> dict:
+    """Helper function to build filters dict from individual parameters.
+
+    Args:
+        hostname: Optional hostname to filter by
+        group: Optional group name to filter by
+        platform: Optional platform to filter by
+        data_role: Optional role in data to filter by (e.g., "core", "edge")
+        data_site: Optional site in data to filter by
+
+    Returns:
+        Dictionary of filters to pass to apply_filters
+    """
+    filters = {}
+    if hostname is not None:
+        filters["hostname"] = hostname
+    if group is not None:
+        filters["group"] = group
+    if platform is not None:
+        filters["platform"] = platform
+    if data_role is not None:
+        filters["data__role"] = data_role
+    if data_site is not None:
+        filters["data__site"] = data_site
+
+    return filters
+
+
 @mcp.tool()
-async def run_show_commands(commands: list[str], **filters) -> dict:
+async def run_show_commands(
+    commands: list[str],
+    hostname: str | None = None,
+    group: str | None = None,
+    platform: str | None = None,
+    data_role: str | None = None,
+    data_site: str | None = None,
+) -> dict:
     """Execute show/display commands on network devices via SSH.
 
     Returns the raw command output. This tool can also be used for
@@ -19,7 +60,11 @@ async def run_show_commands(commands: list[str], **filters) -> dict:
 
     Args:
         commands: List of commands to execute
-        **filters: Filter criteria (hostname, group, platform, data__role, data__site, etc.)
+        hostname: Optional hostname to filter by
+        group: Optional group name to filter by
+        platform: Optional platform to filter by
+        data_role: Optional role in data to filter by (e.g., "core", "edge")
+        data_site: Optional site in data to filter by
 
     Returns:
         Dictionary containing command output for each targeted device
@@ -31,6 +76,7 @@ async def run_show_commands(commands: list[str], **filters) -> dict:
         {'show ip interface brief': {'router-01': {...}, 'router-02': {...}}}
     """
     nr = get_nr()
+    filters = _build_filters_dict(hostname, group, platform, data_role, data_site)
     nr = apply_filters(nr, **filters)
 
     results = {}

@@ -61,7 +61,7 @@ def get_nr():
 
 # Import all tool modules (they register via @mcp.tool()) after mcp is defined
 # This happens after mcp is created to avoid circular imports
-from .tools import inventory, napalm, netmiko  # noqa: F401
+from .tools import inventory, napalm, netmiko  # noqa: F401,E402
 
 
 def main():
