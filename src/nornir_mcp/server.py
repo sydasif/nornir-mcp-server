@@ -48,15 +48,15 @@ def get_nornir():
 
 # Global Nornir instance (deferred initialization)
 def get_nr():
-    """Get the global Nornir instance, creating it if it doesn't exist.
+    """Get a fresh Nornir instance.
 
     Returns:
-        Nornir: The global Nornir instance.
-
+        Nornir: A new Nornir instance for the current request.
     """
-    if not hasattr(get_nr, "_instance"):
-        get_nr._instance = get_nornir()
-    return get_nr._instance
+    # We must return a new instance every time because Nornir is stateful.
+    # If a host fails a task in a singleton instance, it is marked as 'failed'
+    # and skipped in subsequent runs (0 hosts selected), which breaks the server.
+    return get_nornir()
 
 
 # Import all tool modules (they register via @mcp.tool()) after mcp is defined
