@@ -83,7 +83,7 @@ async def backup_configurations(
         if data.get("success"):
             # Extract the configuration content
             config_data = data.get("result", {})
-            config_content = config_data.get("config", {}).get(retrieve, "")
+            config_content = config_data.get(retrieve, "")
 
             if config_content:
                 # Create filename with timestamp
