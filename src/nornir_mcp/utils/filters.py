@@ -1,40 +1,49 @@
 """Nornir MCP Server device filtering utilities.
 
-Contains functions to filter Nornir inventory based on various criteria.
+Contains functions to apply filters to Nornir inventory using the F object.
 """
 
-import fnmatch
-
 from nornir.core import Nornir
+from nornir.core.filter import F
 
 
-def filter_devices(nr: Nornir, filter_str: str) -> Nornir:
-    """Filter Nornir inventory based on filter expression.
+def apply_filters(nr: Nornir, **filters) -> Nornir:
+    """Apply filters to Nornir inventory using the F object.
 
-    Supports:
-    - Exact hostname: 'router-01'
-    - Multiple devices: 'router-01,router-02'
-    - Group membership: 'edge_routers'
-    - Patterns: 'router-*'
+    If no filters are provided, returns the unfiltered Nornir instance,
+    which targets all hosts in the inventory (Nornir's default behavior).
+
+    Args:
+        nr: Nornir instance to filter
+        **filters: Filter criteria as keyword arguments
+            - hostname: Exact hostname match
+            - group: Group membership (uses groups__contains)
+            - platform: Platform match
+            - Any data.* attribute using data__ prefix (e.g., data__role="core")
+
+    Returns:
+        Filtered Nornir instance (or unfiltered if no filters provided)
+
+    Example:
+        >>> apply_filters(nr)  # No filters = all hosts
+        >>> apply_filters(nr, hostname="router-01")
+        >>> apply_filters(nr, group="edge_routers")
+        >>> apply_filters(nr, data__role="core")
+        >>> apply_filters(nr, platform="cisco_ios", group="production")
     """
-    # Comma-separated list
-    if "," in filter_str:
-        hosts = [h.strip() for h in filter_str.split(",")]
-        return nr.filter(filter_func=lambda h: h.name in hosts)
+    # If no filters provided, return unfiltered (all hosts)
+    if not filters:
+        return nr
 
-    # Try exact hostname match
-    if filter_str in nr.inventory.hosts:
-        return nr.filter(name=filter_str)
+    # Special handling for common filter types
+    if "hostname" in filters:
+        nr = nr.filter(F(name=filters.pop("hostname")))
 
-    # Try group match
-    if filter_str in nr.inventory.groups:
-        return nr.filter(filter_func=lambda h: filter_str in [g.name for g in h.groups])
+    if "group" in filters:
+        nr = nr.filter(F(groups__contains=filters.pop("group")))
 
-    # Pattern matching (glob-style)
-    if "*" in filter_str:
-        pattern = filter_str
-        return nr.filter(filter_func=lambda h: fnmatch.fnmatch(h.name, pattern))
+    # Apply remaining filters directly (platform, data__ attributes, etc.)
+    if filters:
+        nr = nr.filter(F(**filters))
 
-    # Default: strict name match (which will likely fail if it wasn't caught above,
-    # but provides a consistent fallback behavior)
-    return nr.filter(name=filter_str)
+    return nr

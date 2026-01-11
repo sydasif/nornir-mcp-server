@@ -8,7 +8,7 @@ import re
 from nornir_napalm.plugins.tasks import napalm_get
 
 from ..server import get_nr, mcp
-from ..utils.filters import filter_devices
+from ..utils.filters import apply_filters
 from ..utils.formatters import format_results
 
 
@@ -20,7 +20,6 @@ def sanitize_configs(configs):
 
     Returns:
         Dictionary with sanitized configuration data with sensitive information removed
-
     """
     sanitized = {}
     for device, data in configs.items():
@@ -45,56 +44,57 @@ def sanitize_configs(configs):
 
 
 @mcp.tool()
-async def get_facts(devices: str) -> dict:
+async def get_facts(**filters) -> dict:
     """Retrieve basic device information including vendor, model, OS version, uptime, serial number, and hostname.
 
     This tool uses NAPALM's get_facts getter which provides normalized
     output across different vendor platforms.
 
+    If no filters are provided, retrieves facts from all devices in the inventory.
+
     Args:
-        devices: Device filter expression (hostname, group, or pattern)
+        **filters: Optional filter criteria (hostname, group, platform, data__role, data__site, etc.)
+                  If omitted, targets all hosts in the inventory.
 
     Returns:
         Dictionary containing device facts for each targeted device
 
     Example:
-        >>> await get_facts("router-01")
+        >>> await get_facts()  # All devices
+        {'router-01': {...}, 'router-02': {...}, 'switch-01': {...}}
+        >>> await get_facts(hostname="router-01")
         {'router-01': {'success': True, 'result': {...}}}
-
+        >>> await get_facts(group="edge_routers")
+        {'router-01': {'success': True, 'result': {...}}, ...}
     """
-    # Filter devices based on request
     nr = get_nr()
-    filtered_nr = filter_devices(nr, devices)
+    nr = apply_filters(nr, **filters)
 
-    # Run NAPALM getter
-    result = filtered_nr.run(task=napalm_get, getters=["facts"])
-
-    # Format results
+    result = nr.run(task=napalm_get, getters=["facts"])
     return format_results(result, getter_name="facts")
 
 
 @mcp.tool()
-async def get_interfaces(devices: str, interface: str | None = None) -> dict:
+async def get_interfaces(interface: str | None = None, **filters) -> dict:
     """Get detailed interface information including status, IP addresses, MAC address, speed, MTU, and error counters.
 
     Args:
-        devices: Device filter expression (hostname, group, or pattern)
         interface: Optional specific interface name to query
+        **filters: Filter criteria (hostname, group, platform, data__role, data__site, etc.)
 
     Returns:
         Dictionary containing interface information for each targeted device
 
     Example:
-        >>> await get_interfaces("router-01")
+        >>> await get_interfaces(hostname="router-01")
         {'router-01': {'success': True, 'result': {...}}}
-        >>> await get_interfaces("router-01", interface="GigabitEthernet0/0")
+        >>> await get_interfaces(hostname="router-01", interface="GigabitEthernet0/0")
         {'router-01': {'success': True, 'result': {...}}}
-
     """
     nr = get_nr()
-    filtered_nr = filter_devices(nr, devices)
+    nr = apply_filters(nr, **filters)
 
-    result = filtered_nr.run(task=napalm_get, getters=["interfaces"])
+    result = nr.run(task=napalm_get, getters=["interfaces"])
     formatted = format_results(result, getter_name="interfaces")
 
     # Filter to specific interface if requested
@@ -108,72 +108,77 @@ async def get_interfaces(devices: str, interface: str | None = None) -> dict:
 
 
 @mcp.tool()
-async def get_bgp_neighbors(devices: str) -> dict:
+async def get_bgp_neighbors(**filters) -> dict:
     """Get BGP neighbor status and statistics including state, uptime, remote AS, and prefix counts.
 
     Args:
-        devices: Device filter expression (hostname, group, or pattern)
+        **filters: Filter criteria (hostname, group, platform, data__role, data__site, etc.)
 
     Returns:
         Dictionary containing BGP neighbor information for each targeted device
 
     Example:
-        >>> await get_bgp_neighbors("router-01")
+        >>> await get_bgp_neighbors(hostname="router-01")
         {'router-01': {'success': True, 'result': {...}}}
-
+        >>> await get_bgp_neighbors(group="edge_routers")
+        {'router-01': {'success': True, 'result': {...}}, ...}
     """
     nr = get_nr()
-    filtered_nr = filter_devices(nr, devices)
-    result = filtered_nr.run(task=napalm_get, getters=["bgp_neighbors"])
+    nr = apply_filters(nr, **filters)
+
+    result = nr.run(task=napalm_get, getters=["bgp_neighbors"])
     return format_results(result, getter_name="bgp_neighbors")
 
 
 @mcp.tool()
-async def get_lldp_neighbors(devices: str) -> dict:
+async def get_lldp_neighbors(**filters) -> dict:
     """Discover network topology via LLDP, showing connected devices and ports for each interface.
 
     Args:
-        devices: Device filter expression (hostname, group, or pattern)
+        **filters: Filter criteria (hostname, group, platform, data__role, data__site, etc.)
 
     Returns:
         Dictionary containing LLDP neighbor information for each targeted device
 
     Example:
-        >>> await get_lldp_neighbors("switch-01")
+        >>> await get_lldp_neighbors(hostname="switch-01")
         {'switch-01': {'success': True, 'result': {...}}}
-
+        >>> await get_lldp_neighbors(data__role="core")
+        {'switch-01': {'success': True, 'result': {...}}, ...}
     """
     nr = get_nr()
-    filtered_nr = filter_devices(nr, devices)
-    result = filtered_nr.run(task=napalm_get, getters=["lldp_neighbors"])
+    nr = apply_filters(nr, **filters)
+
+    result = nr.run(task=napalm_get, getters=["lldp_neighbors"])
     return format_results(result, getter_name="lldp_neighbors")
 
 
 @mcp.tool()
 async def get_config(
-    devices: str, retrieve: str = "running", sanitized: bool = True
+    retrieve: str = "running",
+    sanitized: bool = True,
+    **filters
 ) -> dict:
     """Retrieve device configuration (running, startup, or candidate). Sensitive information like passwords is removed by default.
 
     Args:
-        devices: Device filter expression (hostname, group, or pattern)
         retrieve: Type of configuration to retrieve ('running', 'startup', 'candidate')
         sanitized: Whether to remove sensitive information like passwords
+        **filters: Filter criteria (hostname, group, platform, data__role, data__site, etc.)
 
     Returns:
         Dictionary containing device configuration for each targeted device
 
     Example:
-        >>> await get_config("router-01")
+        >>> await get_config(hostname="router-01")
         {'router-01': {'success': True, 'result': {...}}}
-        >>> await get_config("router-01", retrieve="startup", sanitized=False)
-        {'router-01': {'success': True, 'result': {...}}}
-
+        >>> await get_config(group="edge_routers", retrieve="startup", sanitized=False)
+        {'router-01': {'success': True, 'result': {...}}, ...}
     """
     nr = get_nr()
-    filtered_nr = filter_devices(nr, devices)
+    nr = apply_filters(nr, **filters)
 
-    result = filtered_nr.run(
+    result = nr.run(
         task=napalm_get,
         getters=["config"],
         getters_options={"config": {"retrieve": retrieve}},

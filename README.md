@@ -181,13 +181,25 @@ Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
 
 ## Device Filtering
 
-The server supports multiple filtering methods:
+All tools support optional filtering. **If no filters are provided, the tool targets all devices in the inventory** (Nornir's default behavior).
 
-- **Exact hostname**: `"router-01"`
-- **Multiple devices**: `"router-01,router-02,router-03"`
-- **Group membership**: `"edge_routers"`
-- **Data attributes**: `"role=core"`, `"site=datacenter-01"`
-- **Pattern matching**: `"router-*"`, `"*-core-*"`
+The server supports flexible filtering using keyword arguments that map to Nornir's F object:
+
+- **Exact hostname**: `hostname="router-01"`
+- **Group membership**: `group="edge_routers"`
+- **Platform**: `platform="cisco_ios"`
+- **Data attributes**: `data__role="core"`, `data__site="datacenter-01"`
+
+All Nornir F object operators are supported using the `data__` prefix for custom attributes.
+
+Examples:
+- "Get facts for all devices" → `get_facts()` (no filters)
+- "Get facts for router-01" → `get_facts(hostname="router-01")`
+- "Show interfaces on all edge routers" → `get_interfaces(group="edge_routers")`
+- "Get BGP neighbors for all core devices" → `get_bgp_neighbors(data__role="core")`
+- "List all Cisco IOS devices in production" → `list_devices(platform="cisco_ios", group="production")`
+
+Multiple filters are combined with AND logic. Claude will intelligently choose the appropriate filter parameters based on your natural language request, or omit filters entirely to target all devices.
 
 ## Supported Platforms
 

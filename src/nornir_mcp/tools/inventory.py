@@ -4,40 +4,41 @@ Provides tools for querying and managing network device inventory.
 """
 
 from ..server import get_nr, mcp
-from ..utils.filters import filter_devices
+from ..utils.filters import apply_filters
 
 
 @mcp.tool()
-async def list_devices(filter: str | None = None, details: bool = False) -> dict:
+async def list_devices(details: bool = False, **filters) -> dict:
     """Query network inventory with optional filters.
 
     Returns device names, IPs, platforms, and groups. Use 'details=true'
     for full inventory attributes.
 
+    If no filters are provided, returns all devices in the inventory.
+
     Args:
-        filter: Optional filter expression (hostname, group, or data attribute)
         details: Whether to return full inventory attributes
+        **filters: Optional filter criteria (hostname, group, platform, data__role, data__site, etc.)
+                  If omitted, targets all hosts in the inventory.
 
     Returns:
         Dictionary containing device inventory information
 
     Example:
-        >>> await list_devices()
+        >>> await list_devices()  # All devices
+        {'total_devices': 10, 'devices': [...]}
+        >>> await list_devices(group="edge_routers")
+        {'total_devices': 3, 'devices': [...]}
+        >>> await list_devices(data__role="core")
         {'total_devices': 2, 'devices': [...]}
-        >>> await list_devices(filter="role=core")
+        >>> await list_devices(hostname="router-01", details=True)
         {'total_devices': 1, 'devices': [...]}
-        >>> await list_devices(filter="router-01", details=True)
-        {'total_devices': 1, 'devices': [...]}
-
     """
     nr = get_nr()
-    if filter:
-        filtered_nr = filter_devices(nr, filter)
-    else:
-        filtered_nr = nr
+    nr = apply_filters(nr, **filters)
 
     devices = []
-    for host_name, host in filtered_nr.inventory.hosts.items():
+    for host_name, host in nr.inventory.hosts.items():
         device_info = {
             "name": host_name,
             "hostname": host.hostname,
@@ -66,7 +67,6 @@ async def get_device_groups() -> dict:
     Example:
         >>> await get_device_groups()
         {'groups': {'core_routers': {'count': 2, 'members': [...]}}}
-
     """
     nr = get_nr()
     groups = {}

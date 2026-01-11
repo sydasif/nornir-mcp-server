@@ -6,38 +6,36 @@ Provides tools for network device management using Netmiko for flexible command 
 from nornir_netmiko.tasks import netmiko_send_command
 
 from ..server import get_nr, mcp
-from ..utils.filters import filter_devices
+from ..utils.filters import apply_filters
 from ..utils.formatters import format_results
 
 
 @mcp.tool()
-async def run_show_commands(
-    devices: str,
-    commands: list[str],
-) -> dict:
+async def run_show_commands(commands: list[str], **filters) -> dict:
     """Execute show/display commands on network devices via SSH.
 
     Returns the raw command output. This tool can also be used for
     connectivity checks (ping/traceroute).
 
     Args:
-        devices: Device filter expression (hostname, group, or pattern)
         commands: List of commands to execute
+        **filters: Filter criteria (hostname, group, platform, data__role, data__site, etc.)
 
     Returns:
         Dictionary containing command output for each targeted device
 
     Example:
-        >>> await run_show_commands("router-01", ["show version"])
+        >>> await run_show_commands(["show version"], hostname="router-01")
         {'show version': {'router-01': {'success': True, 'output': 'Cisco IOS Software...'}}}
-
+        >>> await run_show_commands(["show ip interface brief"], group="edge_routers")
+        {'show ip interface brief': {'router-01': {...}, 'router-02': {...}}}
     """
     nr = get_nr()
-    filtered_nr = filter_devices(nr, devices)
+    nr = apply_filters(nr, **filters)
 
     results = {}
     for command in commands:
-        result = filtered_nr.run(
+        result = nr.run(
             task=netmiko_send_command,
             command_string=command,
             # We rely on the LLM to parse the raw text output,
