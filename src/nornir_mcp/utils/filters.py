@@ -7,6 +7,37 @@ from nornir.core import Nornir
 from nornir.core.filter import F
 
 
+def build_filters_dict(**kwargs) -> dict:
+    """Build a standardized filter dictionary from individual parameters.
+
+    This centralized function ensures consistent filtering logic across all
+    tool modules, adhering to the DRY principle.
+
+    Args:
+        **kwargs: Filter parameters including:
+            - hostname: Exact hostname match
+            - group: Group membership
+            - platform: Platform match
+            - data_role: Role in data (e.g., "core", "edge")
+            - data_site: Site in data
+
+    Returns:
+        Dictionary of filters ready to be passed to apply_filters
+
+    Example:
+        >>> build_filters_dict(hostname="router-01", group="edge")
+        {'hostname': 'router-01', 'group': 'edge'}
+    """
+    mapping = {
+        "hostname": "hostname",
+        "group": "group",
+        "platform": "platform",
+        "data_role": "data__role",
+        "data_site": "data__site",
+    }
+    return {mapping[k]: v for k, v in kwargs.items() if v is not None and k in mapping}
+
+
 def apply_filters(nr: Nornir, **filters) -> Nornir:
     """Apply filters to Nornir inventory using the F object.
 

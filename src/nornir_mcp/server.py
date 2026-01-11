@@ -46,17 +46,27 @@ def get_nornir():
     return InitNornir(config_file=str(config_file))
 
 
-# Global Nornir instance (deferred initialization)
+# Global Nornir singleton instance
+_nr = None
+
 def get_nr():
-    """Get a fresh Nornir instance.
+    """Get a Nornir instance with a clean state.
 
     Returns:
-        Nornir: A new Nornir instance for the current request.
+        Nornir: A Nornir instance with failed hosts state reset.
+
+    This function implements a singleton pattern for Nornir initialization
+    while ensuring each request starts with a clean slate by resetting
+    the failed_hosts state. This prevents transient failures from
+    affecting subsequent tool calls.
     """
-    # We must return a new instance every time because Nornir is stateful.
-    # If a host fails a task in a singleton instance, it is marked as 'failed'
-    # and skipped in subsequent runs (0 hosts selected), which breaks the server.
-    return get_nornir()
+    global _nr
+    if _nr is None:
+        _nr = get_nornir()
+
+    # Reset failed hosts state to ensure a clean slate for each request
+    _nr.inventory.reset_failed_hosts()
+    return _nr
 
 
 # Import all tool modules (they register via @mcp.tool()) after mcp is defined

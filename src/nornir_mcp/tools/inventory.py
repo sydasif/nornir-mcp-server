@@ -4,41 +4,7 @@ Provides tools for querying and managing network device inventory.
 """
 
 from ..server import get_nr, mcp
-from ..utils.filters import apply_filters
-
-
-def _build_filters_dict(
-    hostname: str | None = None,
-    group: str | None = None,
-    platform: str | None = None,
-    data_role: str | None = None,
-    data_site: str | None = None,
-) -> dict:
-    """Helper function to build filters dict from individual parameters.
-
-    Args:
-        hostname: Optional hostname to filter by
-        group: Optional group name to filter by
-        platform: Optional platform to filter by
-        data_role: Optional role in data to filter by (e.g., "core", "edge")
-        data_site: Optional site in data to filter by
-
-    Returns:
-        Dictionary of filters to pass to apply_filters
-    """
-    filters = {}
-    if hostname is not None:
-        filters["hostname"] = hostname
-    if group is not None:
-        filters["group"] = group
-    if platform is not None:
-        filters["platform"] = platform
-    if data_role is not None:
-        filters["data__role"] = data_role
-    if data_site is not None:
-        filters["data__site"] = data_site
-
-    return filters
+from ..utils.filters import apply_filters, build_filters_dict
 
 
 @mcp.tool()
@@ -79,7 +45,13 @@ async def list_devices(
         {'total_devices': 1, 'devices': [...]}
     """
     nr = get_nr()
-    filters = _build_filters_dict(hostname, group, platform, data_role, data_site)
+    filters = build_filters_dict(
+        hostname=hostname,
+        group=group,
+        platform=platform,
+        data_role=data_role,
+        data_site=data_site,
+    )
     nr = apply_filters(nr, **filters)
 
     devices = []
@@ -109,14 +81,40 @@ async def get_device_groups() -> dict:
     Returns:
         Dictionary containing all inventory groups and their member counts
 
-    Example:
+        Example:
         >>> await get_device_groups()
         {'groups': {'core_routers': {'count': 2, 'members': [...]}}}
     """
     nr = get_nr()
-    groups = {}
-    for group_name, group in nr.inventory.groups.items():
-        members = [h.name for h in nr.inventory.hosts.values() if group in h.groups]
-        groups[group_name] = {"count": len(members), "members": members}
+    groups = {name: {"count": 0, "members": []} for name in nr.inventory.groups}
+
+    for host_name, host in nr.inventory.hosts.items():
+        for group in host.groups:
+            if group.name in groups:
+                groups[group.name]["count"] += 1
+                groups[group.name]["members"].append(host_name)
 
     return {"groups": groups}
+
+
+@mcp.tool()
+async def reset_failed_hosts() -> dict:
+    """Clear the 'failed' status from all hosts in the inventory.
+
+    Use this if hosts are being skipped due to previous execution errors.
+    This tool provides explicit control over the failed hosts state,
+    complementing the automatic reset that occurs on every tool call.
+
+    Returns:
+        Dictionary with status and message
+
+    Example:
+        >>> await reset_failed_hosts()
+        {'status': 'success', 'message': 'Failed hosts state has been cleared for all devices.'}
+    """
+    nr = get_nr()
+    nr.inventory.reset_failed_hosts()
+    return {
+        "status": "success",
+        "message": "Failed hosts state has been cleared for all devices.",
+    }

@@ -6,42 +6,8 @@ Provides tools for network device management using Netmiko for flexible command 
 from nornir_netmiko.tasks import netmiko_send_command
 
 from ..server import get_nr, mcp
-from ..utils.filters import apply_filters
+from ..utils.filters import apply_filters, build_filters_dict
 from ..utils.formatters import format_results
-
-
-def _build_filters_dict(
-    hostname: str | None = None,
-    group: str | None = None,
-    platform: str | None = None,
-    data_role: str | None = None,
-    data_site: str | None = None,
-) -> dict:
-    """Helper function to build filters dict from individual parameters.
-
-    Args:
-        hostname: Optional hostname to filter by
-        group: Optional group name to filter by
-        platform: Optional platform to filter by
-        data_role: Optional role in data to filter by (e.g., "core", "edge")
-        data_site: Optional site in data to filter by
-
-    Returns:
-        Dictionary of filters to pass to apply_filters
-    """
-    filters = {}
-    if hostname is not None:
-        filters["hostname"] = hostname
-    if group is not None:
-        filters["group"] = group
-    if platform is not None:
-        filters["platform"] = platform
-    if data_role is not None:
-        filters["data__role"] = data_role
-    if data_site is not None:
-        filters["data__site"] = data_site
-
-    return filters
 
 
 @mcp.tool()
@@ -76,7 +42,13 @@ async def run_show_commands(
         {'show ip interface brief': {'router-01': {...}, 'router-02': {...}}}
     """
     nr = get_nr()
-    filters = _build_filters_dict(hostname, group, platform, data_role, data_site)
+    filters = build_filters_dict(
+        hostname=hostname,
+        group=group,
+        platform=platform,
+        data_role=data_role,
+        data_site=data_site,
+    )
     nr = apply_filters(nr, **filters)
 
     results = {}

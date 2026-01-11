@@ -8,7 +8,7 @@ import re
 from nornir_napalm.plugins.tasks import napalm_get
 
 from ..server import get_nr, mcp
-from ..utils.filters import apply_filters
+from ..utils.filters import apply_filters, build_filters_dict
 from ..utils.formatters import format_results
 
 
@@ -41,40 +41,6 @@ def sanitize_configs(configs):
         else:
             sanitized[device] = data
     return sanitized
-
-
-def _build_filters_dict(
-    hostname: str | None = None,
-    group: str | None = None,
-    platform: str | None = None,
-    data_role: str | None = None,
-    data_site: str | None = None,
-) -> dict:
-    """Helper function to build filters dict from individual parameters.
-
-    Args:
-        hostname: Optional hostname to filter by
-        group: Optional group name to filter by
-        platform: Optional platform to filter by
-        data_role: Optional role in data to filter by (e.g., "core", "edge")
-        data_site: Optional site in data to filter by
-
-    Returns:
-        Dictionary of filters to pass to apply_filters
-    """
-    filters = {}
-    if hostname is not None:
-        filters["hostname"] = hostname
-    if group is not None:
-        filters["group"] = group
-    if platform is not None:
-        filters["platform"] = platform
-    if data_role is not None:
-        filters["data__role"] = data_role
-    if data_site is not None:
-        filters["data__site"] = data_site
-
-    return filters
 
 
 @mcp.tool()
@@ -111,7 +77,13 @@ async def get_facts(
         {'router-01': {'success': True, 'result': {...}}, ...}
     """
     nr = get_nr()
-    filters = _build_filters_dict(hostname, group, platform, data_role, data_site)
+    filters = build_filters_dict(
+        hostname=hostname,
+        group=group,
+        platform=platform,
+        data_role=data_role,
+        data_site=data_site,
+    )
     nr = apply_filters(nr, **filters)
 
     result = nr.run(task=napalm_get, getters=["facts"])
@@ -147,7 +119,13 @@ async def get_interfaces(
         {'router-01': {'success': True, 'result': {...}}}
     """
     nr = get_nr()
-    filters = _build_filters_dict(hostname, group, platform, data_role, data_site)
+    filters = build_filters_dict(
+        hostname=hostname,
+        group=group,
+        platform=platform,
+        data_role=data_role,
+        data_site=data_site,
+    )
     nr = apply_filters(nr, **filters)
 
     result = nr.run(task=napalm_get, getters=["interfaces"])
@@ -190,7 +168,13 @@ async def get_bgp_neighbors(
         {'router-01': {'success': True, 'result': {...}}, ...}
     """
     nr = get_nr()
-    filters = _build_filters_dict(hostname, group, platform, data_role, data_site)
+    filters = build_filters_dict(
+        hostname=hostname,
+        group=group,
+        platform=platform,
+        data_role=data_role,
+        data_site=data_site,
+    )
     nr = apply_filters(nr, **filters)
 
     result = nr.run(task=napalm_get, getters=["bgp_neighbors"])
@@ -224,7 +208,13 @@ async def get_lldp_neighbors(
         {'switch-01': {'success': True, 'result': {...}}, ...}
     """
     nr = get_nr()
-    filters = _build_filters_dict(hostname, group, platform, data_role, data_site)
+    filters = build_filters_dict(
+        hostname=hostname,
+        group=group,
+        platform=platform,
+        data_role=data_role,
+        data_site=data_site,
+    )
     nr = apply_filters(nr, **filters)
 
     result = nr.run(task=napalm_get, getters=["lldp_neighbors"])
@@ -262,7 +252,13 @@ async def get_config(
         {'router-01': {'success': True, 'result': {...}}, ...}
     """
     nr = get_nr()
-    filters = _build_filters_dict(hostname, group, platform, data_role, data_site)
+    filters = build_filters_dict(
+        hostname=hostname,
+        group=group,
+        platform=platform,
+        data_role=data_role,
+        data_site=data_site,
+    )
     nr = apply_filters(nr, **filters)
 
     result = nr.run(
