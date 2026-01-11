@@ -5,7 +5,7 @@ An MCP (Model Context Protocol) server built with **FastMCP** that exposes Norni
 ## Features
 
 - **Network Inventory Tools**: List devices, query groups, filter by attributes
-- **NAPALM Integration**: Standardized multi-vendor network operations (facts, interfaces, BGP, LLDP, config)
+- **NAPALM Integration**: Standardized multi-vendor network operations (facts, interfaces with IP addresses, BGP, LLDP, config)
 - **Netmiko Integration**: Flexible command execution and connectivity testing
 - **Device Filtering**: Supports hostname, group, attribute, and pattern-based filtering
 - **Structured Output**: Automatic parsing with TextFSM and Genie (where available)
@@ -128,16 +128,16 @@ The server provides the following MCP tools:
 
 ### NAPALM Tools (Normalized Multi-Vendor)
 
-- `get_facts`: Basic device information (vendor, model, OS, uptime) - accepts direct parameters
-- `get_interfaces`: Interface status, IP addresses, speed, errors
-- `get_bgp_neighbors`: BGP neighbor status and statistics - accepts direct parameters
-- `get_lldp_neighbors`: Network topology via LLDP - accepts direct parameters
-- `get_config`: Device configuration retrieval with sanitization - accepts direct parameters
+- `get_facts`: Basic device information (vendor, model, OS, uptime) - accepts direct filter parameters
+- `get_interfaces`: Interface status, IP addresses, speed, errors - accepts direct filter parameters
+- `get_bgp_neighbors`: BGP neighbor status and statistics - accepts direct filter parameters
+- `get_lldp_neighbors`: Network topology via LLDP - accepts direct filter parameters
+- `get_config`: Device configuration retrieval with sanitization and optional backup functionality (replaces the separate backup tool) - accepts direct filter parameters
 
 ### Netmiko Tools (Flexible Command Execution)
 
-- `run_show_commands`: Execute show/display commands with optional parsing - accepts direct parameters
-- `check_connectivity`: Ping or traceroute from network devices - accepts direct parameters
+- `run_show_commands`: Execute show/display commands with optional parsing - accepts direct filter parameters
+- `check_connectivity`: Ping or traceroute from network devices - accepts direct filter parameters
 
 ## Usage
 
@@ -196,7 +196,10 @@ Examples:
 - "Get facts for all devices" → `get_facts()` (no filters)
 - "Get facts for router-01" → `get_facts(hostname="router-01")`
 - "Show interfaces on all edge routers" → `get_interfaces(group="edge_routers")`
+- "Get interface GigabitEthernet0/0 on router-01" → `get_interfaces(hostname="router-01", interface="GigabitEthernet0/0")`
 - "Get BGP neighbors for all core devices" → `get_bgp_neighbors(data__role="core")`
+- "Get running config for all devices" → `get_config(retrieve="running")`
+- "Backup configurations for edge routers to ./backups" → `get_config(group="edge_routers", backup=True, backup_directory="./backups")`
 - "List all Cisco IOS devices in production" → `list_devices(platform="cisco_ios", group="production")`
 
 Multiple filters are combined with AND logic. Claude will intelligently choose the appropriate filter parameters based on your natural language request, or omit filters entirely to target all devices.
