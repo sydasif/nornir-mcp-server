@@ -99,7 +99,7 @@ async def get_interfaces(
     data_role: str | None = None,
     data_site: str | None = None,
 ) -> dict:
-    """Get detailed interface information including status, IP addresses, MAC address, speed, MTU, and error counters.
+    """Get detailed interface information including status, configuration, IP addresses, MAC address, speed, MTU, and error counters.
 
     Args:
         interface: Optional specific interface name to query
@@ -110,7 +110,8 @@ async def get_interfaces(
         data_site: Optional site in data to filter by
 
     Returns:
-        Dictionary containing interface information for each targeted device
+        Dictionary containing interface information for each targeted device.
+        Each interface includes basic properties and an 'ip_addresses' field with IP configuration details.
 
     Example:
         >>> await get_interfaces(hostname="router-01")
@@ -128,8 +129,33 @@ async def get_interfaces(
     )
     nr = apply_filters(nr, **filters)
 
-    result = nr.run(task=napalm_get, getters=["interfaces"])
-    formatted = format_results(result, getter_name="interfaces")
+    result = nr.run(task=napalm_get, getters=["interfaces", "interfaces_ip"])
+    formatted = format_results(result, getter_name=None)  # Will return combined results
+
+    # Merge interfaces and interfaces_ip data
+    for device_name, device_data in formatted.items():
+        if device_data.get("success") and device_data.get("result"):
+            interfaces = device_data["result"].get("interfaces", {})
+            interfaces_ip = device_data["result"].get("interfaces_ip", {})
+
+            # Combine the data by adding IP information to each interface
+            merged_result = {}
+            all_interface_names = set(interfaces.keys()) | set(interfaces_ip.keys())
+
+            for iface_name in all_interface_names:
+                merged_iface = {}
+
+                # Add basic interface information if available
+                if iface_name in interfaces:
+                    merged_iface.update(interfaces[iface_name])
+
+                # Add IP address information if available
+                if iface_name in interfaces_ip:
+                    merged_iface["ip_addresses"] = interfaces_ip[iface_name]
+
+                merged_result[iface_name] = merged_iface
+
+            device_data["result"] = merged_result
 
     # Filter to specific interface if requested
     if interface:
