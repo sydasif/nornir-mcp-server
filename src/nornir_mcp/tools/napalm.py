@@ -6,6 +6,7 @@ Provides tools for network device management using NAPALM for normalized multi-v
 from nornir_napalm.plugins.tasks import napalm_get
 
 from ..server import get_nr, mcp
+from ..utils.config import process_config_request
 from ..utils.filters import apply_filters, build_filters_dict
 from ..utils.formatters import format_results
 
@@ -194,18 +195,23 @@ async def get_lldp_neighbors(
 @mcp.tool()
 async def get_config(
     retrieve: str = "running",
-    sanitized: bool = True,
+    backup: bool = False,
+    backup_directory: str = "./backups",
     hostname: str | None = None,
     group: str | None = None,
     platform: str | None = None,
     data_role: str | None = None,
     data_site: str | None = None,
 ) -> dict:
-    """Retrieve device configuration (running, startup, or candidate). Sensitive information like passwords is removed by default.
+    """Retrieve device configuration (running, startup, or candidate).
+
+    Sensitive information like passwords is removed by default.
+    If backup=True, configurations are saved to files instead of returned in the response.
 
     Args:
         retrieve: Type of configuration to retrieve ('running', 'startup', 'candidate')
-        sanitized: Whether to remove sensitive information like passwords
+        backup: If True, saves configs to timestamped files in backup_directory
+        backup_directory: Directory to store backup files (default: "./backups")
         hostname: Optional hostname to filter by
         group: Optional group name to filter by
         platform: Optional platform to filter by
@@ -213,13 +219,16 @@ async def get_config(
         data_site: Optional site in data to filter by
 
     Returns:
-        Dictionary containing device configuration for each targeted device
+        Dictionary containing device configuration or backup file paths for each targeted device
 
     Example:
+        # Get config in response
         >>> await get_config(hostname="router-01")
         {'router-01': {'success': True, 'result': {...}}}
-        >>> await get_config(group="edge_routers", retrieve="startup", sanitized=False)
-        {'router-01': {'success': True, 'result': {...}}, ...}
+
+        # Backup configs to disk
+        >>> await get_config(group="edge_routers", backup=True, retrieve="startup")
+        {'router-01': {'success': True, 'result': 'Configuration backed up to backups/router-01_20231201_120000.cfg'}, ...}
     """
     nr = get_nr()
     filters = build_filters_dict(
@@ -231,12 +240,9 @@ async def get_config(
     )
     nr = apply_filters(nr, **filters)
 
-    result = nr.run(
-        task=napalm_get,
-        getters=["config"],
-        getters_options={"config": {"retrieve": retrieve}},
+    return await process_config_request(
+        nr=nr,
+        retrieve=retrieve,
+        backup=backup,
+        backup_directory=backup_directory,
     )
-
-    formatted = format_results(result, getter_name="config")
-
-    return formatted
