@@ -102,8 +102,7 @@ async def reset_failed_hosts() -> dict:
     """Clear the 'failed' status from all hosts in the inventory.
 
     Use this if hosts are being skipped due to previous execution errors.
-    This tool provides explicit control over the failed hosts state,
-    complementing the automatic reset that occurs on every tool call.
+    This tool provides explicit control over the failed hosts state.
 
     Returns:
         Dictionary with status and message
@@ -113,7 +112,7 @@ async def reset_failed_hosts() -> dict:
         {'status': 'success', 'message': 'Failed hosts state has been cleared for all devices.'}
     """
     nr = get_nr()
-    nr.inventory.reset_failed_hosts()
+    nr.data.reset_failed_hosts()
     return {
         "status": "success",
         "message": "Failed hosts state has been cleared for all devices.",

@@ -49,23 +49,19 @@ def get_nornir():
 # Global Nornir singleton instance
 _nr = None
 
+
 def get_nr():
-    """Get a Nornir instance with a clean state.
+    """Get a Nornir instance.
 
     Returns:
-        Nornir: A Nornir instance with failed hosts state reset.
+        Nornir: A Nornir instance.
 
-    This function implements a singleton pattern for Nornir initialization
-    while ensuring each request starts with a clean slate by resetting
-    the failed_hosts state. This prevents transient failures from
-    affecting subsequent tool calls.
+    This function implements a singleton pattern for Nornir initialization.
     """
     global _nr
     if _nr is None:
         _nr = get_nornir()
 
-    # Reset failed hosts state to ensure a clean slate for each request
-    _nr.inventory.reset_failed_hosts()
     return _nr
 
 
