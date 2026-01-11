@@ -3,44 +3,11 @@
 Provides tools for network device management using NAPALM for normalized multi-vendor support.
 """
 
-import re
-
 from nornir_napalm.plugins.tasks import napalm_get
 
 from ..server import get_nr, mcp
 from ..utils.filters import apply_filters, build_filters_dict
 from ..utils.formatters import format_results
-
-
-def sanitize_configs(configs):
-    """Remove sensitive information from configurations.
-
-    Args:
-        configs: Dictionary containing configuration data that may contain sensitive information
-
-    Returns:
-        Dictionary with sanitized configuration data with sensitive information removed
-    """
-    sanitized = {}
-    for device, data in configs.items():
-        if data.get("success") and data.get("result"):
-            config_data = data["result"]
-
-            # Iterate through all config types returned (running, startup, candidate)
-            # instead of hardcoding just "running"
-            for config_type, config_content in config_data.items():
-                if isinstance(config_content, str):
-                    # Remove password lines
-                    cleaned = re.sub(
-                        r"password \S+", "password <removed>", config_content
-                    )
-                    cleaned = re.sub(r"secret \S+", "secret <removed>", cleaned)
-                    config_data[config_type] = cleaned
-
-            sanitized[device] = {"success": True, "result": config_data}
-        else:
-            sanitized[device] = data
-    return sanitized
 
 
 @mcp.tool()
@@ -271,9 +238,5 @@ async def get_config(
     )
 
     formatted = format_results(result, getter_name="config")
-
-    # Sanitize if requested
-    if sanitized:
-        formatted = sanitize_configs(formatted)
 
     return formatted
