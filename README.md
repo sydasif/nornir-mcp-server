@@ -119,6 +119,8 @@ export NETWORK_PASS=your_password
 
 ## Available Tools
 
+All tools accept a standard `filters` object for device selection.
+
 The server provides the following MCP tools:
 
 ### Inventory Tools
@@ -128,17 +130,16 @@ The server provides the following MCP tools:
 
 ### NAPALM Tools (Normalized Multi-Vendor)
 
-- `get_device_facts`: Basic device information (vendor, model, OS, uptime) - accepts direct filter parameters
-- `get_interfaces_detailed`: Interface status, IP addresses, speed, errors - accepts direct filter parameters
-- `get_bgp_detailed`: BGP neighbor state and address-family details merged per neighbor - accepts direct filter parameters
-- `get_lldp_detailed`: Network topology via LLDP with summary and detailed information merged per interface - accepts direct filter parameters
-- `get_device_configs`: Device configuration retrieval with sanitization and optional backup functionality (replaces the separate backup tool) - accepts direct filter parameters
+- `get_device_facts`: Basic device information (vendor, model, OS, uptime)
+- `get_interfaces_detailed`: Interface status, IP addresses, speed, errors
+- `get_bgp_detailed`: BGP neighbor state and address-family details merged per neighbor
+- `get_lldp_detailed`: Network topology via LLDP with summary and detailed information merged per interface
+- `get_device_configs`: Device configuration retrieval with sanitization and optional backup functionality (replaces the separate backup tool)
 
 ### Netmiko Tools (Flexible Command Execution)
 
-- `run_show_commands`: Execute show/display commands with optional parsing - accepts direct filter parameters
-- `check_connectivity`: Ping or traceroute from network devices - accepts direct filter parameters
-- `send_config_commands`: Send configuration commands to network devices via SSH (modifies device configuration) - accepts direct filter parameters
+- `run_show_commands`: Execute show/display commands with optional parsing
+- `send_config_commands`: Send configuration commands to network devices via SSH (modifies device configuration)
 
 ## Usage
 
@@ -182,27 +183,24 @@ Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
 
 ## Device Filtering
 
-All tools support optional filtering. **If no filters are provided, the tool targets all devices in the inventory** (Nornir's default behavior).
+All tools support optional filtering via a standard `filters` object. **If no filters are provided, the tool targets all devices in the inventory** (Nornir's default behavior).
 
-The server supports flexible filtering using keyword arguments that map to Nornir's F object:
+The server supports schema-agnostic filtering through a Pydantic model with three core fields:
 
-- **Exact hostname**: `hostname="router-01"`
-- **Group membership**: `group="edge_routers"`
-- **Platform**: `platform="cisco_ios"`
-- **Data attributes**: `data__role="core"`, `data__site="datacenter-01"`
-
-All Nornir F object operators are supported using the `data__` prefix for custom attributes.
+- **hostname**: Matches either the Nornir Inventory Name (ID) OR the actual device hostname/IP
+- **group**: Matches group membership (e.g., "edge_routers", "production")
+- **platform**: Matches platform type (e.g., "cisco_ios", "arista_eos")
 
 Examples:
+
 - "Get facts for all devices" → `get_device_facts()` (no filters)
-- "Get facts for router-01" → `get_device_facts(hostname="router-01")`
-- "Show interfaces on all edge routers" → `get_interfaces_detailed(group="edge_routers")`
-- "Get interface GigabitEthernet0/0 on router-01" → `get_interfaces_detailed(hostname="router-01", interface="GigabitEthernet0/0")`
-- "Get BGP neighbors for all core devices" → `get_bgp_detailed(data__role="core")`
+- "Get facts for router-01" → `get_device_facts(filters=DeviceFilters(hostname="router-01"))`
+- "Show interfaces on all edge routers" → `get_interfaces_detailed(filters=DeviceFilters(group="edge_routers"))`
+- "Get interface GigabitEthernet0/0 on router-01" → `get_interfaces_detailed(filters=DeviceFilters(hostname="router-01"), interface="GigabitEthernet0/0")`
 - "Get running config for all devices" → `get_device_configs(retrieve="running")`
-- "Backup configurations for edge routers to ./backups" → `get_device_configs(group="edge_routers", backup=True, backup_directory="./backups")`
-- "List all Cisco IOS devices in production" → `list_devices(platform="cisco_ios", group="production")`
-- "Configure interface on router-01" → `send_config_commands(commands=["interface Loopback100", "description MCP_ADDED"], hostname="router-01")`
+- "Backup configurations for edge routers to ./backups" → `get_device_configs(filters=DeviceFilters(group="edge_routers"), backup=True, backup_directory="./backups")`
+- "List all Cisco IOS devices in production" → `list_devices(filters=DeviceFilters(platform="cisco_ios", group="production"))`
+- "Configure interface on router-01" → `send_config_commands(commands=["interface Loopback100", "description MCP_ADDED"], filters=DeviceFilters(hostname="router-01"))`
 
 Multiple filters are combined with AND logic. Claude will intelligently choose the appropriate filter parameters based on your natural language request, or omit filters entirely to target all devices.
 
@@ -230,6 +228,7 @@ Multiple filters are combined with AND logic. Claude will intelligently choose t
 4. **Use environment variables** for credentials
 5. **Run in isolated management networks**
 6. **Enable audit logging** for compliance
+7. **Configuration backups are strictly sandboxed** to the local project directory to prevent path traversal vulnerabilities
 
 ## Troubleshooting
 
@@ -265,7 +264,7 @@ pytest --cov=nornir_mcp
 To add new tools:
 
 1. Create a new module in `src/nornir_mcp/tools/`
-2. Implement the tool using the `@mcp.tool()` decorator with direct parameters
+2. Implement the tool using the `@mcp.tool()` decorator with a standard `filters` parameter of type `DeviceFilters`
 3. Add tests in the `tests/` directory
 
 ## License
