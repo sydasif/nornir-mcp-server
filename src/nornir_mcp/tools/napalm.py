@@ -6,7 +6,7 @@ from nornir_napalm.plugins.tasks import napalm_get
 
 from ..models import DeviceFilters
 from ..server import get_nr, mcp
-from ..utils.config import process_config_request
+from ..utils.config import ensure_backup_directory, write_config_to_file
 from ..utils.filters import apply_filters
 from ..utils.formatters import format_results
 
@@ -143,36 +143,103 @@ async def get_lldp_detailed(
 
 
 @mcp.tool()
-async def get_device_configs(
-    retrieve: str = "running",
-    backup: bool = False,
-    backup_directory: str = "./backups",
+async def get_device_config(
     filters: DeviceFilters | None = None,
+    source: str = "running",
 ) -> dict:
-    """Retrieve device configuration (running, startup, or candidate).
-
-    If backup=True, configurations are saved to files instead of returned in the response.
+    """Read and return device configuration text.
 
     Args:
-        retrieve: Type of configuration to retrieve ('running', 'startup', 'candidate')
-        backup: Optional, if `True`, saves configs to files in backup_directory (default: "./backups")
-        backup_directory: Optional, directory to store backup files (default: "./backups")
         filters: DeviceFilters object containing filter criteria
+        source: Type of configuration to retrieve ('running', 'startup', 'candidate')
 
     Returns:
-        Dictionary containing device configuration or backup file paths for each targeted device
+        Dictionary containing device configuration text for each targeted device
     """
     nr = get_nr()
     if filters is None:
         filters = DeviceFilters()
     nr = apply_filters(nr, filters)
 
-    return await process_config_request(
-        nr=nr,
-        retrieve=retrieve,
-        backup=backup,
-        backup_directory=backup_directory,
+    # Run NAPALM getter to retrieve configuration
+    result = await asyncio.to_thread(
+        nr.run,
+        task=napalm_get,
+        getters=["config"],
+        getters_options={"config": {"retrieve": source}},
     )
+
+    # Format the results to return config text directly
+    formatted = format_results(result, getter_name="config")
+
+    # Extract just the configuration text from the result
+    for hostname, data in formatted.items():
+        if data.get("success"):
+            config_data = data.get("result", {})
+            config_content = config_data.get(source, "")
+            data["result"] = config_content
+
+    return formatted
+
+
+@mcp.tool()
+async def backup_device_config(
+    filters: DeviceFilters | None = None,
+    path: str = "./backups",
+) -> dict:
+    """Save device configuration to the local disk.
+
+    Args:
+        filters: DeviceFilters object containing filter criteria
+        path: Directory path to save backup files (default: "./backups")
+
+    Returns:
+        Dictionary containing summary of saved file paths for each targeted device
+    """
+    nr = get_nr()
+    if filters is None:
+        filters = DeviceFilters()
+    nr = apply_filters(nr, filters)
+
+    # Run NAPALM getter to retrieve configuration
+    result = await asyncio.to_thread(
+        nr.run,
+        task=napalm_get,
+        getters=["config"],
+        getters_options={"config": {"retrieve": "running"}},
+    )
+
+    # Format the results
+    formatted = format_results(result, getter_name="config")
+
+    # Validate the backup directory
+    backup_path = ensure_backup_directory(path)
+
+    backup_results = {}
+    for hostname, data in formatted.items():
+        if data.get("success"):
+            # Extract the configuration content
+            config_data = data.get("result", {})
+            config_content = config_data.get("running", "")
+
+            if config_content:
+                # Write the configuration to file using helper function
+                file_path = write_config_to_file(hostname, config_content, backup_path)
+
+                backup_results[hostname] = {
+                    "success": True,
+                    "result": f"Configuration backed up to {file_path}",
+                }
+            else:
+                backup_results[hostname] = {
+                    "success": False,
+                    "result": "No configuration content found to backup",
+                }
+        else:
+            # Pass through the original error
+            backup_results[hostname] = data
+
+    return backup_results
 
 
 @mcp.tool()
