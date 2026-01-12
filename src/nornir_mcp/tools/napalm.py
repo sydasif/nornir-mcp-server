@@ -61,7 +61,27 @@ async def get_interfaces(
     data_role: str | None = None,
     data_site: str | None = None,
 ) -> dict:
-    """Return interface state and IP information merged per interface."""
+    """Retrieve interface state and IP information merged per interface.
+
+    Args:
+        interface: Optional specific interface name to filter by (e.g., "GigabitEthernet0/0")
+        hostname: Optional hostname to filter by
+        group: Optional group name to filter by
+        platform: Optional platform to filter by
+        data_role: Optional role in data to filter by (e.g., "core", "edge")
+        data_site: Optional site in data to filter by
+
+    Returns:
+        Dictionary containing merged interface state and IP information for each targeted device
+
+    Example:
+        >>> await get_interfaces()  # All interfaces on all devices
+        {'router-01': {'success': True, 'result': {'GigabitEthernet0/0': {...}, 'Loopback0': {...}}}}
+        >>> await get_interfaces(hostname="router-01")
+        {'router-01': {'success': True, 'result': {...}}}
+        >>> await get_interfaces(interface="GigabitEthernet0/0", group="edge_routers")
+        {'router-01': {'success': True, 'result': {'GigabitEthernet0/0': {...}}}, ...}
+    """
     nr = get_nr()
     filters = build_filters_dict(
         hostname=hostname,

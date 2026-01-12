@@ -9,7 +9,14 @@ from .formatters import format_results
 
 
 def ensure_backup_directory(backup_dir: str) -> Path:
-    """Create backup directory if it doesn't exist."""
+    """Create backup directory if it doesn't exist.
+
+    Args:
+        backup_dir: Path to the backup directory to create
+
+    Returns:
+        Path object pointing to the backup directory
+    """
     path = Path(backup_dir)
     path.mkdir(parents=True, exist_ok=True)
     return path
