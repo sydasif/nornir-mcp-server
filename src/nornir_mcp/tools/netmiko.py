@@ -1,6 +1,6 @@
 """Nornir MCP Server Netmiko tools."""
 
-from nornir_netmiko.tasks import netmiko_send_command
+from nornir_netmiko.tasks import netmiko_send_command, netmiko_send_config
 
 from ..server import get_nr, mcp
 from ..utils.filters import apply_filters, build_filters_dict
@@ -58,3 +58,49 @@ async def run_show_commands(
         results[command] = format_results(result, key="output")
 
     return results
+
+
+@mcp.tool()
+async def send_config_commands(
+    commands: list[str],
+    hostname: str | None = None,
+    group: str | None = None,
+    platform: str | None = None,
+    data_role: str | None = None,
+    data_site: str | None = None,
+) -> dict:
+    """Send configuration commands to network devices via SSH.
+
+    ⚠️ WARNING: This tool modifies device configuration. Netmiko will automatically enter and exit config mode.
+
+
+    Args:
+        commands: List of commands to execute (e.g., ["router bgp 65000", "neighbor 1.1.1.1 remote-as 65001"])
+        hostname: Optional hostname to filter by
+        group: Optional group name to filter by
+        platform: Optional platform to filter by
+        data_role: Optional role in data to filter by
+        data_site: Optional site in data to filter by
+
+    Returns:
+        Dictionary containing the configuration session output for each device
+
+    Example:
+        >>> await send_config_commands(["interface Loopback100", "description MCP_ADDED"], hostname="router-01")
+    """
+    nr = get_nr()
+    filters = build_filters_dict(
+        hostname=hostname,
+        group=group,
+        platform=platform,
+        data_role=data_role,
+        data_site=data_site,
+    )
+    nr = apply_filters(nr, **filters)
+
+    result = nr.run(
+        task=netmiko_send_config,
+        config_commands=commands,
+    )
+
+    return format_results(result, key="output")
