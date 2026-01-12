@@ -9,7 +9,7 @@ from ..utils.formatters import format_results
 
 
 @mcp.tool()
-async def get_facts(
+async def get_device_facts(
     hostname: str | None = None,
     group: str | None = None,
     platform: str | None = None,
@@ -29,14 +29,6 @@ async def get_facts(
 
     Returns:
         Dictionary containing device facts for each targeted device
-
-    Example:
-        >>> await get_facts()  # All devices
-        {'router-01': {...}, 'router-02': {...}, 'switch-01': {...}}
-        >>> await get_facts(hostname="router-01")
-        {'router-01': {'success': True, 'result': {...}}}
-        >>> await get_facts(group="edge_routers")
-        {'router-01': {'success': True, 'result': {...}}, ...}
     """
     nr = get_nr()
     filters = build_filters_dict(
@@ -53,7 +45,7 @@ async def get_facts(
 
 
 @mcp.tool()
-async def get_interfaces(
+async def get_interfaces_detailed(
     interface: str | None = None,
     hostname: str | None = None,
     group: str | None = None,
@@ -73,14 +65,6 @@ async def get_interfaces(
 
     Returns:
         Dictionary containing merged interface state and IP information for each targeted device
-
-    Example:
-        >>> await get_interfaces()  # All interfaces on all devices
-        {'router-01': {'success': True, 'result': {'GigabitEthernet0/0': {...}, 'Loopback0': {...}}}}
-        >>> await get_interfaces(hostname="router-01")
-        {'router-01': {'success': True, 'result': {...}}}
-        >>> await get_interfaces(interface="GigabitEthernet0/0", group="edge_routers")
-        {'router-01': {'success': True, 'result': {'GigabitEthernet0/0': {...}}}, ...}
     """
     nr = get_nr()
     filters = build_filters_dict(
@@ -127,46 +111,6 @@ async def get_interfaces(
 
 
 @mcp.tool()
-async def get_bgp_neighbors(
-    hostname: str | None = None,
-    group: str | None = None,
-    platform: str | None = None,
-    data_role: str | None = None,
-    data_site: str | None = None,
-) -> dict:
-    """Get BGP neighbor status and statistics including state, uptime, remote AS, and prefix counts.
-
-    Args:
-        hostname: Optional hostname to filter by
-        group: Optional group name to filter by
-        platform: Optional platform to filter by
-        data_role: Optional role in data to filter by (e.g., "core", "edge")
-        data_site: Optional site in data to filter by
-
-    Returns:
-        Dictionary containing BGP neighbor information for each targeted device
-
-    Example:
-        >>> await get_bgp_neighbors(hostname="router-01")
-        {'router-01': {'success': True, 'result': {...}}}
-        >>> await get_bgp_neighbors(group="edge_routers")
-        {'router-01': {'success': True, 'result': {...}}, ...}
-    """
-    nr = get_nr()
-    filters = build_filters_dict(
-        hostname=hostname,
-        group=group,
-        platform=platform,
-        data_role=data_role,
-        data_site=data_site,
-    )
-    nr = apply_filters(nr, **filters)
-
-    result = nr.run(task=napalm_get, getters=["bgp_neighbors"])
-    return format_results(result, getter_name="bgp_neighbors")
-
-
-@mcp.tool()
 async def get_lldp_detailed(
     interface: str | None = None,
     hostname: str | None = None,
@@ -187,14 +131,6 @@ async def get_lldp_detailed(
 
     Returns:
         Dictionary containing merged LLDP summary and detail information for each targeted device
-
-    Example:
-        >>> await get_lldp_detailed()  # All interfaces on all devices
-        {'switch-01': {'success': True, 'result': {'Ethernet1': {'summary': [...], 'detail': {...}}, ...}}}
-        >>> await get_lldp_detailed(hostname="switch-01")
-        {'switch-01': {'success': True, 'result': {...}}}
-        >>> await get_lldp_detailed(interface="Ethernet1", group="edge_switches")
-        {'switch-01': {'success': True, 'result': {'Ethernet1': {'summary': [...], 'detail': {...}}}, ...}
     """
     nr = get_nr()
     filters = build_filters_dict(
@@ -241,7 +177,7 @@ async def get_lldp_detailed(
 
 
 @mcp.tool()
-async def get_config(
+async def get_device_configs(
     retrieve: str = "running",
     backup: bool = False,
     backup_directory: str = "./backups",
@@ -267,15 +203,6 @@ async def get_config(
 
     Returns:
         Dictionary containing device configuration or backup file paths for each targeted device
-
-    Example:
-        # Get config in response
-        >>> await get_config(hostname="router-01")
-        {'router-01': {'success': True, 'result': {...}}}
-
-        # Backup configs to disk
-        >>> await get_config(group="edge_routers", backup=True, retrieve="startup")
-        {'router-01': {'success': True, 'result': 'Configuration backed up to backups/router-01_20231201_120000.cfg'}, ...}
     """
     nr = get_nr()
     filters = build_filters_dict(
@@ -293,3 +220,69 @@ async def get_config(
         backup=backup,
         backup_directory=backup_directory,
     )
+
+
+@mcp.tool()
+async def get_bgp_detailed(
+    neighbor: str | None = None,
+    hostname: str | None = None,
+    group: str | None = None,
+    platform: str | None = None,
+    data_role: str | None = None,
+    data_site: str | None = None,
+) -> dict:
+    """Return BGP neighbor state and address-family details merged per neighbor.
+
+    Args:
+        neighbor: Optional specific neighbor IP address to filter by (e.g., "192.0.2.1")
+        hostname: Optional hostname to filter by
+        group: Optional group name to filter by
+        platform: Optional platform to filter by
+        data_role: Optional role in data to filter by (e.g., "core", "edge")
+        data_site: Optional site in data to filter by
+
+    Returns:
+        Dictionary containing merged BGP neighbor state and address-family details for each targeted device
+    """
+    nr = get_nr()
+    filters = build_filters_dict(
+        hostname=hostname,
+        group=group,
+        platform=platform,
+        data_role=data_role,
+        data_site=data_site,
+    )
+    nr = apply_filters(nr, **filters)
+
+    # Run both BGP getters in a single call
+    result = nr.run(
+        task=napalm_get,
+        getters=["bgp_neighbors", "bgp_neighbors_detail"],
+    )
+
+    formatted = format_results(result, getter_name=None)
+
+    for _, data in formatted.items():
+        if not data.get("success"):
+            continue
+
+        raw = data["result"]
+
+        bgp_state = raw.get("bgp_neighbors", {})
+        bgp_detail = raw.get("bgp_neighbors_detail", {})
+
+        merged = {}
+
+        for neighbor_ip in set(bgp_state) | set(bgp_detail):
+            merged[neighbor_ip] = {
+                "state": bgp_state.get(neighbor_ip, {}),
+                "address_families": bgp_detail.get(neighbor_ip, {}),
+            }
+
+        # Optional single-neighbor filter
+        if neighbor:
+            merged = {k: v for k, v in merged.items() if k == neighbor}
+
+        data["result"] = merged
+
+    return formatted
