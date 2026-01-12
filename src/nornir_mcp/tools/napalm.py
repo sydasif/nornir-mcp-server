@@ -167,16 +167,18 @@ async def get_bgp_neighbors(
 
 
 @mcp.tool()
-async def get_lldp_neighbors(
+async def get_lldp_detailed(
+    interface: str | None = None,
     hostname: str | None = None,
     group: str | None = None,
     platform: str | None = None,
     data_role: str | None = None,
     data_site: str | None = None,
 ) -> dict:
-    """Discover network topology via LLDP, showing connected devices and ports for each interface.
+    """Return LLDP neighbors with summary and detailed information merged per interface.
 
     Args:
+        interface: Optional specific interface name to filter by (e.g., "GigabitEthernet0/0")
         hostname: Optional hostname to filter by
         group: Optional group name to filter by
         platform: Optional platform to filter by
@@ -184,13 +186,15 @@ async def get_lldp_neighbors(
         data_site: Optional site in data to filter by
 
     Returns:
-        Dictionary containing LLDP neighbor information for each targeted device
+        Dictionary containing merged LLDP summary and detail information for each targeted device
 
     Example:
-        >>> await get_lldp_neighbors(hostname="switch-01")
+        >>> await get_lldp_detailed()  # All interfaces on all devices
+        {'switch-01': {'success': True, 'result': {'Ethernet1': {'summary': [...], 'detail': {...}}, ...}}}
+        >>> await get_lldp_detailed(hostname="switch-01")
         {'switch-01': {'success': True, 'result': {...}}}
-        >>> await get_lldp_neighbors(data_role="core")
-        {'switch-01': {'success': True, 'result': {...}}, ...}
+        >>> await get_lldp_detailed(interface="Ethernet1", group="edge_switches")
+        {'switch-01': {'success': True, 'result': {'Ethernet1': {'summary': [...], 'detail': {...}}}, ...}
     """
     nr = get_nr()
     filters = build_filters_dict(
@@ -202,8 +206,38 @@ async def get_lldp_neighbors(
     )
     nr = apply_filters(nr, **filters)
 
-    result = nr.run(task=napalm_get, getters=["lldp_neighbors"])
-    return format_results(result, getter_name="lldp_neighbors")
+    # Run both LLDP getters in one call
+    result = nr.run(
+        task=napalm_get,
+        getters=["lldp_neighbors", "lldp_neighbors_detail"],
+    )
+
+    formatted = format_results(result, getter_name=None)
+
+    for _, data in formatted.items():
+        if not data.get("success"):
+            continue
+
+        raw = data["result"]
+
+        lldp_summary = raw.get("lldp_neighbors", {})
+        lldp_detail = raw.get("lldp_neighbors_detail", {})
+
+        merged = {}
+
+        for iface in set(lldp_summary) | set(lldp_detail):
+            merged[iface] = {
+                "summary": lldp_summary.get(iface, []),
+                "detail": lldp_detail.get(iface, {}),
+            }
+
+        # Optional single-interface filter
+        if interface:
+            merged = {k: v for k, v in merged.items() if k == interface}
+
+        data["result"] = merged
+
+    return formatted
 
 
 @mcp.tool()
