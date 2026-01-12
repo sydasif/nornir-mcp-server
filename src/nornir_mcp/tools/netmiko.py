@@ -5,7 +5,7 @@ import asyncio
 from nornir_netmiko.tasks import netmiko_send_command, netmiko_send_config
 
 from ..models import DeviceFilters
-from ..server import get_nr, mcp
+from ..application import get_nr, mcp
 from ..utils.filters import apply_filters
 from ..utils.formatters import format_results
 

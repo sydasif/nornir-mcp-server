@@ -5,7 +5,7 @@ import asyncio
 from nornir_napalm.plugins.tasks import napalm_get
 
 from ..models import DeviceFilters
-from ..server import get_nr, mcp
+from ..application import get_nr, mcp
 from ..utils.config import ensure_backup_directory, write_config_to_file
 from ..utils.filters import apply_filters
 from ..utils.formatters import format_results
