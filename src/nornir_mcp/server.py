@@ -1,7 +1,4 @@
-"""Nornir MCP Server - Network Automation Server.
-
-This module provides a FastMCP server for network automation tasks using Nornir.
-"""
+"""Nornir MCP Server - Network Automation Server."""
 
 import logging
 import os
@@ -14,7 +11,7 @@ from nornir import InitNornir
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    handlers=[logging.FileHandler("nornir-mcp.log"), logging.StreamHandler()],
+    handlers=[logging.FileHandler(".mcp.log"), logging.StreamHandler()],
 )
 
 logger = logging.getLogger("nornir-mcp")

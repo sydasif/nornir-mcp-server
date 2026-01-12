@@ -1,7 +1,4 @@
-"""Nornir MCP Server inventory tools.
-
-Provides tools for querying and managing network device inventory.
-"""
+"""Nornir MCP Server inventory tools."""
 
 from ..server import get_nr, mcp
 from ..utils.filters import apply_filters, build_filters_dict

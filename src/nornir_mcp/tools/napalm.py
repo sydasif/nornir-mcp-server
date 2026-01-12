@@ -1,7 +1,4 @@
-"""Nornir MCP Server NAPALM tools.
-
-Provides tools for network device management using NAPALM for normalized multi-vendor support.
-"""
+"""Nornir MCP Server NAPALM tools."""
 
 from nornir_napalm.plugins.tasks import napalm_get
 
@@ -20,9 +17,6 @@ async def get_facts(
     data_site: str | None = None,
 ) -> dict:
     """Retrieve basic device information including vendor, model, OS version, uptime, serial number, and hostname.
-
-    This tool uses NAPALM's get_facts getter which provides normalized
-    output across different vendor platforms.
 
     If no filters are provided, retrieves facts from all devices in the inventory.
 
@@ -205,13 +199,12 @@ async def get_config(
 ) -> dict:
     """Retrieve device configuration (running, startup, or candidate).
 
-    Sensitive information like passwords is removed by default.
     If backup=True, configurations are saved to files instead of returned in the response.
 
     Args:
         retrieve: Type of configuration to retrieve ('running', 'startup', 'candidate')
-        backup: If True, saves configs to timestamped files in backup_directory
-        backup_directory: Directory to store backup files (default: "./backups")
+        backup: Optional, if `True`, saves configs to files in backup_directory (default: "./backups")
+        backup_directory: Optional, directory to store backup files (default: "./backups")
         hostname: Optional hostname to filter by
         group: Optional group name to filter by
         platform: Optional platform to filter by

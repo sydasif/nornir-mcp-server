@@ -1,7 +1,4 @@
-"""Nornir MCP Server Netmiko tools.
-
-Provides tools for network device management using Netmiko for flexible command execution.
-"""
+"""Nornir MCP Server Netmiko tools."""
 
 from nornir_netmiko.tasks import netmiko_send_command
 
@@ -21,11 +18,10 @@ async def run_show_commands(
 ) -> dict:
     """Execute show/display commands on network devices via SSH.
 
-    Returns the raw command output. This tool can also be used for
-    connectivity checks (ping/traceroute).
+    Returns the raw command output.
 
     Args:
-        commands: List of commands to execute
+        commands: List of commands to execute (e.g., ["show version", "show ip interface brief"])
         hostname: Optional hostname to filter by
         group: Optional group name to filter by
         platform: Optional platform to filter by
