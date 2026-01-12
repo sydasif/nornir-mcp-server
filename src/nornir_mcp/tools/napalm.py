@@ -4,43 +4,31 @@ import asyncio
 
 from nornir_napalm.plugins.tasks import napalm_get
 
+from ..models import DeviceFilters
 from ..server import get_nr, mcp
 from ..utils.config import process_config_request
-from ..utils.filters import apply_filters, build_filters_dict
+from ..utils.filters import apply_filters
 from ..utils.formatters import format_results
 
 
 @mcp.tool()
 async def get_device_facts(
-    hostname: str | None = None,
-    group: str | None = None,
-    platform: str | None = None,
-    data_role: str | None = None,
-    data_site: str | None = None,
+    filters: DeviceFilters | None = None,
 ) -> dict:
     """Retrieve basic device information including vendor, model, OS version, uptime, serial number, and hostname.
 
     If no filters are provided, retrieves facts from all devices in the inventory.
 
     Args:
-        hostname: Optional hostname to filter by
-        group: Optional group name to filter by
-        platform: Optional platform to filter by
-        data_role: Optional role in data to filter by (e.g., "core", "edge")
-        data_site: Optional site in data to filter by
+        filters: DeviceFilters object containing filter criteria
 
     Returns:
         Dictionary containing device facts for each targeted device
     """
     nr = get_nr()
-    filters = build_filters_dict(
-        hostname=hostname,
-        group=group,
-        platform=platform,
-        data_role=data_role,
-        data_site=data_site,
-    )
-    nr = apply_filters(nr, **filters)
+    if filters is None:
+        filters = DeviceFilters()
+    nr = apply_filters(nr, filters)
 
     result = await asyncio.to_thread(nr.run, task=napalm_get, getters=["facts"])
     return format_results(result, getter_name="facts")
@@ -49,34 +37,21 @@ async def get_device_facts(
 @mcp.tool()
 async def get_interfaces_detailed(
     interface: str | None = None,
-    hostname: str | None = None,
-    group: str | None = None,
-    platform: str | None = None,
-    data_role: str | None = None,
-    data_site: str | None = None,
+    filters: DeviceFilters | None = None,
 ) -> dict:
     """Retrieve interface state and IP information merged per interface.
 
     Args:
         interface: Optional specific interface name to filter by (e.g., "GigabitEthernet0/0")
-        hostname: Optional hostname to filter by
-        group: Optional group name to filter by
-        platform: Optional platform to filter by
-        data_role: Optional role in data to filter by (e.g., "core", "edge")
-        data_site: Optional site in data to filter by
+        filters: DeviceFilters object containing filter criteria
 
     Returns:
         Dictionary containing merged interface state and IP information for each targeted device
     """
     nr = get_nr()
-    filters = build_filters_dict(
-        hostname=hostname,
-        group=group,
-        platform=platform,
-        data_role=data_role,
-        data_site=data_site,
-    )
-    nr = apply_filters(nr, **filters)
+    if filters is None:
+        filters = DeviceFilters()
+    nr = apply_filters(nr, filters)
 
     # Run NAPALM getters in a single call
     result = await asyncio.to_thread(
@@ -116,34 +91,21 @@ async def get_interfaces_detailed(
 @mcp.tool()
 async def get_lldp_detailed(
     interface: str | None = None,
-    hostname: str | None = None,
-    group: str | None = None,
-    platform: str | None = None,
-    data_role: str | None = None,
-    data_site: str | None = None,
+    filters: DeviceFilters | None = None,
 ) -> dict:
     """Return LLDP neighbors with summary and detailed information merged per interface.
 
     Args:
         interface: Optional specific interface name to filter by (e.g., "GigabitEthernet0/0")
-        hostname: Optional hostname to filter by
-        group: Optional group name to filter by
-        platform: Optional platform to filter by
-        data_role: Optional role in data to filter by (e.g., "core", "edge")
-        data_site: Optional site in data to filter by
+        filters: DeviceFilters object containing filter criteria
 
     Returns:
         Dictionary containing merged LLDP summary and detail information for each targeted device
     """
     nr = get_nr()
-    filters = build_filters_dict(
-        hostname=hostname,
-        group=group,
-        platform=platform,
-        data_role=data_role,
-        data_site=data_site,
-    )
-    nr = apply_filters(nr, **filters)
+    if filters is None:
+        filters = DeviceFilters()
+    nr = apply_filters(nr, filters)
 
     # Run both LLDP getters in one call
     result = await asyncio.to_thread(
@@ -185,11 +147,7 @@ async def get_device_configs(
     retrieve: str = "running",
     backup: bool = False,
     backup_directory: str = "./backups",
-    hostname: str | None = None,
-    group: str | None = None,
-    platform: str | None = None,
-    data_role: str | None = None,
-    data_site: str | None = None,
+    filters: DeviceFilters | None = None,
 ) -> dict:
     """Retrieve device configuration (running, startup, or candidate).
 
@@ -199,24 +157,15 @@ async def get_device_configs(
         retrieve: Type of configuration to retrieve ('running', 'startup', 'candidate')
         backup: Optional, if `True`, saves configs to files in backup_directory (default: "./backups")
         backup_directory: Optional, directory to store backup files (default: "./backups")
-        hostname: Optional hostname to filter by
-        group: Optional group name to filter by
-        platform: Optional platform to filter by
-        data_role: Optional role in data to filter by (e.g., "core", "edge")
-        data_site: Optional site in data to filter by
+        filters: DeviceFilters object containing filter criteria
 
     Returns:
         Dictionary containing device configuration or backup file paths for each targeted device
     """
     nr = get_nr()
-    filters = build_filters_dict(
-        hostname=hostname,
-        group=group,
-        platform=platform,
-        data_role=data_role,
-        data_site=data_site,
-    )
-    nr = apply_filters(nr, **filters)
+    if filters is None:
+        filters = DeviceFilters()
+    nr = apply_filters(nr, filters)
 
     return await process_config_request(
         nr=nr,
@@ -229,34 +178,21 @@ async def get_device_configs(
 @mcp.tool()
 async def get_bgp_detailed(
     neighbor: str | None = None,
-    hostname: str | None = None,
-    group: str | None = None,
-    platform: str | None = None,
-    data_role: str | None = None,
-    data_site: str | None = None,
+    filters: DeviceFilters | None = None,
 ) -> dict:
     """Return BGP neighbor state and address-family details merged per neighbor.
 
     Args:
         neighbor: Optional specific neighbor IP address to filter by (e.g., "192.0.2.1")
-        hostname: Optional hostname to filter by
-        group: Optional group name to filter by
-        platform: Optional platform to filter by
-        data_role: Optional role in data to filter by (e.g., "core", "edge")
-        data_site: Optional site in data to filter by
+        filters: DeviceFilters object containing filter criteria
 
     Returns:
         Dictionary containing merged BGP neighbor state and address-family details for each targeted device
     """
     nr = get_nr()
-    filters = build_filters_dict(
-        hostname=hostname,
-        group=group,
-        platform=platform,
-        data_role=data_role,
-        data_site=data_site,
-    )
-    nr = apply_filters(nr, **filters)
+    if filters is None:
+        filters = DeviceFilters()
+    nr = apply_filters(nr, filters)
 
     # Run both BGP getters in a single call
     result = await asyncio.to_thread(

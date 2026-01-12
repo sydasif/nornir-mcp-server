@@ -4,19 +4,16 @@ import asyncio
 
 from nornir_netmiko.tasks import netmiko_send_command, netmiko_send_config
 
+from ..models import DeviceFilters
 from ..server import get_nr, mcp
-from ..utils.filters import apply_filters, build_filters_dict
+from ..utils.filters import apply_filters
 from ..utils.formatters import format_results
 
 
 @mcp.tool()
 async def run_show_commands(
     commands: list[str],
-    hostname: str | None = None,
-    group: str | None = None,
-    platform: str | None = None,
-    data_role: str | None = None,
-    data_site: str | None = None,
+    filters: DeviceFilters | None = None,
 ) -> dict:
     """Execute show/display commands on network devices via SSH.
 
@@ -24,30 +21,21 @@ async def run_show_commands(
 
     Args:
         commands: List of commands to execute (e.g., ["show version", "show ip interface brief"])
-        hostname: Optional hostname to filter by
-        group: Optional group name to filter by
-        platform: Optional platform to filter by
-        data_role: Optional role in data to filter by (e.g., "core", "edge")
-        data_site: Optional site in data to filter by
+        filters: DeviceFilters object containing filter criteria
 
     Returns:
         Dictionary containing command output for each targeted device
 
     Example:
-        >>> await run_show_commands(["show version"], hostname="router-01")
+        >>> await run_show_commands(["show version"], filters=DeviceFilters(hostname="router-01"))
         {'show version': {'router-01': {'success': True, 'output': 'Cisco IOS Software...'}}}
-        >>> await run_show_commands(["show ip interface brief"], group="edge_routers")
+        >>> await run_show_commands(["show ip interface brief"], filters=DeviceFilters(group="edge_routers"))
         {'show ip interface brief': {'router-01': {...}, 'router-02': {...}}}
     """
     nr = get_nr()
-    filters = build_filters_dict(
-        hostname=hostname,
-        group=group,
-        platform=platform,
-        data_role=data_role,
-        data_site=data_site,
-    )
-    nr = apply_filters(nr, **filters)
+    if filters is None:
+        filters = DeviceFilters()
+    nr = apply_filters(nr, filters)
 
     results = {}
     for command in commands:
@@ -66,11 +54,7 @@ async def run_show_commands(
 @mcp.tool()
 async def send_config_commands(
     commands: list[str],
-    hostname: str | None = None,
-    group: str | None = None,
-    platform: str | None = None,
-    data_role: str | None = None,
-    data_site: str | None = None,
+    filters: DeviceFilters | None = None,
 ) -> dict:
     """Send configuration commands to network devices via SSH.
 
@@ -79,27 +63,18 @@ async def send_config_commands(
 
     Args:
         commands: List of commands to execute (e.g., ["router bgp 65000", "neighbor 1.1.1.1 remote-as 65001"])
-        hostname: Optional hostname to filter by
-        group: Optional group name to filter by
-        platform: Optional platform to filter by
-        data_role: Optional role in data to filter by
-        data_site: Optional site in data to filter by
+        filters: DeviceFilters object containing filter criteria
 
     Returns:
         Dictionary containing the configuration session output for each device
 
     Example:
-        >>> await send_config_commands(["interface Loopback100", "description MCP_ADDED"], hostname="router-01")
+        >>> await send_config_commands(["interface Loopback100", "description MCP_ADDED"], filters=DeviceFilters(hostname="router-01"))
     """
     nr = get_nr()
-    filters = build_filters_dict(
-        hostname=hostname,
-        group=group,
-        platform=platform,
-        data_role=data_role,
-        data_site=data_site,
-    )
-    nr = apply_filters(nr, **filters)
+    if filters is None:
+        filters = DeviceFilters()
+    nr = apply_filters(nr, filters)
 
     result = await asyncio.to_thread(
         nr.run,

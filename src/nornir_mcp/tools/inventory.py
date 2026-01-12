@@ -1,17 +1,14 @@
 """Nornir MCP Server inventory tools."""
 
+from ..models import DeviceFilters
 from ..server import get_nr, mcp
-from ..utils.filters import apply_filters, build_filters_dict
+from ..utils.filters import apply_filters
 
 
 @mcp.tool()
 async def list_devices(
     details: bool = False,
-    hostname: str | None = None,
-    group: str | None = None,
-    platform: str | None = None,
-    data_role: str | None = None,
-    data_site: str | None = None,
+    filters: DeviceFilters | None = None,
 ) -> dict:
     """Query network inventory with optional filters.
 
@@ -22,11 +19,7 @@ async def list_devices(
 
     Args:
         details: Whether to return full inventory attributes
-        hostname: Optional hostname to filter by
-        group: Optional group name to filter by
-        platform: Optional platform to filter by
-        data_role: Optional role in data to filter by (e.g., "core", "edge")
-        data_site: Optional site in data to filter by
+        filters: DeviceFilters object containing filter criteria
 
     Returns:
         Dictionary containing device inventory information
@@ -34,22 +27,15 @@ async def list_devices(
     Example:
         >>> await list_devices()  # All devices
         {'total_devices': 10, 'devices': [...]}
-        >>> await list_devices(group="edge_routers")
+        >>> await list_devices(filters=DeviceFilters(group="edge_routers"))
         {'total_devices': 3, 'devices': [...]}
-        >>> await list_devices(data_role="core")
-        {'total_devices': 2, 'devices': [...]}
-        >>> await list_devices(hostname="router-01", details=True)
+        >>> await list_devices(filters=DeviceFilters(hostname="router-01", details=True))
         {'total_devices': 1, 'devices': [...]}
     """
     nr = get_nr()
-    filters = build_filters_dict(
-        hostname=hostname,
-        group=group,
-        platform=platform,
-        data_role=data_role,
-        data_site=data_site,
-    )
-    nr = apply_filters(nr, **filters)
+    if filters is None:
+        filters = DeviceFilters()
+    nr = apply_filters(nr, filters)
 
     devices = []
     for host_name, host in nr.inventory.hosts.items():
