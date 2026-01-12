@@ -68,7 +68,8 @@ def apply_filters(nr: Nornir, **filters) -> Nornir:
 
     # Special handling for common filter types
     if "hostname" in filters:
-        nr = nr.filter(F(name=filters.pop("hostname")))
+        hostname_value = filters.pop("hostname")
+        nr = nr.filter(F(name=hostname_value) | F(hostname=hostname_value))
 
     if "group" in filters:
         nr = nr.filter(F(groups__contains=filters.pop("group")))

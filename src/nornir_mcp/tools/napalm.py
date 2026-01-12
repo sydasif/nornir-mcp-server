@@ -1,5 +1,7 @@
 """Nornir MCP Server NAPALM tools."""
 
+import asyncio
+
 from nornir_napalm.plugins.tasks import napalm_get
 
 from ..server import get_nr, mcp
@@ -40,7 +42,7 @@ async def get_device_facts(
     )
     nr = apply_filters(nr, **filters)
 
-    result = nr.run(task=napalm_get, getters=["facts"])
+    result = await asyncio.to_thread(nr.run, task=napalm_get, getters=["facts"])
     return format_results(result, getter_name="facts")
 
 
@@ -77,7 +79,8 @@ async def get_interfaces_detailed(
     nr = apply_filters(nr, **filters)
 
     # Run NAPALM getters in a single call
-    result = nr.run(
+    result = await asyncio.to_thread(
+        nr.run,
         task=napalm_get,
         getters=["interfaces", "interfaces_ip"],
     )
@@ -143,7 +146,8 @@ async def get_lldp_detailed(
     nr = apply_filters(nr, **filters)
 
     # Run both LLDP getters in one call
-    result = nr.run(
+    result = await asyncio.to_thread(
+        nr.run,
         task=napalm_get,
         getters=["lldp_neighbors", "lldp_neighbors_detail"],
     )
@@ -255,7 +259,8 @@ async def get_bgp_detailed(
     nr = apply_filters(nr, **filters)
 
     # Run both BGP getters in a single call
-    result = nr.run(
+    result = await asyncio.to_thread(
+        nr.run,
         task=napalm_get,
         getters=["bgp_neighbors", "bgp_neighbors_detail"],
     )

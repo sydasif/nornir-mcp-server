@@ -1,5 +1,6 @@
 """Configuration retrieval and backup utilities."""
 
+import asyncio
 from datetime import datetime
 from pathlib import Path
 
@@ -16,10 +17,21 @@ def ensure_backup_directory(backup_dir: str) -> Path:
 
     Returns:
         Path object pointing to the backup directory
+
+    Raises:
+        ValueError: If the backup directory path attempts to traverse outside the safe root
     """
-    path = Path(backup_dir)
-    path.mkdir(parents=True, exist_ok=True)
-    return path
+    # 1. Resolve absolute paths
+    target_path = Path(backup_dir).resolve()
+    # 2. Define strict root (e.g., current directory)
+    root_path = Path.cwd().resolve()
+
+    # 3. Check if target is within root
+    if not target_path.is_relative_to(root_path):
+        raise ValueError(f"Security Error: Backup directory must be within {root_path}")
+
+    target_path.mkdir(parents=True, exist_ok=True)
+    return target_path
 
 
 async def process_config_request(
@@ -40,7 +52,8 @@ async def process_config_request(
         Dictionary containing either the config data or backup file paths
     """
     # Run NAPALM getter to retrieve configuration
-    result = nr.run(
+    result = await asyncio.to_thread(
+        nr.run,
         task=napalm_get,
         getters=["config"],
         getters_options={"config": {"retrieve": retrieve}},

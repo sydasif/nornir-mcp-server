@@ -1,5 +1,7 @@
 """Nornir MCP Server Netmiko tools."""
 
+import asyncio
+
 from nornir_netmiko.tasks import netmiko_send_command, netmiko_send_config
 
 from ..server import get_nr, mcp
@@ -49,7 +51,8 @@ async def run_show_commands(
 
     results = {}
     for command in commands:
-        result = nr.run(
+        result = await asyncio.to_thread(
+            nr.run,
             task=netmiko_send_command,
             command_string=command,
             # We rely on the LLM to parse the raw text output,
@@ -98,7 +101,8 @@ async def send_config_commands(
     )
     nr = apply_filters(nr, **filters)
 
-    result = nr.run(
+    result = await asyncio.to_thread(
+        nr.run,
         task=netmiko_send_config,
         config_commands=commands,
     )
