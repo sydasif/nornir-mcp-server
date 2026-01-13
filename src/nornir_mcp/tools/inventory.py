@@ -12,8 +12,8 @@ async def list_devices(
 ) -> dict:
     """Query network inventory with optional filters.
 
-    Returns device names, IPs, platforms, and groups. Use 'details=true'
-    for full inventory attributes.
+    Returns device names, IPs, platforms, and groups.
+    Use 'details=true' for full inventory attributes.
 
     If no filters are provided, returns all devices in the inventory.
 
@@ -23,14 +23,6 @@ async def list_devices(
 
     Returns:
         Dictionary containing device inventory information
-
-    Example:
-        >>> await list_devices()  # All devices
-        {'total_devices': 10, 'devices': [...]}
-        >>> await list_devices(filters=DeviceFilters(group="edge_routers"))
-        {'total_devices': 3, 'devices': [...]}
-        >>> await list_devices(filters=DeviceFilters(hostname="router-01", details=True))
-        {'total_devices': 1, 'devices': [...]}
     """
     nr = get_nr()
     if filters is None:
@@ -74,5 +66,3 @@ async def list_device_groups() -> dict:
                 groups[group.name]["members"].append(host_name)
 
     return {"groups": groups}
-
-

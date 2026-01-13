@@ -16,7 +16,21 @@ async def send_config_commands(
 ) -> dict:
     """Send configuration commands to network devices (modifies device state).
 
-    WARNING: This tool modifies device configuration.
+    This function supports both individual and bulk configuration
+    changes across multiple devices simultaneously.
+
+    SECURITY WARNING: This tool modifies device configuration and can potentially
+    disrupt network services. Always verify commands before execution.
+
+    Args:
+        commands: List of configuration commands to execute on the devices
+        filters: DeviceFilters object containing filter criteria to target specific devices
+
+    Returns:
+        Dictionary containing command execution output for each targeted device
+
+    Raises:
+        ValueError: If commands list is empty or contains invalid commands
     """
     if not commands:
         raise ValueError("Command list cannot be empty")
