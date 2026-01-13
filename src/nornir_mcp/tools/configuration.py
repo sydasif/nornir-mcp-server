@@ -14,34 +14,21 @@ async def send_config_commands(
     commands: list[str],
     filters: DeviceFilters | None = None,
 ) -> dict:
-    """Send configuration commands to network devices (modifies device state).
-
-    This function supports both individual and bulk configuration
-    changes across multiple devices simultaneously.
-
-    SECURITY WARNING: This tool modifies device configuration and can potentially
-    disrupt network services. Always verify commands before execution.
+    """Send configuration commands to network devices.
 
     Args:
-        commands: List of configuration commands to execute on the devices
-        filters: DeviceFilters object containing filter criteria to target specific devices
+        commands: List of configuration commands
+        filters: DeviceFilters object containing filter criteria
 
     Returns:
-        Dictionary containing command execution output for each targeted device
-
-    Raises:
-        ValueError: If commands list is empty or contains invalid commands
+        Raw output from the configuration execution per host.
     """
     if not commands:
         raise ValueError("Command list cannot be empty")
 
-    if not all(isinstance(cmd, str) and cmd.strip() for cmd in commands):
-        raise ValueError("All commands must be non-empty strings")
-
     return await runner.execute(
         task=netmiko_send_config,
         filters=filters,
-        formatter_key="output",
         config_commands=commands,
     )
 
@@ -55,45 +42,44 @@ async def backup_device_configs(
 
     Args:
         filters: DeviceFilters object containing filter criteria
-        path: Directory path to save backup files (default: "./backups")
+        path: Directory path to save backup files
 
     Returns:
-        Dictionary containing summary of saved file paths for each targeted device
+        Summary of saved file paths.
     """
-    # First get the configurations
+    # 1. Get configurations (Raw NAPALM structure: {'config': {'running': '...'}})
     result = await runner.execute(
         task=napalm_get,
         filters=filters,
         getters=["config"],
         getters_options={"config": {"retrieve": "running"}},
-        getter_name="config",
     )
 
-    # Validate the backup directory
     backup_path = ensure_backup_directory(path)
-
     backup_results = {}
+
     for hostname, data in result.items():
-        if data.get("success"):
-            # Extract the configuration content
-            config_data = data.get("result", {})
-            config_content = config_data.get("running", "")
+        # Check if the host execution failed (data would be an error dict or missing keys)
+        if isinstance(data, dict) and "config" in data:
+            # Extract config content from raw NAPALM structure
+            config_content = data["config"].get("running", "")
 
             if config_content:
-                # Write the configuration to file using helper function
                 file_path = write_config_to_file(hostname, config_content, backup_path)
-
                 backup_results[hostname] = {
-                    "success": True,
-                    "result": f"Configuration backed up to {file_path}",
+                    "status": "success",
+                    "path": file_path,
                 }
             else:
                 backup_results[hostname] = {
-                    "success": False,
-                    "result": "No configuration content found to backup",
+                    "status": "warning",
+                    "message": "Empty configuration content",
                 }
         else:
-            # Pass through the original error
-            backup_results[hostname] = data
+            # Propagate error info found in data
+            backup_results[hostname] = {
+                "status": "failed",
+                "details": data
+            }
 
     return backup_results

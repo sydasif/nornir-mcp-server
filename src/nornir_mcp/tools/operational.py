@@ -14,17 +14,16 @@ from ..services.runner import runner
 async def get_device_facts(filters: DeviceFilters | None = None) -> dict:
     """Retrieve basic device information (Vendor, OS, Uptime).
 
-    Fetches fundamental device facts including vendor, operating system,
-    uptime, serial number, and model information directly from NAPALM without processing.
-
     Args:
-        filters: DeviceFilters object containing filter criteria to target specific devices
+        filters: DeviceFilters object containing filter criteria
 
     Returns:
-        Dictionary containing raw device facts as returned by NAPALM for each targeted device
+        Raw NAPALM facts dictionary per host.
     """
     return await runner.execute(
-        task=napalm_get, filters=filters, getters=["facts"], getter_name="facts"
+        task=napalm_get,
+        filters=filters,
+        getters=["facts"]
     )
 
 
@@ -33,18 +32,14 @@ async def get_interfaces_detailed(
     interface: str | None = None,
     filters: DeviceFilters | None = None,
 ) -> dict:
-    """Retrieve raw interface statistics and IP addresses from NAPALM.
-
-    Fetches raw interface information including operational state,
-    configuration state, speed, duplex, and IP address assignments directly from NAPALM
-    without any merging or processing.
+    """Retrieve raw interface statistics and IP addresses.
 
     Args:
         interface: Optional specific interface name to filter results
-        filters: DeviceFilters object containing filter criteria to target specific devices
+        filters: DeviceFilters object containing filter criteria
 
     Returns:
-        Dictionary containing raw interface data as returned by NAPALM for each targeted device
+        Raw NAPALM interface data per host.
     """
     result = await runner.execute(
         task=napalm_get,
@@ -52,26 +47,26 @@ async def get_interfaces_detailed(
         getters=["interfaces", "interfaces_ip"],
     )
 
-    # Apply optional single-interface filter to raw data
+    # Minimal filtering only to reduce token usage if specific interface requested
     if interface:
-        for host_data in result.values():
-            if host_data.get("success"):
-                raw = host_data["result"]
-                filtered_result = {}
+        for host, data in result.items():
+            # Skip failed hosts or unexpected structures
+            if not isinstance(data, dict):
+                continue
 
-                # Extract interfaces and interfaces_ip separately
-                interfaces = raw.get("interfaces", {})
-                interfaces_ip = raw.get("interfaces_ip", {})
+            # Filter 'interfaces' key
+            if "interfaces" in data and isinstance(data["interfaces"], dict):
+                if interface in data["interfaces"]:
+                    data["interfaces"] = {interface: data["interfaces"][interface]}
+                else:
+                    data["interfaces"] = {}
 
-                # Filter both dictionaries for the specific interface
-                if interface in interfaces:
-                    filtered_result["interfaces"] = {interface: interfaces[interface]}
-                if interface in interfaces_ip:
-                    filtered_result["interfaces_ip"] = {
-                        interface: interfaces_ip[interface]
-                    }
-
-                host_data["result"] = filtered_result
+            # Filter 'interfaces_ip' key
+            if "interfaces_ip" in data and isinstance(data["interfaces_ip"], dict):
+                if interface in data["interfaces_ip"]:
+                    data["interfaces_ip"] = {interface: data["interfaces_ip"][interface]}
+                else:
+                    data["interfaces_ip"] = {}
 
     return result
 
@@ -81,18 +76,14 @@ async def get_lldp_detailed(
     interface: str | None = None,
     filters: DeviceFilters | None = None,
 ) -> dict:
-    """Return raw LLDP neighbors information from NAPALM without merging.
-
-    Fetches raw Link Layer Discovery Protocol (LLDP) information showing neighboring devices
-    connected to each interface, with both summary and detailed neighbor information
-    returned separately as provided by NAPALM.
+    """Return raw LLDP neighbors information.
 
     Args:
         interface: Optional specific interface name to filter results
-        filters: DeviceFilters object containing filter criteria to target specific devices
+        filters: DeviceFilters object containing filter criteria
 
     Returns:
-        Dictionary containing raw LLDP neighbor information as returned by NAPALM for each targeted device
+        Raw NAPALM LLDP data per host.
     """
     result = await runner.execute(
         task=napalm_get,
@@ -100,28 +91,22 @@ async def get_lldp_detailed(
         getters=["lldp_neighbors", "lldp_neighbors_detail"],
     )
 
-    # Apply optional single-interface filter to raw data
     if interface:
-        for host_data in result.values():
-            if host_data.get("success"):
-                raw = host_data["result"]
-                filtered_result = {}
+        for host, data in result.items():
+            if not isinstance(data, dict):
+                continue
 
-                # Extract lldp_neighbors and lldp_neighbors_detail separately
-                lldp_neighbors = raw.get("lldp_neighbors", {})
-                lldp_neighbors_detail = raw.get("lldp_neighbors_detail", {})
+            if "lldp_neighbors" in data and isinstance(data["lldp_neighbors"], dict):
+                if interface in data["lldp_neighbors"]:
+                    data["lldp_neighbors"] = {interface: data["lldp_neighbors"][interface]}
+                else:
+                    data["lldp_neighbors"] = {}
 
-                # Filter both dictionaries for the specific interface
-                if interface in lldp_neighbors:
-                    filtered_result["lldp_neighbors"] = {
-                        interface: lldp_neighbors[interface]
-                    }
-                if interface in lldp_neighbors_detail:
-                    filtered_result["lldp_neighbors_detail"] = {
-                        interface: lldp_neighbors_detail[interface]
-                    }
-
-                host_data["result"] = filtered_result
+            if "lldp_neighbors_detail" in data and isinstance(data["lldp_neighbors_detail"], dict):
+                if interface in data["lldp_neighbors_detail"]:
+                    data["lldp_neighbors_detail"] = {interface: data["lldp_neighbors_detail"][interface]}
+                else:
+                    data["lldp_neighbors_detail"] = {}
 
     return result
 
@@ -131,24 +116,20 @@ async def get_device_configs(
     filters: DeviceFilters | None = None,
     source: str = "running",
 ) -> dict:
-    """Retrieve raw device configuration data from NAPALM.
-
-    Fetches the raw device configuration data from the specified source
-    (running, startup, candidate) as returned by NAPALM without any processing.
+    """Retrieve raw device configuration data.
 
     Args:
-        filters: DeviceFilters object containing filter criteria to target specific devices
-        source: Configuration source to retrieve (default: "running")
+        filters: DeviceFilters object containing filter criteria
+        source: Configuration source (running, startup, candidate)
 
     Returns:
-        Dictionary containing raw configuration data as returned by NAPALM for each targeted device
+        Raw NAPALM config dictionary per host.
     """
     return await runner.execute(
         task=napalm_get,
         filters=filters,
         getters=["config"],
         getters_options={"config": {"retrieve": source}},
-        getter_name="config",
     )
 
 
@@ -159,41 +140,28 @@ async def run_show_commands(
 ) -> dict:
     """Execute raw CLI show commands via SSH.
 
-    Executes arbitrary show commands on network devices via SSH connection.
-    This provides flexibility for commands that may not be covered by other tools.
-    Only 'show' commands are allowed to enforce read-only operations.
-
     Args:
-        commands: List of show commands to execute on the devices
-        filters: DeviceFilters object containing filter criteria to target specific devices
+        commands: List of show commands to execute
+        filters: DeviceFilters object containing filter criteria
 
     Returns:
-        Dictionary containing raw command output as returned by Netmiko for each command and targeted device
-
-    Raises:
-        ValueError: If commands list is empty, contains invalid commands, or non-show commands
+        Dictionary mapping command -> host -> raw output
     """
     if not commands:
         raise ValueError("Commands list cannot be empty")
 
-    if not all(isinstance(cmd, str) and cmd.strip() for cmd in commands):
-        raise ValueError("All commands must be non-empty strings")
-
-    # Validate that all commands are show commands for read-only enforcement
     for cmd in commands:
         cmd_lower = cmd.strip().lower()
         if not cmd_lower.startswith("show"):
             raise ValueError(
-                f"Only 'show' commands are allowed for read-only operations. Invalid command: '{cmd}'"
+                f"Only 'show' commands are allowed. Invalid: '{cmd}'"
             )
 
     results = {}
     for cmd in commands:
-        # Re-use runner for each command
         results[cmd] = await runner.execute(
             task=netmiko_send_command,
             filters=filters,
-            formatter_key="output",
             command_string=cmd,
         )
     return results
@@ -204,17 +172,14 @@ async def get_bgp_detailed(
     neighbor: str | None = None,
     filters: DeviceFilters | None = None,
 ) -> dict:
-    """Return raw BGP neighbor information from NAPALM without merging.
-
-    Fetches raw Border Gateway Protocol (BGP) information including neighbor state,
-    established sessions, and address family advertisements as provided by NAPALM.
+    """Return raw BGP neighbor information.
 
     Args:
-        neighbor: Optional specific neighbor IP address to filter results
-        filters: DeviceFilters object containing filter criteria to target specific devices
+        neighbor: Optional specific neighbor IP to filter results
+        filters: DeviceFilters object containing filter criteria
 
     Returns:
-        Dictionary containing raw BGP neighbor information as returned by NAPALM for each targeted device
+        Raw NAPALM BGP data per host.
     """
     result = await runner.execute(
         task=napalm_get,
@@ -222,27 +187,21 @@ async def get_bgp_detailed(
         getters=["bgp_neighbors", "bgp_neighbors_detail"],
     )
 
-    # Apply optional single-neighbor filter to raw data
     if neighbor:
-        for host_data in result.values():
-            if host_data.get("success"):
-                raw = host_data["result"]
-                filtered_result = {}
+        for host, data in result.items():
+            if not isinstance(data, dict):
+                continue
 
-                # Extract bgp_neighbors and bgp_neighbors_detail separately
-                bgp_neighbors = raw.get("bgp_neighbors", {})
-                bgp_neighbors_detail = raw.get("bgp_neighbors_detail", {})
+            if "bgp_neighbors" in data and isinstance(data["bgp_neighbors"], dict):
+                if neighbor in data["bgp_neighbors"]:
+                    data["bgp_neighbors"] = {neighbor: data["bgp_neighbors"][neighbor]}
+                else:
+                    data["bgp_neighbors"] = {}
 
-                # Filter both dictionaries for the specific neighbor
-                if neighbor in bgp_neighbors:
-                    filtered_result["bgp_neighbors"] = {
-                        neighbor: bgp_neighbors[neighbor]
-                    }
-                if neighbor in bgp_neighbors_detail:
-                    filtered_result["bgp_neighbors_detail"] = {
-                        neighbor: bgp_neighbors_detail[neighbor]
-                    }
-
-                host_data["result"] = filtered_result
+            if "bgp_neighbors_detail" in data and isinstance(data["bgp_neighbors_detail"], dict):
+                if neighbor in data["bgp_neighbors_detail"]:
+                    data["bgp_neighbors_detail"] = {neighbor: data["bgp_neighbors_detail"][neighbor]}
+                else:
+                    data["bgp_neighbors_detail"] = {}
 
     return result

@@ -13,25 +13,21 @@ from ..utils.formatters import format_results
 
 
 class NornirRunner:
-    """Orchestrates Nornir task execution, filtering, and result formatting."""
+    """Orchestrates Nornir task execution."""
 
     async def execute(
         self,
         task: Callable[..., Result],
         filters: DeviceFilters | None = None,
-        formatter_key: str = "result",
-        getter_name: str | None = None,
-        processor: Callable[[dict], dict] | None = None,
         **task_kwargs: Any,
     ) -> dict:
         """
-        Standardized execution pipeline.
+        Execute a Nornir task and return raw results.
 
         1. Gets fresh Nornir instance
         2. Applies Filters
         3. Offloads blocking task to thread
-        4. Formats results
-        5. (Optional) Post-processes complex data
+        4. Returns raw results dictionary
         """
         # 1. Setup & Filter
         nr = get_nr()
@@ -41,20 +37,13 @@ class NornirRunner:
         try:
             nr = apply_filters(nr, filters)
         except ValueError as e:
-            return {"error": str(e), "success": False}
+            return {"error": str(e)}
 
         # 2. Execute in Thread (Non-blocking)
-        # We pass task_kwargs explicitly to the Nornir task
         result = await asyncio.to_thread(nr.run, task=task, **task_kwargs)
 
-        # 3. Standardize Output
-        formatted = format_results(result, key=formatter_key, getter_name=getter_name)
-
-        # 4. Optional Post-Processing (e.g., merging interface data)
-        if processor:
-            formatted = processor(formatted)
-
-        return formatted
+        # 3. Standardize Output (Simple extraction)
+        return format_results(result)
 
 
 # Singleton instance for easy import

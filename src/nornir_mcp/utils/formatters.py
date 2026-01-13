@@ -6,42 +6,31 @@ Contains functions to format Nornir results into standard response formats.
 from nornir.core.task import AggregatedResult
 
 
-def format_results(
-    result: AggregatedResult, key: str = "result", getter_name: str | None = None
-) -> dict:
-    """Format Nornir results into standard response format.
+def format_results(result: AggregatedResult) -> dict:
+    """Simple extraction of Nornir results.
+
+    Returns a dictionary mapping hostname to the raw result data.
+    If a task failed, the error information is returned instead of the result.
 
     Args:
         result: The aggregated result from Nornir task execution
-        key: The dictionary key to use for the success data (default: "result")
-        getter_name: Optional name of the getter to extract specific data (nested dict)
 
     Returns:
-        Dictionary containing formatted results with success/error information
-
+        Dictionary {hostname: raw_result_data | error_dict}
     """
     formatted = {}
 
     for host, multi_result in result.items():
         if multi_result.failed:
+            # Return error details directly
             formatted[host] = {
-                "success": False,
-                "error": {
-                    "type": type(multi_result.exception).__name__,
-                    "message": str(multi_result.exception),
-                    "details": {
-                        "platform": getattr(multi_result.host, "platform", "unknown"),
-                    },
-                },
+                "failed": True,
+                "exception": str(multi_result.exception),
+                "traceback": getattr(multi_result.exception, "traceback", None),
             }
         else:
-            # Extract result data
-            data = multi_result[0].result
-
-            # If a specific getter key is requested (e.g. for NAPALM)
-            if getter_name and isinstance(data, dict):
-                data = data.get(getter_name, data)
-
-            formatted[host] = {"success": True, key: data}
+            # Return the raw result data directly (stripping Nornir's MultiResult wrapper)
+            # multi_result[0] is the result of the first (and usually only) task
+            formatted[host] = multi_result[0].result
 
     return formatted
