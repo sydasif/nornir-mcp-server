@@ -1,7 +1,7 @@
 """Nornir MCP Server inventory tools."""
 
-from ..models import DeviceFilters
 from ..application import get_nr, mcp
+from ..models import DeviceFilters
 from ..utils.filters import apply_filters
 
 
@@ -55,7 +55,7 @@ async def list_devices(
 
 
 @mcp.tool()
-async def get_device_groups() -> dict:
+async def list_device_groups() -> dict:
     """List all inventory groups and their member counts.
 
     Useful for discovering available device groupings like roles,
@@ -63,10 +63,6 @@ async def get_device_groups() -> dict:
 
     Returns:
         Dictionary containing all inventory groups and their member counts
-
-        Example:
-        >>> await get_device_groups()
-        {'groups': {'core_routers': {'count': 2, 'members': [...]}}}
     """
     nr = get_nr()
     groups = {name: {"count": 0, "members": []} for name in nr.inventory.groups}
@@ -81,18 +77,14 @@ async def get_device_groups() -> dict:
 
 
 @mcp.tool()
-async def reset_failed_hosts() -> dict:
+async def clear_failed_hosts() -> dict:
     """Clear the 'failed' status from all hosts in the inventory.
 
-    Use this if hosts are being skipped due to previous execution errors.
+    Use this if hosts are being skipped or returned `{}` due to previous execution errors.
     This tool provides explicit control over the failed hosts state.
 
     Returns:
         Dictionary with status and message
-
-    Example:
-        >>> await reset_failed_hosts()
-        {'status': 'success', 'message': 'Failed hosts state has been cleared for all devices.'}
     """
     nr = get_nr()
     nr.data.reset_failed_hosts()
