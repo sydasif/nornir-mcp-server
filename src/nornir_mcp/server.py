@@ -1,7 +1,9 @@
 """Nornir MCP Server - Network Automation Server."""
 
 from .application import mcp
-from .tools import inventory, napalm, netmiko
+
+# Import the new intent-based modules
+from .tools import configuration, inventory, operational  # noqa: F401
 
 
 def main():
