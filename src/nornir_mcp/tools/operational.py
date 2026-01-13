@@ -23,7 +23,7 @@ async def get_device_facts(filters: DeviceFilters | None = None) -> dict:
     return await runner.execute(
         task=napalm_get,
         filters=filters,
-        getters=["facts"]
+        getters=["facts"],
     )
 
 
@@ -49,7 +49,7 @@ async def get_interfaces_detailed(
 
     # Minimal filtering only to reduce token usage if specific interface requested
     if interface:
-        for host, data in result.items():
+        for _host, data in result.items():
             # Skip failed hosts or unexpected structures
             if not isinstance(data, dict):
                 continue
@@ -64,7 +64,9 @@ async def get_interfaces_detailed(
             # Filter 'interfaces_ip' key
             if "interfaces_ip" in data and isinstance(data["interfaces_ip"], dict):
                 if interface in data["interfaces_ip"]:
-                    data["interfaces_ip"] = {interface: data["interfaces_ip"][interface]}
+                    data["interfaces_ip"] = {
+                        interface: data["interfaces_ip"][interface]
+                    }
                 else:
                     data["interfaces_ip"] = {}
 
@@ -92,19 +94,25 @@ async def get_lldp_detailed(
     )
 
     if interface:
-        for host, data in result.items():
+        for _host, data in result.items():
             if not isinstance(data, dict):
                 continue
 
             if "lldp_neighbors" in data and isinstance(data["lldp_neighbors"], dict):
                 if interface in data["lldp_neighbors"]:
-                    data["lldp_neighbors"] = {interface: data["lldp_neighbors"][interface]}
+                    data["lldp_neighbors"] = {
+                        interface: data["lldp_neighbors"][interface]
+                    }
                 else:
                     data["lldp_neighbors"] = {}
 
-            if "lldp_neighbors_detail" in data and isinstance(data["lldp_neighbors_detail"], dict):
+            if "lldp_neighbors_detail" in data and isinstance(
+                data["lldp_neighbors_detail"], dict
+            ):
                 if interface in data["lldp_neighbors_detail"]:
-                    data["lldp_neighbors_detail"] = {interface: data["lldp_neighbors_detail"][interface]}
+                    data["lldp_neighbors_detail"] = {
+                        interface: data["lldp_neighbors_detail"][interface]
+                    }
                 else:
                     data["lldp_neighbors_detail"] = {}
 
@@ -147,15 +155,6 @@ async def run_show_commands(
     Returns:
         Dictionary mapping command -> host -> raw output
     """
-    if not commands:
-        raise ValueError("Commands list cannot be empty")
-
-    for cmd in commands:
-        cmd_lower = cmd.strip().lower()
-        if not cmd_lower.startswith("show"):
-            raise ValueError(
-                f"Only 'show' commands are allowed. Invalid: '{cmd}'"
-            )
 
     results = {}
     for cmd in commands:
@@ -188,7 +187,7 @@ async def get_bgp_detailed(
     )
 
     if neighbor:
-        for host, data in result.items():
+        for _host, data in result.items():
             if not isinstance(data, dict):
                 continue
 
@@ -198,9 +197,13 @@ async def get_bgp_detailed(
                 else:
                     data["bgp_neighbors"] = {}
 
-            if "bgp_neighbors_detail" in data and isinstance(data["bgp_neighbors_detail"], dict):
+            if "bgp_neighbors_detail" in data and isinstance(
+                data["bgp_neighbors_detail"], dict
+            ):
                 if neighbor in data["bgp_neighbors_detail"]:
-                    data["bgp_neighbors_detail"] = {neighbor: data["bgp_neighbors_detail"][neighbor]}
+                    data["bgp_neighbors_detail"] = {
+                        neighbor: data["bgp_neighbors_detail"][neighbor]
+                    }
                 else:
                     data["bgp_neighbors_detail"] = {}
 

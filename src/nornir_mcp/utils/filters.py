@@ -24,12 +24,6 @@ def apply_filters(nr: Nornir, filters: DeviceFilters) -> Nornir:
 
     Raises:
         ValueError: If filters result in zero matching hosts
-
-    Example:
-        >>> apply_filters(nr, DeviceFilters())  # No filters = all hosts
-        >>> apply_filters(nr, DeviceFilters(hostname="router-01"))
-        >>> apply_filters(nr, DeviceFilters(group="edge_routers"))
-        >>> apply_filters(nr, DeviceFilters(platform="cisco_ios", group="production"))
     """
     original_count = len(nr.inventory.hosts)
 

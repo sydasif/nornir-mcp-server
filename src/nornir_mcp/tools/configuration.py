@@ -77,9 +77,6 @@ async def backup_device_configs(
                 }
         else:
             # Propagate error info found in data
-            backup_results[hostname] = {
-                "status": "failed",
-                "details": data
-            }
+            backup_results[hostname] = {"status": "failed", "details": data}
 
     return backup_results
