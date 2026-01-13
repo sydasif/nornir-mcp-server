@@ -5,11 +5,12 @@ An MCP (Model Context Protocol) server built with **FastMCP** that exposes Norni
 ## Features
 
 - **Network Inventory Tools**: List devices, query groups, filter by attributes
-- **NAPALM Integration**: Standardized multi-vendor network operations (facts, interfaces with IP addresses, BGP, LLDP, config)
-- **Netmiko Integration**: Flexible command execution and connectivity testing
+- **Operational Tools**: Read-only commands for network state retrieval (facts, interfaces with IP addresses, BGP, LLDP, configs)
+- **Configuration Tools**: State-modifying commands for network device management
+- **Service-Intent Architecture**: Clean separation between operational (read) and configuration (write) operations
 - **Device Filtering**: Supports hostname, group, attribute, and pattern-based filtering
-- **Structured Output**: Automatic parsing with TextFSM and Genie (where available)
-- **Security Focused**: Sensitive information sanitization and read-only by default
+- **Structured Output**: Standardized result formatting with error handling
+- **Security Focused**: Sensitive information sanitization and intent-based access controls
 
 ## Prerequisites
 
@@ -121,26 +122,26 @@ export NETWORK_PASS=your_password
 
 All tools accept a standard `filters` object for device selection.
 
-The server provides the following MCP tools:
+The server provides the following MCP tools organized by intent:
 
 ### Inventory Tools
 
 - `list_devices`: Query network inventory with optional filters
 - `list_device_groups`: List all inventory groups and their member counts
 
-### NAPALM Tools (Normalized Multi-Vendor)
+### Operational Tools (Read-Only Commands)
 
 - `get_device_facts`: Basic device information (vendor, model, OS, uptime)
 - `get_interfaces_detailed`: Interface status, IP addresses, speed, errors
 - `get_bgp_detailed`: BGP neighbor state and address-family details merged per neighbor
 - `get_lldp_detailed`: Network topology via LLDP with summary and detailed information merged per interface
 - `get_device_configs`: Retrieve device configuration text (running, startup, or candidate)
-- `backup_device_configs`: Save device configuration to local disk
-
-### Netmiko Tools (Flexible Command Execution)
-
 - `run_show_commands`: Execute show/display commands with optional parsing
+
+### Configuration Tools (State-Modifying Commands)
+
 - `send_config_commands`: Send configuration commands to network devices via SSH (modifies device configuration)
+- `backup_device_configs`: Save device configuration to local disk
 
 ## Usage
 
@@ -161,6 +162,14 @@ NORNIR_CONFIG_FILE=/path/to/config.yaml nornir-mcp
 # Run with hot reload for development
 fastmcp dev src/nornir_mcp/server.py
 ```
+
+### Architecture
+
+The server implements a Version 2 Service-Intent Pattern with:
+
+- **Services Layer**: `NornirRunner` service handles standardized execution, filtering, and result formatting
+- **Intent-Based Tools**: Organized into operational (read-only) and configuration (state-modifying) categories
+- **Centralized Processing**: All tools leverage the same execution pipeline for consistency
 
 ### Claude Desktop Integration
 
@@ -264,9 +273,24 @@ pytest --cov=nornir_mcp
 
 To add new tools:
 
-1. Create a new module in `src/nornir_mcp/tools/`
+1. Create a new module in `src/nornir_mcp/tools/` or add to existing modules:
+   - `operational.py` for read-only commands
+   - `configuration.py` for state-modifying commands
+   - `inventory.py` for inventory-related operations
 2. Implement the tool using the `@mcp.tool()` decorator with a standard `filters` parameter of type `DeviceFilters`
-3. Add tests in the `tests/` directory
+3. Leverage the `NornirRunner` service for standardized execution:
+
+   ```python
+   from ..services.runner import runner
+
+   result = await runner.execute(
+       task=your_nornir_task,
+       filters=filters,
+       # Additional parameters as needed
+   )
+   ```
+
+4. Add tests in the `tests/` directory
 
 ## License
 
