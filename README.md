@@ -126,7 +126,7 @@ The server provides the following MCP tools:
 ### Inventory Tools
 
 - `list_devices`: Query network inventory with optional filters
-- `get_device_groups`: List all inventory groups and their member counts
+- `list_device_groups`: List all inventory groups and their member counts
 
 ### NAPALM Tools (Normalized Multi-Vendor)
 
