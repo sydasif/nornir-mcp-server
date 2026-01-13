@@ -134,7 +134,8 @@ The server provides the following MCP tools:
 - `get_interfaces_detailed`: Interface status, IP addresses, speed, errors
 - `get_bgp_detailed`: BGP neighbor state and address-family details merged per neighbor
 - `get_lldp_detailed`: Network topology via LLDP with summary and detailed information merged per interface
-- `get_device_configs`: Device configuration retrieval with sanitization and optional backup functionality (replaces the separate backup tool)
+- `get_device_configs`: Retrieve device configuration text (running, startup, or candidate)
+- `backup_device_configs`: Save device configuration to local disk
 
 ### Netmiko Tools (Flexible Command Execution)
 

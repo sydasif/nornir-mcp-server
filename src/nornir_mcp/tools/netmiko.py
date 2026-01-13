@@ -10,6 +10,19 @@ from ..utils.filters import apply_filters
 from ..utils.formatters import format_results
 
 
+def validate_commands(commands: list[str]) -> None:
+    """Validate command list is non-empty and contains valid strings.
+
+    Raises:
+        ValueError: If commands list is empty or contains invalid entries
+    """
+    if not commands:
+        raise ValueError("Command list cannot be empty")
+
+    if not all(isinstance(cmd, str) and cmd.strip() for cmd in commands):
+        raise ValueError("All commands must be non-empty strings")
+
+
 @mcp.tool()
 async def run_show_commands(
     commands: list[str],
@@ -32,6 +45,8 @@ async def run_show_commands(
         >>> await run_show_commands(["show ip interface brief"], filters=DeviceFilters(group="edge_routers"))
         {'show ip interface brief': {'router-01': {...}, 'router-02': {...}}}
     """
+    validate_commands(commands)  # Just check non-empty
+
     nr = get_nr()
     if filters is None:
         filters = DeviceFilters()
@@ -71,6 +86,8 @@ async def send_config_commands(
     Example:
         >>> await send_config_commands(["interface Loopback100", "description MCP_ADDED"], filters=DeviceFilters(hostname="router-01"))
     """
+    validate_commands(commands)  # Just check non-empty
+
     nr = get_nr()
     if filters is None:
         filters = DeviceFilters()

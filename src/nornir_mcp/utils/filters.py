@@ -22,12 +22,17 @@ def apply_filters(nr: Nornir, filters: DeviceFilters) -> Nornir:
     Returns:
         Filtered Nornir instance (or unfiltered if no filters provided)
 
+    Raises:
+        ValueError: If filters result in zero matching hosts
+
     Example:
         >>> apply_filters(nr, DeviceFilters())  # No filters = all hosts
         >>> apply_filters(nr, DeviceFilters(hostname="router-01"))
         >>> apply_filters(nr, DeviceFilters(group="edge_routers"))
         >>> apply_filters(nr, DeviceFilters(platform="cisco_ios", group="production"))
     """
+    original_count = len(nr.inventory.hosts)
+
     # If no filters provided, return unfiltered (all hosts)
     if not any([filters.hostname, filters.group, filters.platform]):
         return nr
@@ -41,5 +46,13 @@ def apply_filters(nr: Nornir, filters: DeviceFilters) -> Nornir:
 
     if filters.platform:
         nr = nr.filter(F(platform=filters.platform))
+
+    # Validate that filters matched at least one host
+    if len(nr.inventory.hosts) == 0:
+        raise ValueError(
+            f"No devices matched the provided filters. "
+            f"Original inventory: {original_count} devices. "
+            f"Filters applied: {filters.model_dump(exclude_none=True)}"
+        )
 
     return nr

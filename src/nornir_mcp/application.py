@@ -42,20 +42,13 @@ def get_nornir():
     return InitNornir(config_file=str(config_file))
 
 
-# Global Nornir singleton instance
-_nr = None
-
-
 def get_nr():
-    """Get a Nornir instance.
+    """Get a fresh Nornir instance for each request.
 
     Returns:
-        Nornir: A Nornir instance.
+        Nornir: A fresh Nornir instance for each call.
 
-    This function implements a singleton pattern for Nornir initialization.
+    This function creates a new Nornir instance for each request,
+    ensuring complete state isolation between tool calls.
     """
-    global _nr
-    if _nr is None:
-        _nr = get_nornir()
-
-    return _nr
+    return get_nornir()

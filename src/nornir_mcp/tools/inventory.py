@@ -76,19 +76,3 @@ async def list_device_groups() -> dict:
     return {"groups": groups}
 
 
-@mcp.tool()
-async def clear_failed_hosts() -> dict:
-    """Clear the 'failed' status from all hosts in the inventory.
-
-    Use this if hosts are being skipped or returned `{}` due to previous execution errors.
-    This tool provides explicit control over the failed hosts state.
-
-    Returns:
-        Dictionary with status and message
-    """
-    nr = get_nr()
-    nr.data.reset_failed_hosts()
-    return {
-        "status": "success",
-        "message": "Failed hosts state has been cleared for all devices.",
-    }

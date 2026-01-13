@@ -4,8 +4,8 @@ import asyncio
 
 from nornir_napalm.plugins.tasks import napalm_get
 
-from ..models import DeviceFilters
 from ..application import get_nr, mcp
+from ..models import DeviceFilters
 from ..utils.config import ensure_backup_directory, write_config_to_file
 from ..utils.filters import apply_filters
 from ..utils.formatters import format_results
@@ -143,7 +143,7 @@ async def get_lldp_detailed(
 
 
 @mcp.tool()
-async def get_device_config(
+async def get_device_configs(
     filters: DeviceFilters | None = None,
     source: str = "running",
 ) -> dict:
@@ -173,7 +173,7 @@ async def get_device_config(
     formatted = format_results(result, getter_name="config")
 
     # Extract just the configuration text from the result
-    for hostname, data in formatted.items():
+    for _hostname, data in formatted.items():
         if data.get("success"):
             config_data = data.get("result", {})
             config_content = config_data.get(source, "")
@@ -183,7 +183,7 @@ async def get_device_config(
 
 
 @mcp.tool()
-async def backup_device_config(
+async def backup_device_configs(
     filters: DeviceFilters | None = None,
     path: str = "./backups",
 ) -> dict:
