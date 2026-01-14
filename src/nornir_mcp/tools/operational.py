@@ -23,7 +23,7 @@ async def get_device_facts(filters: DeviceFilters | None = None) -> dict:
     return await runner.execute(
         task=napalm_get,
         filters=filters,
-        getters=["facts", "environment"],
+        getters=["facts"],
     )
 
 
