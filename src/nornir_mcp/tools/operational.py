@@ -23,7 +23,7 @@ async def get_device_facts(filters: DeviceFilters | None = None) -> dict:
     return await runner.execute(
         task=napalm_get,
         filters=filters,
-        getters=["facts"],
+        getters=["facts", "environment"],
     )
 
 
@@ -206,5 +206,61 @@ async def get_bgp_detailed(
                     }
                 else:
                     data["bgp_neighbors_detail"] = {}
+
+    return result
+
+
+@mcp.tool()
+async def get_arp_table(
+    filters: DeviceFilters | None = None,
+) -> dict:
+    """Retrieve the ARP table for network devices.
+
+    Useful for identifying IP-to-MAC mappings and detecting duplicate IPs.
+
+    Args:
+        filters: DeviceFilters object containing filter criteria
+
+    Returns:
+        Raw NAPALM ARP data per host.
+    """
+    return await runner.execute(
+        task=napalm_get,
+        filters=filters,
+        getters=["arp_table"],
+    )
+
+
+@mcp.tool()
+async def get_mac_address_table(
+    filters: DeviceFilters | None = None,
+    mac_address: str | None = None,
+) -> dict:
+    """Retrieve the MAC address table (CAM table) for switches.
+
+    Args:
+        filters: DeviceFilters object containing filter criteria
+        mac_address: Optional specific MAC address to filter results (format: "00:11:22:33:44:55")
+
+    Returns:
+        Raw NAPALM MAC table data per host.
+    """
+    result = await runner.execute(
+        task=napalm_get,
+        filters=filters,
+        getters=["mac_address_table"],
+    )
+
+    # Optional client-side filtering for a specific MAC
+    if mac_address:
+        for _host, data in result.items():
+            if isinstance(data, dict) and "mac_address_table" in data:
+                # Filter the list of entries where 'mac' matches
+                filtered_entries = [
+                    entry
+                    for entry in data["mac_address_table"]
+                    if entry.get("mac") == mac_address
+                ]
+                data["mac_address_table"] = filtered_entries
 
     return result
