@@ -3,7 +3,7 @@
 from .application import mcp
 
 # Import the new intent-based modules
-from .tools import configuration, inventory, operational  # noqa: F401
+from .tools import management, inventory, monitoring  # noqa: F401
 
 
 def main():
