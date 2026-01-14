@@ -5,9 +5,9 @@ An MCP (Model Context Protocol) server built with **FastMCP** that exposes Norni
 ## Features
 
 - **Network Inventory Tools**: List devices, query groups, filter by attributes
-- **Operational Tools**: Read-only commands for network state retrieval (facts, interfaces with IP addresses, BGP, LLDP, configs)
-- **Configuration Tools**: State-modifying commands for network device management
-- **Service-Intent Architecture**: Clean separation between operational (read) and configuration (write) operations
+- **Monitoring Tools**: Read-only commands for network state retrieval (facts, interfaces with IP addresses, BGP, LLDP, configs, ARP/MAC tables)
+- **Management Tools**: State-modifying commands for network device management
+- **Service-Intent Architecture**: Clean separation between monitoring (read) and management (write) operations
 - **Device Filtering**: Supports hostname, group, attribute, and pattern-based filtering
 - **Structured Output**: Standardized result formatting with error handling
 - **Security Focused**: Sensitive information sanitization and intent-based access controls
@@ -137,6 +137,8 @@ The server provides the following MCP tools organized by intent:
 - `get_lldp_detailed`: Network topology via LLDP with summary and detailed information merged per interface
 - `get_device_configs`: Retrieve device configuration text (running, startup, or candidate)
 - `run_show_commands`: Execute show/display commands with optional parsing
+- `get_arp_table`: Retrieve the ARP table for network devices (IP-to-MAC mappings)
+- `get_mac_address_table`: Retrieve the MAC address table (CAM table) for switches
 
 ### Configuration Tools (State-Modifying Commands)
 
@@ -274,8 +276,8 @@ pytest --cov=nornir_mcp
 To add new tools:
 
 1. Create a new module in `src/nornir_mcp/tools/` or add to existing modules:
-   - `operational.py` for read-only commands
-   - `configuration.py` for state-modifying commands
+   - `monitoring.py` for read-only commands
+   - `management.py` for state-modifying commands
    - `inventory.py` for inventory-related operations
 2. Implement the tool using the `@mcp.tool()` decorator with a standard `filters` parameter of type `DeviceFilters`
 3. Leverage the `NornirRunner` service for standardized execution:
