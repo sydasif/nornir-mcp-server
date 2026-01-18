@@ -25,3 +25,4 @@ node_modules/
 # Coverage reports
 htmlcov/
 .coverage
+.claude/
