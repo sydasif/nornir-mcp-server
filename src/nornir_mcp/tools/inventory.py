@@ -6,63 +6,62 @@ from ..utils.filters import apply_filters
 
 
 @mcp.tool()
-async def list_devices(
+async def list_network_devices(
+    query_type: str = "all",
     details: bool = False,
     filters: DeviceFilters | None = None,
 ) -> dict:
-    """Query network inventory with optional filters.
+    """List network devices and inventory information.
 
-    Returns device names, IPs, platforms, and groups.
-    Use 'details=true' for full inventory attributes.
-
-    If no filters are provided, returns all devices in the inventory.
+    Consolidated tool that provides flexible access to inventory data including
+    devices, groups, or both. Use 'details=true' for full device attributes.
 
     Args:
-        details: Whether to return full inventory attributes
-        filters: DeviceFilters object containing filter criteria
+        query_type: Type of inventory data to return ("devices", "groups", "all")
+        details: Whether to return full inventory attributes (for devices query)
+        filters: DeviceFilters object containing filter criteria (applies to devices and all queries)
 
     Returns:
-        Dictionary containing device inventory information
+        Dictionary containing inventory data based on query_type
     """
     nr = get_nr()
     if filters is None:
         filters = DeviceFilters()
     nr = apply_filters(nr, filters)
 
-    devices = []
-    for host_name, host in nr.inventory.hosts.items():
-        device_info = {
-            "name": host_name,
-            "hostname": host.hostname,
-            "platform": host.platform,
-            "groups": [g.name for g in host.groups],
+    result = {}
+
+    if query_type in ("devices", "all"):
+        devices = []
+        for host_name, host in nr.inventory.hosts.items():
+            device_info = {
+                "name": host_name,
+                "hostname": host.hostname,
+                "platform": host.platform,
+                "groups": [g.name for g in host.groups],
+            }
+
+            if details:
+                device_info["data"] = host.data
+
+            devices.append(device_info)
+
+        result["devices"] = {"total_devices": len(devices), "devices": devices}
+
+    if query_type in ("groups", "all"):
+        groups = {name: {"count": 0, "members": []} for name in nr.inventory.groups}
+
+        for host_name, host in nr.inventory.hosts.items():
+            for group in host.groups:
+                if group.name in groups:
+                    groups[group.name]["count"] += 1
+                    groups[group.name]["members"].append(host_name)
+
+        result["groups"] = {"groups": groups}
+
+    if query_type not in ("devices", "groups", "all"):
+        return {
+            "error": f"Invalid query_type '{query_type}'. Must be 'devices', 'groups', or 'all'"
         }
 
-        if details:
-            device_info["data"] = host.data
-
-        devices.append(device_info)
-
-    return {"total_devices": len(devices), "devices": devices}
-
-
-@mcp.tool()
-async def list_device_groups() -> dict:
-    """List all inventory groups and their member counts.
-
-    Useful for discovering available device groupings like roles,
-    sites, or device types.
-
-    Returns:
-        Dictionary containing all inventory groups and their member counts
-    """
-    nr = get_nr()
-    groups = {name: {"count": 0, "members": []} for name in nr.inventory.groups}
-
-    for host_name, host in nr.inventory.hosts.items():
-        for group in host.groups:
-            if group.name in groups:
-                groups[group.name]["count"] += 1
-                groups[group.name]["members"].append(host_name)
-
-    return {"groups": groups}
+    return result

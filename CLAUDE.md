@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 This is a Nornir MCP (Model Context Protocol) Server - a network automation server that exposes Nornir capabilities to Claude for natural language interaction with network infrastructure. It combines NAPALM's standardized getters with Netmiko's flexible command execution for comprehensive network management.
 
-The server provides **21 tools** organized by intent: 15 monitoring tools, 3 management tools, 2 inventory tools, and 1 validation tool.
+The server provides **11 tools** organized by technology: 6 NAPALM tools (structured data), 4 Netmiko tools (CLI operations), and 1 inventory tool.
 
 ## Functional Requirements
 

@@ -1,13 +1,10 @@
-"""Operational Tools - Read-only commands for network devices."""
+"""NAPALM Tools - Structured data retrieval from network devices."""
 
 import logging
 
 from ..application import mcp
 from ..models import DeviceFilters
-from ..services.runner import runner
 from ..utils.helpers import napalm_getter
-from ..utils.security import CommandValidator
-from ..utils.tasks import napalm_get, netmiko_send_command
 
 logger = logging.getLogger(__name__)
 
@@ -49,171 +46,6 @@ async def get_device_configs(
 
 
 @mcp.tool()
-async def run_show_commands(
-    commands: list[str],
-    filters: DeviceFilters | None = None,
-) -> dict:
-    """Execute raw CLI show commands via SSH.
-
-    Args:
-        commands: List of show commands to execute
-        filters: DeviceFilters object containing filter criteria
-
-    Returns:
-        Dictionary mapping command -> host -> raw output
-    """
-    # Initialize command validator to prevent dangerous commands
-    validator = CommandValidator()
-
-    # Validate each command before execution
-    for cmd in commands:
-        validation_error = validator.validate(cmd)
-        if validation_error:
-            logger.warning(f"Command validation failed for '{cmd}': {validation_error}")
-            return {
-                "error": True,
-                "validation_error": validation_error,
-                "failed_command": cmd,
-            }
-
-    results = {}
-    for cmd in commands:
-        results[cmd] = await runner.execute(
-            task=netmiko_send_command,
-            filters=filters,
-            command_string=cmd,
-        )
-    return results
-
-
-@mcp.tool()
-async def get_arp_table(
-    filters: DeviceFilters | None = None,
-) -> dict:
-    """Retrieve the ARP table for network devices.
-
-    Useful for identifying IP-to-MAC mappings and detecting duplicate IPs.
-
-    Args:
-        filters: DeviceFilters object containing filter criteria
-
-    Returns:
-        Raw NAPALM ARP data per host.
-    """
-    return await napalm_getter(getters=["arp_table"], filters=filters)
-
-
-@mcp.tool()
-async def get_mac_address_table(
-    filters: DeviceFilters | None = None,
-    mac_address: str | None = None,
-) -> dict:
-    """Retrieve the MAC address table (CAM table) for switches.
-
-    Args:
-        filters: DeviceFilters object containing filter criteria
-        mac_address: Optional specific MAC address to filter results (format: "00:11:22:33:44:55")
-
-    Returns:
-        Raw NAPALM MAC table data per host.
-    """
-    result = await runner.execute(
-        task=napalm_get,
-        filters=filters,
-        getters=["mac_address_table"],
-    )
-
-    # Optional client-side filtering for a specific MAC
-    if mac_address:
-        for _host, data in result.items():
-            if isinstance(data, dict) and "mac_address_table" in data:
-                # Filter the list of entries where 'mac' matches
-                filtered_entries = [
-                    entry
-                    for entry in data["mac_address_table"]
-                    if entry.get("mac") == mac_address
-                ]
-                data["mac_address_table"] = filtered_entries
-
-    return result
-
-
-@mcp.tool()
-async def get_routing_table(
-    filters: DeviceFilters | None = None,
-    vrf: str | None = None,
-) -> dict:
-    """Retrieve routing information from network devices.
-
-    Args:
-        filters: DeviceFilters object containing filter criteria
-        vrf: Optional specific VRF to filter results
-
-    Returns:
-        Raw NAPALM network_instances data per host containing routing tables.
-    """
-    result = await runner.execute(
-        task=napalm_get,
-        filters=filters,
-        getters=["network_instances"],
-    )
-
-    if vrf:
-        for _host, data in result.items():
-            if isinstance(data, dict) and "network_instances" in data:
-                if vrf in data["network_instances"]:
-                    data["network_instances"] = {vrf: data["network_instances"][vrf]}
-
-    return result
-
-
-@mcp.tool()
-async def get_users(
-    filters: DeviceFilters | None = None,
-) -> dict:
-    """Retrieve user account information from network devices.
-
-    Useful for auditing and managing user accounts.
-
-    Args:
-        filters: DeviceFilters object containing filter criteria
-
-    Returns:
-        Raw NAPALM users data per host.
-    """
-    return await napalm_getter(getters=["users"], filters=filters)
-
-
-@mcp.tool()
-async def get_vlans(
-    filters: DeviceFilters | None = None,
-    vlan_id: str | None = None,
-) -> dict:
-    """Retrieve VLAN configuration details from network devices.
-
-    Args:
-        filters: DeviceFilters object containing filter criteria
-        vlan_id: Optional specific VLAN ID to filter results
-
-    Returns:
-        Raw NAPALM VLANs data per host.
-    """
-    result = await runner.execute(
-        task=napalm_get,
-        filters=filters,
-        getters=["vlans"],
-    )
-
-    if vlan_id:
-        for _host, data in result.items():
-            if isinstance(data, dict) and "vlans" in data:
-                if vlan_id in data["vlans"]:
-                    data["vlans"] = {vlan_id: data["vlans"][vlan_id]}
-
-    return result
-
-
-@mcp.tool()
 async def get_bgp_neighbors(
     filters: DeviceFilters | None = None,
     device_name: str | None = None,
@@ -221,45 +53,6 @@ async def get_bgp_neighbors(
     """Get BGP neighbor information."""
     return await napalm_getter(
         getters=["bgp_neighbors"],
-        filters=filters,
-        device_name=device_name,
-    )
-
-
-@mcp.tool()
-async def get_bgp_neighbors_detail(
-    filters: DeviceFilters | None = None,
-    device_name: str | None = None,
-) -> dict:
-    """Get detailed BGP neighbor information."""
-    return await napalm_getter(
-        getters=["bgp_neighbors_detail"],
-        filters=filters,
-        device_name=device_name,
-    )
-
-
-@mcp.tool()
-async def get_lldp_neighbors(
-    filters: DeviceFilters | None = None,
-    device_name: str | None = None,
-) -> dict:
-    """Get LLDP neighbor information."""
-    return await napalm_getter(
-        getters=["lldp_neighbors"],
-        filters=filters,
-        device_name=device_name,
-    )
-
-
-@mcp.tool()
-async def get_lldp_neighbors_detail(
-    filters: DeviceFilters | None = None,
-    device_name: str | None = None,
-) -> dict:
-    """Get detailed LLDP neighbor information."""
-    return await napalm_getter(
-        getters=["lldp_neighbors_detail"],
         filters=filters,
         device_name=device_name,
     )
@@ -292,25 +85,26 @@ async def get_interfaces_ip(
 
 
 @mcp.tool()
-async def get_bgp_config(
+async def run_napalm_getter(
+    getters: list[str],
     filters: DeviceFilters | None = None,
     device_name: str | None = None,
-    group: str = "",
-    neighbor: str = "",
+    getters_options: dict | None = None,
 ) -> dict:
-    """Retrieve BGP configuration from devices.
+    """Execute one or more NAPALM getters on network devices.
 
     Args:
+        getters: List of NAPALM getter names (e.g., ['facts', 'interfaces', 'arp_table'])
         filters: DeviceFilters for multi-device operations
         device_name: Single device name (alternative to filters)
-        group: Optional BGP group to filter
-        neighbor: Optional BGP neighbor to filter
+        getters_options: Optional getter-specific options
 
     Returns:
-        BGP configuration information
+        Structured NAPALM data per host
     """
     return await napalm_getter(
-        getters=["bgp_config"],
+        getters=getters,
         filters=filters,
         device_name=device_name,
+        getters_options=getters_options,
     )

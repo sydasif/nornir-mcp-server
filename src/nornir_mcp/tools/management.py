@@ -1,4 +1,4 @@
-"""Configuration Tools - Tools that modify device state."""
+"""Netmiko Tools - CLI commands and file operations for network devices."""
 
 import logging
 
@@ -8,7 +8,11 @@ from ..services.runner import runner
 from ..utils.config import ensure_backup_directory, write_config_to_file
 from ..utils.helpers import napalm_getter
 from ..utils.security import CommandValidator
-from ..utils.tasks import netmiko_file_transfer, netmiko_send_config
+from ..utils.tasks import (
+    netmiko_file_transfer,
+    netmiko_send_command,
+    netmiko_send_config,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -130,3 +134,41 @@ async def file_copy(
         file_system=file_system,
         disable_md5=disable_md5,
     )
+
+
+@mcp.tool()
+async def run_show_commands(
+    commands: list[str],
+    filters: DeviceFilters | None = None,
+) -> dict:
+    """Execute raw CLI show commands via SSH.
+
+    Args:
+        commands: List of show commands to execute
+        filters: DeviceFilters object containing filter criteria
+
+    Returns:
+        Dictionary mapping command -> host -> raw output
+    """
+    # Initialize command validator to prevent dangerous commands
+    validator = CommandValidator()
+
+    # Validate each command before execution
+    for cmd in commands:
+        validation_error = validator.validate(cmd)
+        if validation_error:
+            logger.warning(f"Command validation failed for '{cmd}': {validation_error}")
+            return {
+                "error": True,
+                "validation_error": validation_error,
+                "failed_command": cmd,
+            }
+
+    results = {}
+    for cmd in commands:
+        results[cmd] = await runner.execute(
+            task=netmiko_send_command,
+            filters=filters,
+            command_string=cmd,
+        )
+    return results

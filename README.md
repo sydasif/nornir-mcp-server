@@ -2,12 +2,13 @@
 
 An MCP (Model Context Protocol) server built with **FastMCP** that exposes Nornir automation capabilities to Claude, enabling natural language interaction with network infrastructure. This server combines NAPALM's standardized getters with Netmiko's flexible command execution for comprehensive network management.
 
-The server provides **21 tools** organized by intent: 13 monitoring tools, 6 management tools, and 2 inventory tools.
+The server provides **11 tools** organized by technology: 6 NAPALM tools (structured data), 4 Netmiko tools (CLI operations), and 1 inventory tool.
 
 ## Features
 
 - **Network Inventory Tools**: List devices, query groups, filter by attributes
-- **Monitoring Tools**: Read-only commands for network state retrieval (facts, interfaces, BGP, LLDP, configs, ARP/MAC tables, routing tables, users, VLANs, BGP configuration)
+- **NAPALM Tools**: Structured data retrieval from network devices (facts, interfaces, BGP, configs)
+- **Netmiko Tools**: CLI commands and file operations for network devices (config changes, backups, file transfers)
 
 - **Management Tools**: State-modifying commands for network device management (config commands, backups, file transfers)
 - **Validation & Security**: Command validation with configurable blacklists, comprehensive input validation
@@ -147,27 +148,23 @@ The server provides the following MCP tools organized by intent:
 
 ### Inventory Tools
 
-- `list_devices`: Query network inventory with optional filters
-- `list_device_groups`: List all inventory groups and their member counts
+- `list_network_devices`: List network devices and inventory information (supports devices, groups, or all queries)
 
-### Monitoring Tools (Read-Only Commands)
+### NAPALM Tools (Structured Data Retrieval)
 
 - `get_device_facts`: Basic device information (vendor, model, OS, uptime)
 - `get_interfaces`: Interface status, speed, errors (without IP information)
 - `get_interfaces_ip`: Interface IP addresses information
 - `get_bgp_neighbors`: BGP neighbor state information
-- `get_bgp_neighbors_detail`: Detailed BGP neighbor information
-- `get_bgp_config`: Retrieve BGP configuration from devices (with optional group and neighbor filtering)
-- `get_lldp_neighbors`: LLDP neighbor information
-- `get_lldp_neighbors_detail`: Detailed LLDP neighbor information
 - `get_device_configs`: Retrieve device configuration text (running, startup, or candidate)
+- `run_napalm_getter`: Execute any NAPALM getter for flexible data retrieval (arp_table, mac_address_table, network_instances, users, vlans, bgp_neighbors_detail, lldp_neighbors, lldp_neighbors_detail, bgp_config, and more)
+
+### Netmiko Tools (CLI Commands & File Operations)
+
+- `send_config_commands`: Send configuration commands to network devices via SSH with validation
+- `backup_device_configs`: Save device configuration to local disk
+- `file_copy`: Transfer files to/from network devices securely (supports SCP, SFTP, TFTP)
 - `run_show_commands`: Execute show/display commands with optional parsing and security validation
-- `get_arp_table`: Retrieve the ARP table for network devices (IP-to-MAC mappings)
-- `get_mac_address_table`: Retrieve the MAC address table (CAM table) for switches
-- `get_routing_table`: Retrieve routing information from network devices (with optional VRF filtering)
-- `get_users`: Retrieve user account information from network devices
-- `get_vlans`: Retrieve VLAN configuration details from network devices (with optional VLAN ID filtering)
-- `get_network_instances`: Retrieve network instances (VRFs) information (replaces the old advanced monitoring function)
 
 
 ### Management Tools (State-Modifying Commands)
@@ -231,22 +228,25 @@ docker run -v $(pwd)/examples/conf:/app/conf \
 
 #### Inventory Management
 
-**List all devices:**
+**List network devices:**
 ```bash
 # Get all devices in inventory
-list_devices()
+list_network_devices(query_type="devices")
 
 # Filter by platform
-list_devices(filters={"platform": "cisco_ios"})
+list_network_devices(query_type="devices", filters={"platform": "cisco_ios"})
 
 # Filter by group
-list_devices(filters={"group": "production"})
-```
+list_network_devices(query_type="devices", filters={"group": "production"})
 
-**List device groups:**
-```bash
 # Get all groups with member counts
-list_device_groups()
+list_network_devices(query_type="groups")
+
+# Get both devices and groups
+list_network_devices(query_type="all")
+
+# Get detailed device information
+list_network_devices(query_type="devices", details=True)
 ```
 
 #### Network Monitoring
@@ -281,16 +281,16 @@ get_interfaces_ip()
 **Routing & Connectivity:**
 ```bash
 # Get routing table
-get_routing_table()
+run_napalm_getter(getters=['network_instances'])
 
 # Get routing table for specific VRF
-get_routing_table(vrf="VPN1")
+run_napalm_getter(getters=['network_instances'], getters_options={'network_instances': {'name': 'VPN1'}})
 
 # Get ARP table
-get_arp_table()
+run_napalm_getter(getters=['arp_table'])
 
 # Get MAC address table
-get_mac_address_table()
+run_napalm_getter(getters=['mac_address_table'])
 ```
 
 **Protocol-Specific Monitoring:**
@@ -299,16 +299,16 @@ get_mac_address_table()
 get_bgp_neighbors()
 
 # Get detailed BGP neighbors
-get_bgp_neighbors_detail()
+run_napalm_getter(getters=['bgp_neighbors_detail'])
 
 # Get BGP configuration
-get_bgp_config()
+run_napalm_getter(getters=['bgp_config'])
 
 # Get LLDP neighbors
-get_lldp_neighbors()
+run_napalm_getter(getters=['lldp_neighbors'])
 
 # Get detailed LLDP neighbors
-get_lldp_neighbors_detail()
+run_napalm_getter(getters=['lldp_neighbors_detail'])
 ```
 
 **Configuration & Users:**
@@ -320,10 +320,31 @@ get_device_configs(retrieve="running")
 get_device_configs(retrieve="startup")
 
 # Get user accounts
-get_users()
+run_napalm_getter(getters=['users'])
 
 # Get VLAN information
-get_vlans()
+run_napalm_getter(getters=['vlans'])
+```
+
+**Advanced NAPALM Getters:**
+```bash
+# Get any NAPALM getter by name
+run_napalm_getter(getters=['facts'])
+run_napalm_getter(getters=['interfaces'])
+run_napalm_getter(getters=['interfaces_ip'])
+run_napalm_getter(getters=['bgp_neighbors'])
+run_napalm_getter(getters=['environment'])
+run_napalm_getter(getters=['ntp_servers'])
+run_napalm_getter(getters=['snmp_information'])
+
+# Get multiple getters at once
+run_napalm_getter(getters=['facts', 'interfaces', 'bgp_neighbors'])
+
+# Get with options
+run_napalm_getter(
+    getters=['config'],
+    getters_options={'config': {'retrieve': 'running'}}
+)
 ```
 
 **Custom Commands:**
@@ -337,6 +358,24 @@ run_show_commands(
     filters={"group": "core_routers"}
 )
 ```
+
+**Migration from Removed Tools:**
+
+The following tools were removed in favor of the generic `run_napalm_getter` tool:
+
+| Removed Tool | New Usage |
+|-------------|-----------|
+| `get_arp_table()` | `run_napalm_getter(getters=['arp_table'])` |
+| `get_mac_address_table()` | `run_napalm_getter(getters=['mac_address_table'])` |
+| `get_routing_table(vrf='VPN1')` | `run_napalm_getter(getters=['network_instances'], getters_options={'network_instances': {'name': 'VPN1'}})` |
+| `get_users()` | `run_napalm_getter(getters=['users'])` |
+| `get_vlans()` | `run_napalm_getter(getters=['vlans'])` |
+| `get_bgp_neighbors_detail()` | `run_napalm_getter(getters=['bgp_neighbors_detail'])` |
+| `get_lldp_neighbors()` | `run_napalm_getter(getters=['lldp_neighbors'])` |
+| `get_lldp_neighbors_detail()` | `run_napalm_getter(getters=['lldp_neighbors_detail'])` |
+| `get_bgp_config()` | `run_napalm_getter(getters=['bgp_config'])` |
+
+The `run_napalm_getter` tool provides flexibility to access any NAPALM getter while simplifying the API surface. All common getters (facts, interfaces, interfaces_ip, bgp_neighbors, config) are still available as dedicated tools for convenience.
 
 
 
@@ -853,13 +892,17 @@ if validation["success"]:
 facts = get_device_facts()
 interfaces = get_interfaces()
 bgp = get_bgp_neighbors()
-lldp = get_lldp_neighbors()
 
-# Automated troubleshooting
+# Automated troubleshooting using generic NAPALM getter
 if "BGP neighbor down" in some_condition:
     # Use prompt_troubleshoot_bgp
-    detailed_bgp = get_bgp_neighbors_detail()  # Detailed neighbor information
-    bgp_config = get_bgp_config()
+    detailed_bgp = run_napalm_getter(getters=['bgp_neighbors_detail'])  # Detailed neighbor information
+    bgp_config = run_napalm_getter(getters=['bgp_config'])
+
+# Access any NAPALM data as needed
+arp_table = run_napalm_getter(getters=['arp_table'])
+mac_table = run_napalm_getter(getters=['mac_address_table'])
+routing = run_napalm_getter(getters=['network_instances'])
 ```
 
 ### Integration Patterns
@@ -1086,8 +1129,11 @@ uv run fastmcp dev src/nornir_mcp/server.py
 
 ## Version History
 
-### v1.0.0 - Hybrid Implementation
-- **26 MCP tools** across 6 categories
+### v1.0.0 - Technology-Based Organization
+- **11 MCP tools** across 3 categories (6 NAPALM, 4 Netmiko, 1 inventory)
+- **Simplified API**: 5 essential NAPALM tools + 1 generic `run_napalm_getter` for flexibility
+- **Consolidated inventory**: Single `list_network_devices` tool replaces 2 separate inventory tools
+- **Technology separation**: NAPALM tools in monitoring.py, Netmiko tools in management.py
 - **Advanced validation** with Pydantic models
 - **Command security** with configurable blacklists
 - **MCP ecosystem** with prompts and resources
