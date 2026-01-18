@@ -264,3 +264,82 @@ async def get_mac_address_table(
                 data["mac_address_table"] = filtered_entries
 
     return result
+
+
+@mcp.tool()
+async def get_routing_table(
+    filters: DeviceFilters | None = None,
+    vrf: str | None = None,
+) -> dict:
+    """Retrieve routing information from network devices.
+
+    Args:
+        filters: DeviceFilters object containing filter criteria
+        vrf: Optional specific VRF to filter results
+
+    Returns:
+        Raw NAPALM network_instances data per host containing routing tables.
+    """
+    result = await runner.execute(
+        task=napalm_get,
+        filters=filters,
+        getters=["network_instances"],
+    )
+
+    if vrf:
+        for _host, data in result.items():
+            if isinstance(data, dict) and "network_instances" in data:
+                if vrf in data["network_instances"]:
+                    data["network_instances"] = {vrf: data["network_instances"][vrf]}
+
+    return result
+
+
+@mcp.tool()
+async def get_users(
+    filters: DeviceFilters | None = None,
+) -> dict:
+    """Retrieve user account information from network devices.
+
+    Useful for auditing and managing user accounts.
+
+    Args:
+        filters: DeviceFilters object containing filter criteria
+
+    Returns:
+        Raw NAPALM users data per host.
+    """
+    return await runner.execute(
+        task=napalm_get,
+        filters=filters,
+        getters=["users"],
+    )
+
+
+@mcp.tool()
+async def get_vlans(
+    filters: DeviceFilters | None = None,
+    vlan_id: str | None = None,
+) -> dict:
+    """Retrieve VLAN configuration details from network devices.
+
+    Args:
+        filters: DeviceFilters object containing filter criteria
+        vlan_id: Optional specific VLAN ID to filter results
+
+    Returns:
+        Raw NAPALM VLANs data per host.
+    """
+    result = await runner.execute(
+        task=napalm_get,
+        filters=filters,
+        getters=["vlans"],
+    )
+
+    if vlan_id:
+        for _host, data in result.items():
+            if isinstance(data, dict) and "vlans" in data:
+                if vlan_id in data["vlans"]:
+                    data["vlans"] = {vlan_id: data["vlans"][vlan_id]}
+
+    return result

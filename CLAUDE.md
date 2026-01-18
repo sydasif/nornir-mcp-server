@@ -6,6 +6,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 This is a Nornir MCP (Model Context Protocol) Server - a network automation server that exposes Nornir capabilities to Claude for natural language interaction with network infrastructure. It combines NAPALM's standardized getters with Netmiko's flexible command execution for comprehensive network management.
 
+The server currently provides 16 tools organized by intent: 12 monitoring tools, 3 management tools, and 2 inventory tools.
+
 ## Architecture
 
 The server follows a Service-Intent Pattern with the following structure:
@@ -14,8 +16,8 @@ The server follows a Service-Intent Pattern with the following structure:
 - **Server Entry Point** (`server.py`): Main entry point that registers tools and runs the server
 - **Service Layer** (`services/runner.py`): `NornirRunner` handles standardized execution, filtering, and result formatting
 - **Tool Categories** (`tools/`): Organized by intent
-  - `monitoring.py`: Read-only commands (facts, interfaces, BGP, LLDP, configs, ARP/MAC tables)
-  - `management.py`: State-modifying commands (config commands, backups)
+  - `monitoring.py`: Read-only commands (facts, interfaces, BGP, LLDP, configs, ARP/MAC tables, routing tables, users, VLANs)
+  - `management.py`: State-modifying commands (config commands, backups, file transfers)
   - `inventory.py`: Inventory-related operations
 - **Utility Modules** (`utils/`): Filtering, formatting, and configuration utilities
 - **Data Models** (`models.py`): Pydantic models for request/response handling

@@ -5,8 +5,8 @@ An MCP (Model Context Protocol) server built with **FastMCP** that exposes Norni
 ## Features
 
 - **Network Inventory Tools**: List devices, query groups, filter by attributes
-- **Monitoring Tools**: Read-only commands for network state retrieval (facts, interfaces with IP addresses, BGP, LLDP, configs, ARP/MAC tables)
-- **Management Tools**: State-modifying commands for network device management
+- **Monitoring Tools**: Read-only commands for network state retrieval (facts, interfaces with IP addresses, BGP, LLDP, configs, ARP/MAC tables, routing tables, users, VLANs)
+- **Management Tools**: State-modifying commands for network device management (config commands, backups, file transfers)
 - **Service-Intent Architecture**: Clean separation between monitoring (read) and management (write) operations
 - **Device Filtering**: Supports hostname, group, attribute, and pattern-based filtering
 - **Structured Output**: Standardized result formatting with error handling
@@ -137,11 +137,15 @@ The server provides the following MCP tools organized by intent:
 - `run_show_commands`: Execute show/display commands with optional parsing
 - `get_arp_table`: Retrieve the ARP table for network devices (IP-to-MAC mappings)
 - `get_mac_address_table`: Retrieve the MAC address table (CAM table) for switches
+- `get_routing_table`: Retrieve routing information from network devices (with optional VRF filtering)
+- `get_users`: Retrieve user account information from network devices
+- `get_vlans`: Retrieve VLAN configuration details from network devices (with optional VLAN ID filtering)
 
 ### Configuration Tools (State-Modifying Commands)
 
 - `send_config_commands`: Send configuration commands to network devices via SSH (modifies device configuration)
 - `backup_device_configs`: Save device configuration to local disk
+- `file_copy`: Transfer files to/from network devices securely (supports SCP, SFTP, TFTP)
 
 ## Usage
 

@@ -1,7 +1,7 @@
 """Configuration Tools - Tools that modify device state."""
 
 from nornir_napalm.plugins.tasks import napalm_get
-from nornir_netmiko.tasks import netmiko_send_config
+from nornir_netmiko.tasks import netmiko_file_transfer, netmiko_send_config
 
 from ..application import mcp
 from ..models import DeviceFilters
@@ -80,3 +80,36 @@ async def backup_device_configs(
             backup_results[hostname] = {"status": "failed", "details": data}
 
     return backup_results
+
+
+@mcp.tool()
+async def file_copy(
+    source_file: str,
+    dest_file: str,
+    filters: DeviceFilters | None = None,
+    direction: str = "scp",
+    file_system: str | None = None,
+    disable_md5: bool = False,
+) -> dict:
+    """Transfer files to/from network devices securely.
+
+    Args:
+        source_file: Path to the source file
+        dest_file: Path to the destination file on the device
+        filters: DeviceFilters object containing filter criteria
+        direction: Transfer protocol (scp, sftp, tftp)
+        file_system: Optional file system path (e.g., "flash:", "bootflash:")
+        disable_md5: Disable MD5 verification for transfer
+
+    Returns:
+        Dictionary with transfer results per host.
+    """
+    return await runner.execute(
+        task=netmiko_file_transfer,
+        filters=filters,
+        source_file=source_file,
+        dest_file=dest_file,
+        direction=direction,
+        file_system=file_system,
+        disable_md5=disable_md5,
+    )
