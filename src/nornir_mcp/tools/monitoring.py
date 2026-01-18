@@ -33,98 +33,6 @@ async def get_device_facts(filters: DeviceFilters | None = None) -> dict:
 
 
 @mcp.tool()
-async def get_interfaces_detailed(
-    interface: str | None = None,
-    filters: DeviceFilters | None = None,
-) -> dict:
-    """Retrieve raw interface statistics and IP addresses.
-
-    Args:
-        interface: Optional specific interface name to filter results
-        filters: DeviceFilters object containing filter criteria
-
-    Returns:
-        Raw NAPALM interface data per host.
-    """
-    result = await runner.execute(
-        task=napalm_get,
-        filters=filters,
-        getters=["interfaces", "interfaces_ip"],
-    )
-
-    # Minimal filtering only to reduce token usage if specific interface requested
-    if interface:
-        for _host, data in result.items():
-            # Skip failed hosts or unexpected structures
-            if not isinstance(data, dict):
-                continue
-
-            # Filter 'interfaces' key
-            if "interfaces" in data and isinstance(data["interfaces"], dict):
-                if interface in data["interfaces"]:
-                    data["interfaces"] = {interface: data["interfaces"][interface]}
-                else:
-                    data["interfaces"] = {}
-
-            # Filter 'interfaces_ip' key
-            if "interfaces_ip" in data and isinstance(data["interfaces_ip"], dict):
-                if interface in data["interfaces_ip"]:
-                    data["interfaces_ip"] = {
-                        interface: data["interfaces_ip"][interface]
-                    }
-                else:
-                    data["interfaces_ip"] = {}
-
-    return result
-
-
-@mcp.tool()
-async def get_lldp_detailed(
-    interface: str | None = None,
-    filters: DeviceFilters | None = None,
-) -> dict:
-    """Return raw LLDP neighbors information.
-
-    Args:
-        interface: Optional specific interface name to filter results
-        filters: DeviceFilters object containing filter criteria
-
-    Returns:
-        Raw NAPALM LLDP data per host.
-    """
-    result = await runner.execute(
-        task=napalm_get,
-        filters=filters,
-        getters=["lldp_neighbors", "lldp_neighbors_detail"],
-    )
-
-    if interface:
-        for _host, data in result.items():
-            if not isinstance(data, dict):
-                continue
-
-            if "lldp_neighbors" in data and isinstance(data["lldp_neighbors"], dict):
-                if interface in data["lldp_neighbors"]:
-                    data["lldp_neighbors"] = {
-                        interface: data["lldp_neighbors"][interface]
-                    }
-                else:
-                    data["lldp_neighbors"] = {}
-
-            if "lldp_neighbors_detail" in data and isinstance(
-                data["lldp_neighbors_detail"], dict
-            ):
-                if interface in data["lldp_neighbors_detail"]:
-                    data["lldp_neighbors_detail"] = {
-                        interface: data["lldp_neighbors_detail"][interface]
-                    }
-                else:
-                    data["lldp_neighbors_detail"] = {}
-
-    return result
-
-
-@mcp.tool()
 async def get_device_configs(
     filters: DeviceFilters | None = None,
     source: str = "running",
@@ -182,50 +90,6 @@ async def run_show_commands(
             command_string=cmd,
         )
     return results
-
-
-@mcp.tool()
-async def get_bgp_detailed(
-    neighbor: str | None = None,
-    filters: DeviceFilters | None = None,
-) -> dict:
-    """Return raw BGP neighbor information.
-
-    Args:
-        neighbor: Optional specific neighbor IP to filter results
-        filters: DeviceFilters object containing filter criteria
-
-    Returns:
-        Raw NAPALM BGP data per host.
-    """
-    result = await runner.execute(
-        task=napalm_get,
-        filters=filters,
-        getters=["bgp_neighbors", "bgp_neighbors_detail"],
-    )
-
-    if neighbor:
-        for _host, data in result.items():
-            if not isinstance(data, dict):
-                continue
-
-            if "bgp_neighbors" in data and isinstance(data["bgp_neighbors"], dict):
-                if neighbor in data["bgp_neighbors"]:
-                    data["bgp_neighbors"] = {neighbor: data["bgp_neighbors"][neighbor]}
-                else:
-                    data["bgp_neighbors"] = {}
-
-            if "bgp_neighbors_detail" in data and isinstance(
-                data["bgp_neighbors_detail"], dict
-            ):
-                if neighbor in data["bgp_neighbors_detail"]:
-                    data["bgp_neighbors_detail"] = {
-                        neighbor: data["bgp_neighbors_detail"][neighbor]
-                    }
-                else:
-                    data["bgp_neighbors_detail"] = {}
-
-    return result
 
 
 @mcp.tool()
@@ -361,3 +225,153 @@ async def get_vlans(
                     data["vlans"] = {vlan_id: data["vlans"][vlan_id]}
 
     return result
+
+
+@mcp.tool()
+async def get_bgp_neighbors(
+    filters: DeviceFilters | None = None,
+    device_name: str | None = None,
+) -> dict:
+    """Get BGP neighbor information."""
+    if device_name and filters:
+        raise ValueError("Cannot specify both 'filters' and 'device_name'")
+
+    effective_filters = filters
+    if device_name:
+        effective_filters = DeviceFilters(hostname=device_name)
+
+    return await runner.execute(
+        task=napalm_get,
+        filters=effective_filters,
+        getters=["bgp_neighbors"],
+    )
+
+
+@mcp.tool()
+async def get_bgp_neighbors_detail(
+    filters: DeviceFilters | None = None,
+    device_name: str | None = None,
+) -> dict:
+    """Get detailed BGP neighbor information."""
+    if device_name and filters:
+        raise ValueError("Cannot specify both 'filters' and 'device_name'")
+
+    effective_filters = filters
+    if device_name:
+        effective_filters = DeviceFilters(hostname=device_name)
+
+    return await runner.execute(
+        task=napalm_get,
+        filters=effective_filters,
+        getters=["bgp_neighbors_detail"],
+    )
+
+
+@mcp.tool()
+async def get_lldp_neighbors(
+    filters: DeviceFilters | None = None,
+    device_name: str | None = None,
+) -> dict:
+    """Get LLDP neighbor information."""
+    if device_name and filters:
+        raise ValueError("Cannot specify both 'filters' and 'device_name'")
+
+    effective_filters = filters
+    if device_name:
+        effective_filters = DeviceFilters(hostname=device_name)
+
+    return await runner.execute(
+        task=napalm_get,
+        filters=effective_filters,
+        getters=["lldp_neighbors"],
+    )
+
+
+@mcp.tool()
+async def get_lldp_neighbors_detail(
+    filters: DeviceFilters | None = None,
+    device_name: str | None = None,
+) -> dict:
+    """Get detailed LLDP neighbor information."""
+    if device_name and filters:
+        raise ValueError("Cannot specify both 'filters' and 'device_name'")
+
+    effective_filters = filters
+    if device_name:
+        effective_filters = DeviceFilters(hostname=device_name)
+
+    return await runner.execute(
+        task=napalm_get,
+        filters=effective_filters,
+        getters=["lldp_neighbors_detail"],
+    )
+
+
+@mcp.tool()
+async def get_interfaces(
+    filters: DeviceFilters | None = None,
+    device_name: str | None = None,
+) -> dict:
+    """Get interface information."""
+    if device_name and filters:
+        raise ValueError("Cannot specify both 'filters' and 'device_name'")
+
+    effective_filters = filters
+    if device_name:
+        effective_filters = DeviceFilters(hostname=device_name)
+
+    return await runner.execute(
+        task=napalm_get,
+        filters=effective_filters,
+        getters=["interfaces"],
+    )
+
+
+@mcp.tool()
+async def get_interfaces_ip(
+    filters: DeviceFilters | None = None,
+    device_name: str | None = None,
+) -> dict:
+    """Get interface IP information."""
+    if device_name and filters:
+        raise ValueError("Cannot specify both 'filters' and 'device_name'")
+
+    effective_filters = filters
+    if device_name:
+        effective_filters = DeviceFilters(hostname=device_name)
+
+    return await runner.execute(
+        task=napalm_get,
+        filters=effective_filters,
+        getters=["interfaces_ip"],
+    )
+
+
+@mcp.tool()
+async def get_bgp_config(
+    filters: DeviceFilters | None = None,
+    device_name: str | None = None,
+    group: str = "",
+    neighbor: str = "",
+) -> dict:
+    """Retrieve BGP configuration from devices.
+
+    Args:
+        filters: DeviceFilters for multi-device operations
+        device_name: Single device name (alternative to filters)
+        group: Optional BGP group to filter
+        neighbor: Optional BGP neighbor to filter
+
+    Returns:
+        BGP configuration information
+    """
+    if device_name and filters:
+        raise ValueError("Cannot specify both 'filters' and 'device_name'")
+
+    effective_filters = filters
+    if device_name:
+        effective_filters = DeviceFilters(hostname=device_name)
+
+    return await runner.execute(
+        task=napalm_get, filters=effective_filters, getters=["bgp_config"]
+    )

@@ -5,11 +5,9 @@ This module contains the core MCP tools for network automation:
 - Operational tools: Read-only commands for network devices
 - Configuration tools: Tools that modify device state
 - Networking tools: Connectivity and routing tools
-- Advanced monitoring tools: Detailed network monitoring tools
 """
 
 from . import (  # noqa: F401
-    advanced_monitoring,
     inventory,
     management,
     monitoring,

@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 This is a Nornir MCP (Model Context Protocol) Server - a network automation server that exposes Nornir capabilities to Claude for natural language interaction with network infrastructure. It combines NAPALM's standardized getters with Netmiko's flexible command execution for comprehensive network management.
 
-The server provides **26 tools** organized by intent: 11 monitoring tools, 4 advanced monitoring tools, 2 networking tools, 6 management tools, 2 inventory tools, and 1 validation tool.
+The server provides **23 tools** organized by intent: 15 monitoring tools, 2 networking tools, 3 management tools, 2 inventory tools, and 1 validation tool.
 
 ## Architecture
 
@@ -16,8 +16,7 @@ The server follows a Service-Intent Pattern with the following structure:
 - **Server Entry Point** (`server.py`): Main entry point that registers tools, prompts, and resources
 - **Service Layer** (`services/runner.py`): `NornirRunner` handles standardized execution, filtering, and result formatting
 - **Tool Categories** (`tools/`): Organized by intent
-  - `monitoring.py`: Read-only commands (facts, interfaces, BGP, LLDP, configs, ARP/MAC tables, routing tables, users, VLANs)
-  - `advanced_monitoring.py`: Detailed network state queries (BGP config, LLDP details, network instances)
+  - `monitoring.py`: Read-only commands (facts, interfaces, BGP, LLDP, configs, ARP/MAC tables, routing tables, users, VLANs, BGP configuration, network instances)
   - `networking.py`: Connectivity testing tools (ping, traceroute)
   - `management.py`: State-modifying commands (config commands, backups, file transfers)
   - `inventory.py`: Inventory-related operations
@@ -67,7 +66,7 @@ uv tool install git+https://github.com/sydasif/nornir-stack.git
 
 ### Adding New Tools
 
-1. Create a new function in appropriate module (`monitoring.py`, `advanced_monitoring.py`, `networking.py`, `management.py`, or `inventory.py`)
+1. Create a new function in appropriate module (`monitoring.py`, `networking.py`, `management.py`, or `inventory.py`)
 2. Use the `@mcp.tool()` decorator
 3. Include a `filters: DeviceFilters | None = None` parameter for device selection
 4. Leverage the `NornirRunner` service for standardized execution:

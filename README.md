@@ -2,13 +2,12 @@
 
 An MCP (Model Context Protocol) server built with **FastMCP** that exposes Nornir automation capabilities to Claude, enabling natural language interaction with network infrastructure. This server combines NAPALM's standardized getters with Netmiko's flexible command execution for comprehensive network management.
 
-The server provides **26 tools** organized by intent: 16 monitoring tools, 6 management tools, 2 inventory tools, and 2 networking tools.
+The server provides **23 tools** organized by intent: 13 monitoring tools, 6 management tools, 2 inventory tools, and 2 networking tools.
 
 ## Features
 
 - **Network Inventory Tools**: List devices, query groups, filter by attributes
-- **Monitoring Tools**: Read-only commands for network state retrieval (facts, interfaces, BGP, LLDP, configs, ARP/MAC tables, routing tables, users, VLANs)
-- **Advanced Monitoring Tools**: Detailed BGP neighbors, LLDP neighbors, network instances (VRFs)
+- **Monitoring Tools**: Read-only commands for network state retrieval (facts, interfaces, BGP, LLDP, configs, ARP/MAC tables, routing tables, users, VLANs, BGP configuration)
 - **Networking Tools**: Ping and traceroute capabilities for connectivity testing
 - **Management Tools**: State-modifying commands for network device management (config commands, backups, file transfers)
 - **Validation & Security**: Command validation with configurable blacklists, comprehensive input validation
@@ -154,9 +153,13 @@ The server provides the following MCP tools organized by intent:
 ### Monitoring Tools (Read-Only Commands)
 
 - `get_device_facts`: Basic device information (vendor, model, OS, uptime)
-- `get_interfaces_detailed`: Interface status, IP addresses, speed, errors
-- `get_bgp_detailed`: BGP neighbor state and address-family details merged per neighbor
-- `get_lldp_detailed`: Network topology via LLDP with summary and detailed information merged per interface
+- `get_interfaces`: Interface status, speed, errors (without IP information)
+- `get_interfaces_ip`: Interface IP addresses information
+- `get_bgp_neighbors`: BGP neighbor state information
+- `get_bgp_neighbors_detail`: Detailed BGP neighbor information
+- `get_bgp_config`: Retrieve BGP configuration from devices (with optional group and neighbor filtering)
+- `get_lldp_neighbors`: LLDP neighbor information
+- `get_lldp_neighbors_detail`: Detailed LLDP neighbor information
 - `get_device_configs`: Retrieve device configuration text (running, startup, or candidate)
 - `run_show_commands`: Execute show/display commands with optional parsing and security validation
 - `get_arp_table`: Retrieve the ARP table for network devices (IP-to-MAC mappings)
@@ -164,13 +167,7 @@ The server provides the following MCP tools organized by intent:
 - `get_routing_table`: Retrieve routing information from network devices (with optional VRF filtering)
 - `get_users`: Retrieve user account information from network devices
 - `get_vlans`: Retrieve VLAN configuration details from network devices (with optional VLAN ID filtering)
-
-### Advanced Monitoring Tools (Detailed Network State)
-
-- `get_bgp_config`: Retrieve BGP configuration from devices
-- `get_bgp_neighbors_detail`: Obtain detailed BGP neighbor information
-- `get_lldp_neighbors_detail`: Obtain detailed LLDP neighbor information
-- `get_network_instances`: Retrieve network instances (VRFs) information
+- `get_network_instances`: Retrieve network instances (VRFs) information (replaces the old advanced monitoring function)
 
 ### Networking Tools (Connectivity Testing)
 
@@ -273,16 +270,16 @@ get_device_facts(filters={"platform": "cisco_ios"})
 **Interface Monitoring:**
 ```bash
 # Get detailed interface info for all devices
-get_interfaces_detailed()
+get_interfaces()
 
 # Get interface info for specific device
-get_interfaces_detailed(filters={"hostname": "R1"})
+get_interfaces(filters={"hostname": "R1"})
 
 # Get interface counters
 get_interfaces_counters()
 
-# Get IP interface brief
-get_interfaces_ip_brief()
+# Get interface IP information
+get_interfaces_ip()
 ```
 
 **Routing & Connectivity:**
@@ -612,7 +609,7 @@ get_device_facts(filters={"hostname": "R1"})
 get_device_facts(filters={"hostname": "192.168.100.101"})
 
 # All devices in a group
-get_interfaces_detailed(filters={"group": "core_routers"})
+get_interfaces(filters={"group": "core_routers"})
 
 # All devices of a platform type
 get_bgp_neighbors(filters={"platform": "cisco_ios"})
@@ -623,11 +620,9 @@ get_bgp_neighbors(filters={"platform": "cisco_ios"})
 # Multiple filters (AND logic)
 list_devices(filters={"platform": "cisco_ios", "group": "production"})
 
-# Specific interface on specific device
-get_interfaces_detailed(
-    filters={"hostname": "R1"},
-    interface="GigabitEthernet0/0"
-)
+# Specific interface on specific device (note: separate tools now)
+get_interfaces(filters={"hostname": "R1"})
+get_interfaces_ip(filters={"hostname": "R1"})
 
 # Routing table for specific VRF on specific devices
 get_routing_table(
@@ -891,14 +886,14 @@ if validation["success"]:
 ```bash
 # Comprehensive health check
 facts = get_device_facts()
-interfaces = get_interfaces_detailed()
+interfaces = get_interfaces()
 bgp = get_bgp_neighbors()
 lldp = get_lldp_neighbors()
 
 # Automated troubleshooting
 if "BGP neighbor down" in some_condition:
     # Use prompt_troubleshoot_bgp
-    detailed_bgp = get_bgp_neighbors_detail()
+    detailed_bgp = get_bgp_neighbors_detail()  # Detailed neighbor information
     bgp_config = get_bgp_config()
 ```
 
@@ -1010,11 +1005,10 @@ pytest tests/test_inventory.py
 To add new tools:
 
 1. Create a new module in `src/nornir_mcp/tools/` or add to existing modules:
-    - `monitoring.py` for read-only commands
-    - `advanced_monitoring.py` for detailed network state queries
-    - `networking.py` for connectivity testing tools
-    - `management.py` for state-modifying commands
-    - `inventory.py` for inventory-related operations
+     - `monitoring.py` for read-only commands (including detailed network state queries)
+     - `networking.py` for connectivity testing tools
+     - `management.py` for state-modifying commands
+     - `inventory.py` for inventory-related operations
 2. Implement the tool using the `@mcp.tool()` decorator with a standard `filters` parameter of type `DeviceFilters`
 3. Leverage the `NornirRunner` service for standardized execution:
 

@@ -6,7 +6,6 @@ from .application import get_nr, mcp
 
 # Import the new intent-based modules
 from .tools import (  # noqa: F401
-    advanced_monitoring,
     inventory,
     management,
     monitoring,
