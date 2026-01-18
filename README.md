@@ -189,29 +189,321 @@ The server provides the following MCP tools organized by intent:
 
 ## Usage
 
-### Running the Server
+### Quick Start
 
+1. **Copy example configuration:**
 ```bash
-# Ensure config.yaml exists in current directory and run
+cp examples/conf/* .
+```
+
+2. **Run the server:**
+```bash
 nornir-mcp
 ```
 
-### Development Mode
+3. **Configure Claude Desktop** (see integration section below)
 
+### Running the Server
+
+#### Local Development
 ```bash
-# Run with hot reload for development
+# Basic startup
+nornir-mcp
+
+# With debug logging
+LOG_LEVEL=DEBUG nornir-mcp
+
+# Development mode with hot reload
 fastmcp dev src/nornir_mcp/server.py
 ```
 
-### Docker Deployment
-
+#### Docker Deployment
 ```bash
-# Build and run with Docker Compose
-docker-compose up --build
+# Build and run with Docker Compose (recommended)
+docker compose up --build
 
 # Or run directly with Docker
 docker build -t nornir-mcp .
-docker run -v $(pwd)/examples/conf:/app/conf -p 8000:8000 nornir-mcp
+docker run -v $(pwd)/examples/conf:/app/conf \
+           -e LOG_LEVEL=INFO \
+           -p 8000:8000 nornir-mcp
+```
+
+#### Environment Variables
+- `LOG_LEVEL`: Set logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
+- `MCP_HOST`: Server host (default: localhost)
+- `MCP_PORT`: Server port (default: 8000)
+
+### MCP Tools Usage Guide
+
+#### Inventory Management
+
+**List all devices:**
+```bash
+# Get all devices in inventory
+list_devices()
+
+# Filter by platform
+list_devices(filters={"platform": "cisco_ios"})
+
+# Filter by group
+list_devices(filters={"group": "production"})
+```
+
+**List device groups:**
+```bash
+# Get all groups with member counts
+list_device_groups()
+```
+
+#### Network Monitoring
+
+**Device Information:**
+```bash
+# Get basic facts for all devices
+get_device_facts()
+
+# Get facts for specific device
+get_device_facts(filters={"hostname": "R1"})
+
+# Get facts for all Cisco devices
+get_device_facts(filters={"platform": "cisco_ios"})
+```
+
+**Interface Monitoring:**
+```bash
+# Get detailed interface info for all devices
+get_interfaces_detailed()
+
+# Get interface info for specific device
+get_interfaces_detailed(filters={"hostname": "R1"})
+
+# Get interface counters
+get_interfaces_counters()
+
+# Get IP interface brief
+get_interfaces_ip_brief()
+```
+
+**Routing & Connectivity:**
+```bash
+# Get routing table
+get_routing_table()
+
+# Get routing table for specific VRF
+get_routing_table(vrf="VPN1")
+
+# Get ARP table
+get_arp_table()
+
+# Get MAC address table
+get_mac_address_table()
+```
+
+**Protocol-Specific Monitoring:**
+```bash
+# Get BGP neighbors
+get_bgp_neighbors()
+
+# Get detailed BGP neighbors
+get_bgp_neighbors_detail()
+
+# Get BGP configuration
+get_bgp_config()
+
+# Get LLDP neighbors
+get_lldp_neighbors()
+
+# Get detailed LLDP neighbors
+get_lldp_neighbors_detail()
+```
+
+**Configuration & Users:**
+```bash
+# Get running configuration
+get_device_configs(retrieve="running")
+
+# Get startup configuration
+get_device_configs(retrieve="startup")
+
+# Get user accounts
+get_users()
+
+# Get VLAN information
+get_vlans()
+```
+
+**Custom Commands:**
+```bash
+# Run safe show commands
+run_show_commands(commands=["show version", "show interfaces"])
+
+# Run commands with filtering
+run_show_commands(
+    commands=["show ip route", "show arp"],
+    filters={"group": "core_routers"}
+)
+```
+
+#### Networking Tools
+
+**Connectivity Testing:**
+```bash
+# Ping from a device
+ping(destination="8.8.8.8", device_name="R1")
+
+# Ping with custom parameters
+ping(
+    destination="192.168.1.1",
+    device_name="R1",
+    count=10,
+    timeout=5
+)
+
+# Traceroute from a device
+traceroute(destination="google.com", device_name="R2")
+```
+
+#### Network Management
+
+**Configuration Management:**
+```bash
+# Send configuration commands (SAFE - validated)
+send_config_commands(
+    commands=[
+        "interface Loopback100",
+        "description MCP_MANAGED",
+        "ip address 10.100.100.100 255.255.255.255"
+    ],
+    filters={"hostname": "R1"}
+)
+
+# Backup configurations
+backup_device_configs(backup_directory="./backups")
+
+# Backup specific device configs
+backup_device_configs(
+    filters={"group": "production"},
+    backup_directory="./backups"
+)
+```
+
+**File Operations:**
+```bash
+# Copy file to device
+file_copy(
+    source_file="./configs/new_config.txt",
+    dest_file="running-config",
+    direction="put",
+    filters={"hostname": "R1"}
+)
+
+# Copy file from device
+file_copy(
+    source_file="running-config",
+    dest_file="./backups/running-config.txt",
+    direction="get",
+    filters={"hostname": "R1"}
+)
+```
+
+#### Validation & Security
+
+**Input Validation:**
+```bash
+# Validate device parameters
+validate_params({"device_name": "R1"}, "DeviceNameModel")
+
+# Validate ping parameters
+validate_params({
+    "device_name": "R1",
+    "destination": "8.8.8.8",
+    "count": 5
+}, "PingModel")
+
+# Get validation schema
+validate_params({}, "DeviceFilters")
+```
+
+### MCP Ecosystem Features
+
+#### Prompts (Guided Troubleshooting)
+
+**Available Prompts:**
+- `prompt_troubleshoot_network_issue`: General network troubleshooting
+- `prompt_troubleshoot_bgp`: BGP session troubleshooting
+- `prompt_troubleshoot_interface`: Interface issue troubleshooting
+
+**Usage:**
+```bash
+# These prompts are available in Claude when using the MCP server
+# They provide structured troubleshooting workflows
+```
+
+#### Resources (Reference Data)
+
+**Available Resources:**
+- `resource://inventory/hosts`: Device inventory with metadata
+- `resource://inventory/hosts/{keyword}`: Filtered host search
+- `resource://inventory/groups`: Group information
+- `resource://topology`: Network topology data
+- `resource://cisco_ios_commands`: Command reference
+
+**Usage:**
+```bash
+# Access via Claude's resource system
+# These provide contextual information for troubleshooting
+```
+
+### Advanced Configuration
+
+#### Command Blacklist Configuration
+
+Create `conf/blacklist.yaml` for security:
+
+```yaml
+exact_commands:
+  - reload
+  - erase startup-config
+  - write erase
+  - delete flash:
+
+keywords:
+  - erase
+  - format
+  - delete
+  - copy running-config startup-config
+
+disallowed_patterns:
+  - ">"
+  - "<"
+  - ";"
+  - "&&"
+  - "||"
+```
+
+#### Custom Logging
+
+```yaml
+logging:
+  enabled: true
+  level: INFO
+  log_file: "nornir-mcp.log"
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+```
+
+#### Advanced Runner Configuration
+
+```yaml
+runner:
+  plugin: threaded
+  options:
+    num_workers: 50
+    max_rate: 10  # Max tasks per second
+
+# Or use serial runner for debugging
+runner:
+  plugin: serial
 ```
 
 ### Architecture
@@ -229,7 +521,7 @@ The server implements a Service-Intent Pattern with:
 
 ### Claude Desktop Integration
 
-Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
+Add to `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS):
 
 ```json
 {
@@ -237,34 +529,165 @@ Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
     "nornir-network": {
       "command": "nornir-mcp",
       "workingDir": "/path/to/your/network/project",
-      "args": []
+      "args": [],
+      "env": {
+        "LOG_LEVEL": "INFO"
+      }
     }
   }
 }
+```
+
+For Linux/Windows, the config file is typically at:
+- Linux: `~/.config/Claude/claude_desktop_config.json`
+- Windows: `%APPDATA%\Claude\claude_desktop_config.json`
+
+#### Using MCP Features in Claude
+
+**Natural Language Commands:**
+```bash
+# Device inventory
+"Show me all network devices"
+"List devices in the production group"
+"Get facts for router R1"
+
+# Monitoring
+"Check interface status on all switches"
+"Show BGP neighbors for core routers"
+"Get routing table from R2"
+
+# Connectivity testing
+"Ping 8.8.8.8 from R1"
+"Traceroute to google.com from R3"
+
+# Configuration
+"Backup running configs for all devices"
+"Configure interface Loopback100 on R1"
+
+# Validation
+"Validate these BGP parameters: neighbor 10.0.0.1 remote-as 65001"
+"Check if this device name is valid: R1"
+```
+
+**Using Prompts:**
+```bash
+# Structured troubleshooting
+"I need to troubleshoot a BGP session issue with neighbor 10.0.0.1 on device R1"
+"Help me diagnose why interface GigabitEthernet0/0 is down on switch S1"
+"There's a general network connectivity problem in the datacenter"
+```
+
+**Accessing Resources:**
+```bash
+# Reference data
+"Show me the network topology"
+"What commands are available for Cisco IOS devices?"
+"List all hosts in the inventory"
+"Find devices with 'core' in their name"
 ```
 
 ## Device Filtering
 
 All tools support optional filtering via a standard `filters` object. **If no filters are provided, the tool targets all devices in the inventory** (Nornir's default behavior).
 
-The server supports schema-agnostic filtering through a Pydantic model with three core fields:
+### Filter Parameters
 
-- **hostname**: Matches either the Nornir Inventory Name (ID) OR the actual device hostname/IP
-- **group**: Matches group membership (e.g., "edge_routers", "production")
-- **platform**: Matches platform type (e.g., "cisco_ios", "arista_eos")
+The server supports schema-agnostic filtering through a Pydantic model:
 
-Examples:
+- **hostname** (str | None): Matches device inventory name (ID) or actual hostname/IP
+- **group** (str | None): Matches group membership (e.g., "edge_routers", "production")
+- **platform** (str | None): Matches platform type (e.g., "cisco_ios", "arista_eos")
 
-- "Get facts for all devices" → `get_device_facts()` (no filters)
-- "Get facts for router-01" → `get_device_facts(filters=DeviceFilters(hostname="router-01"))`
-- "Show interfaces on all edge routers" → `get_interfaces_detailed(filters=DeviceFilters(group="edge_routers"))`
-- "Get interface GigabitEthernet0/0 on router-01" → `get_interfaces_detailed(filters=DeviceFilters(hostname="router-01"), interface="GigabitEthernet0/0")`
-- "Get running config for all devices" → `get_device_configs(retrieve="running")`
-- "Backup configurations for edge routers to ./backups" → `get_device_configs(filters=DeviceFilters(group="edge_routers"), backup=True, backup_directory="./backups")`
-- "List all Cisco IOS devices in production" → `list_devices(filters=DeviceFilters(platform="cisco_ios", group="production"))`
-- "Configure interface on router-01" → `send_config_commands(commands=["interface Loopback100", "description MCP_ADDED"], filters=DeviceFilters(hostname="router-01"))`
+### Filtering Examples
 
-Multiple filters are combined with AND logic. Claude will intelligently choose the appropriate filter parameters based on your natural language request, or omit filters entirely to target all devices.
+#### Basic Filtering
+```bash
+# No filters - target all devices
+get_device_facts()
+
+# Single device by inventory name
+get_device_facts(filters={"hostname": "R1"})
+
+# Single device by hostname/IP
+get_device_facts(filters={"hostname": "192.168.100.101"})
+
+# All devices in a group
+get_interfaces_detailed(filters={"group": "core_routers"})
+
+# All devices of a platform type
+get_bgp_neighbors(filters={"platform": "cisco_ios"})
+```
+
+#### Advanced Filtering
+```bash
+# Multiple filters (AND logic)
+list_devices(filters={"platform": "cisco_ios", "group": "production"})
+
+# Specific interface on specific device
+get_interfaces_detailed(
+    filters={"hostname": "R1"},
+    interface="GigabitEthernet0/0"
+)
+
+# Routing table for specific VRF on specific devices
+get_routing_table(
+    filters={"group": "core_routers"},
+    vrf="VPN1"
+)
+```
+
+#### Configuration Management Filtering
+```bash
+# Backup configs for production devices
+backup_device_configs(
+    filters={"group": "production"},
+    backup_directory="./backups"
+)
+
+# Configure specific device
+send_config_commands(
+    commands=["interface Loopback100", "ip address 10.100.100.100 255.255.255.255"],
+    filters={"hostname": "R1"}
+)
+
+# Configure all devices in a group
+send_config_commands(
+    commands=["logging buffered 100000"],
+    filters={"platform": "cisco_ios"}
+)
+```
+
+#### Networking Tools Filtering
+```bash
+# Ping from specific device
+ping(
+    destination="8.8.8.8",
+    device_name="R1",
+    filters={"hostname": "R1"}
+)
+
+# Traceroute from core routers
+traceroute(
+    destination="google.com",
+    filters={"group": "core_routers"}
+)
+```
+
+### Filter Logic
+
+- **Multiple filters**: Combined with AND logic (device must match ALL criteria)
+- **Empty filters**: Targets all devices in inventory
+- **Partial matches**: Hostname matching is flexible (inventory name OR actual hostname)
+- **Case sensitivity**: Platform and group names are case-sensitive
+
+### Natural Language to Filters
+
+Claude automatically translates natural language to appropriate filters:
+
+- "Check all Cisco routers" → `{"platform": "cisco_ios"}`
+- "Show me the core switches" → `{"group": "core_switches"}`
+- "Get interface status for R1" → `{"hostname": "R1"}`
+- "Backup production devices" → `{"group": "production"}`
 
 ## Supported Platforms
 
@@ -297,20 +720,275 @@ Multiple filters are combined with AND logic. Claude will intelligently choose t
 
 ## Troubleshooting
 
-### Common Issues
+### Common Issues & Solutions
 
-- **"No Nornir config found"**: Ensure `config.yaml` exists in the current working directory
-- **"Connection timeout"**: Verify network connectivity and SSH access
-- **"Authentication failed"**: Check credentials and device access
-- **"Platform not supported"**: Verify correct platform string in inventory
+#### Configuration Issues
+- **"No Nornir config found"**
+  - Ensure `config.yaml` exists in current working directory
+  - Copy from `examples/conf/config.yaml` if needed
+  - Check file permissions (readable by user running server)
 
-### Debugging
+- **"Inventory file not found"**
+  - Verify paths in `config.yaml` are correct
+  - Use absolute paths or ensure relative paths are from working directory
+  - Copy example inventory files: `cp examples/conf/* .`
 
-Enable debug logging by setting the environment variable:
+#### Connection Issues
+- **"Connection timeout"**
+  - Verify SSH access to devices: `ssh user@device-hostname`
+  - Check network connectivity and firewall rules
+  - Confirm device is reachable: `ping device-hostname`
+  - Verify SSH service is running on device
+
+- **"Authentication failed"**
+  - Check username/password in inventory files
+  - Verify SSH key authentication if configured
+  - Confirm credentials work manually: `ssh user@device`
+  - Check for expired passwords or account lockouts
+
+#### Platform Issues
+- **"Platform not supported"**
+  - Verify correct platform string in inventory
+  - Supported platforms: `cisco_ios`, `cisco_nxos`, `arista_eos`, etc.
+  - Check platform name matches Netmiko/NAPALM expectations
+
+- **"Command not found" or "Invalid command"**
+  - Verify device platform supports the command
+  - Some commands are platform-specific (e.g., `show ip arp` vs `show arp`)
+  - Check device OS version compatibility
+
+#### Tool-Specific Issues
+- **"Command blocked by security policy"**
+  - Command contains blacklisted keywords
+  - Modify `conf/blacklist.yaml` or use different command
+  - Some destructive commands are intentionally blocked
+
+- **"Device not found in inventory"**
+  - Check device name spelling in filters
+  - Verify device exists in inventory files
+  - Use `list_devices()` to see available devices
+
+- **"Validation error"**
+  - Check parameter types and required fields
+  - Use `validate_params()` to check input format
+  - Refer to model schemas for correct parameter structure
+
+#### Docker Issues
+- **"Permission denied"**
+  - Ensure Docker daemon is running: `docker info`
+  - Add user to docker group: `sudo usermod -aG docker $USER`
+  - Or run with sudo: `sudo docker compose up`
+
+- **"Port already in use"**
+  - Change port mapping: `-p 8001:8000`
+  - Find process using port: `lsof -i :8000`
+  - Stop conflicting service
+
+### Debugging & Logging
+
+#### Enable Debug Logging
+```bash
+# Environment variable
+export LOG_LEVEL=DEBUG
+nornir-mcp
+
+# Or inline
+LOG_LEVEL=DEBUG nornir-mcp
+```
+
+#### Log Levels
+- `DEBUG`: Detailed execution information, API calls, command output
+- `INFO`: General operational messages, task completion
+- `WARNING`: Non-critical issues, deprecated features
+- `ERROR`: Serious problems requiring attention
+- `CRITICAL`: System-level failures
+
+#### Log File Configuration
+```yaml
+logging:
+  enabled: true
+  level: DEBUG
+  log_file: "nornir-mcp.log"
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+```
+
+#### Common Debug Commands
+```bash
+# Test basic connectivity
+ping device-hostname
+
+# Test SSH access
+ssh -o ConnectTimeout=10 user@device-hostname "show version"
+
+# Test Nornir configuration
+python -c "from src.nornir_mcp.application import get_nr; print('Nornir loaded:', len(get_nr().inventory.hosts), 'devices')"
+
+# Validate configuration syntax
+python -c "import yaml; yaml.safe_load(open('config.yaml')); print('Config syntax OK')"
+```
+
+### Performance Issues
+
+#### Slow Command Execution
+- **Large inventory**: Use filters to target specific devices
+- **Network latency**: Optimize worker count in runner config
+- **Device performance**: Some devices respond slower than others
+
+#### Memory Usage
+- **Large outputs**: Use filters to limit device count
+- **Config backups**: Clean up old backup files regularly
+- **Concurrent tasks**: Reduce `num_workers` if memory constrained
+
+### Getting Help
+
+#### Community Resources
+- **GitHub Issues**: Report bugs and request features
+- **Documentation**: Check this README and CLAUDE.md
+- **Nornir Docs**: https://nornir.tech/
+- **NAPALM Docs**: https://napalm.readthedocs.io/
+- **Netmiko Docs**: https://netmiko.readthedocs.io/
+
+#### Diagnostic Information
+When reporting issues, include:
+- Server version and platform
+- Full error message and traceback
+- Configuration (redact sensitive data)
+- Device platform and version
+- Steps to reproduce the issue
+
+## Advanced Usage Patterns
+
+### Batch Operations
 
 ```bash
-export LOG_LEVEL=DEBUG
+# Configure multiple devices at once
+send_config_commands(
+    commands=[
+        "snmp-server community public RO",
+        "snmp-server location 'Data Center 1'"
+    ],
+    filters={"platform": "cisco_ios"}
+)
+
+# Backup all production configs
+backup_device_configs(
+    filters={"group": "production"},
+    backup_directory="./backups/prod-$(date +%Y%m%d)"
+)
 ```
+
+### Conditional Operations
+
+```bash
+# Use validation to check parameters before execution
+validation = validate_params({"device_name": "R1"}, "DeviceNameModel")
+if validation["success"]:
+    result = get_device_facts(filters={"hostname": "R1"})
+```
+
+### Monitoring Workflows
+
+```bash
+# Comprehensive health check
+facts = get_device_facts()
+interfaces = get_interfaces_detailed()
+bgp = get_bgp_neighbors()
+lldp = get_lldp_neighbors()
+
+# Automated troubleshooting
+if "BGP neighbor down" in some_condition:
+    # Use prompt_troubleshoot_bgp
+    detailed_bgp = get_bgp_neighbors_detail()
+    bgp_config = get_bgp_config()
+```
+
+### Integration Patterns
+
+```bash
+# Combine with other systems
+devices = list_devices()
+for device in devices:
+    if device["platform"] == "cisco_ios":
+        config = get_device_configs(filters={"hostname": device["name"]})
+        # Process config, update CMDB, etc.
+```
+
+## MCP Ecosystem Deep Dive
+
+### Prompts System
+
+The server includes structured prompts for common troubleshooting scenarios:
+
+#### Available Prompts
+- **`prompt_troubleshoot_network_issue`**: Generic network problem diagnosis
+  - Usage: "I need to troubleshoot a connectivity issue on device R1"
+  - Provides: Step-by-step systematic approach
+
+- **`prompt_troubleshoot_bgp`**: BGP session analysis
+  - Usage: "BGP session with neighbor 10.0.0.1 is down on R1"
+  - Provides: BGP-specific diagnostic workflow
+
+- **`prompt_troubleshoot_interface`**: Interface problem resolution
+  - Usage: "Interface GigabitEthernet0/0 is down on switch S1"
+  - Provides: Interface-specific troubleshooting steps
+
+#### Using Prompts in Claude
+```bash
+# Natural language triggers prompt selection
+"Troubleshoot BGP issues on router R2"
+"Help diagnose interface problems on switch S1"
+"Network connectivity issues in the branch office"
+```
+
+### Resources System
+
+Reference data accessible through Claude's resource system:
+
+#### Inventory Resources
+- **`resource://inventory/hosts`**: Complete device inventory
+- **`resource://inventory/hosts/{keyword}`**: Filtered device search
+- **`resource://inventory/groups`**: Group membership information
+
+#### Network Resources
+- **`resource://topology`**: Network topology visualization
+- **`resource://cisco_ios_commands`**: Cisco IOS command reference
+
+#### Using Resources
+```bash
+# Access reference data
+"Show me the network topology"
+"What commands are available for Cisco devices?"
+"Find all core routers in the inventory"
+"Show devices with 'edge' in their name"
+```
+
+### Validation System
+
+Comprehensive input validation with helpful error messages:
+
+#### Model Validation
+```bash
+# Device name validation
+validate_params({"device_name": "R1"}, "DeviceNameModel")
+
+# Ping parameters validation
+validate_params({
+    "device_name": "R1",
+    "destination": "8.8.8.8",
+    "count": 5
+}, "PingModel")
+
+# Get schema information
+result = validate_params({}, "DeviceFilters")
+# Returns model schema and example values
+```
+
+#### Error Handling
+Validation provides:
+- **Success/failure status**
+- **Detailed error messages**
+- **Correct parameter examples**
+- **Suggested parameter corrections**
 
 ## Development
 
@@ -322,6 +1000,9 @@ pytest
 
 # Run with coverage
 pytest --cov=nornir_mcp
+
+# Run specific test file
+pytest tests/test_inventory.py
 ```
 
 ### Adding New Tools
@@ -389,6 +1070,54 @@ disallowed_patterns:
   - ";"
 ```
 
+## Contributing
+
+### Development Setup
+
+```bash
+# Clone and setup
+git clone https://github.com/your-org/nornir-mcp-server.git
+cd nornir-mcp-server
+uv sync
+
+# Run tests
+uv run pytest
+
+# Run linter
+uv run ruff check . --fix
+uv run ruff format .
+
+# Development server
+uv run fastmcp dev src/nornir_mcp/server.py
+```
+
+### Adding Features
+
+1. **New Tools**: Follow the service-intent pattern in appropriate tool module
+2. **New Platforms**: Add platform support in inventory configuration
+3. **New Prompts**: Add to `prompts.py` with `prompt_` prefix
+4. **New Resources**: Add to `resources.py` with `resource_` prefix
+5. **New Validation**: Add models to `models.py` and register in validation helpers
+
+### Code Standards
+
+- **Linting**: `ruff check` and `ruff format`
+- **Testing**: pytest with coverage reporting
+- **Documentation**: Update README and docstrings
+- **Commits**: Conventional commit format
+
+## Version History
+
+### v1.0.0 - Hybrid Implementation
+- **26 MCP tools** across 6 categories
+- **Advanced validation** with Pydantic models
+- **Command security** with configurable blacklists
+- **MCP ecosystem** with prompts and resources
+- **Docker containerization**
+- **Comprehensive documentation**
+
 ## License
 
-MIT License - see the [LICENSE](LICENSE) file for details.
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
