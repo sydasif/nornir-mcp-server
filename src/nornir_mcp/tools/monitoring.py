@@ -2,13 +2,12 @@
 
 import logging
 
-from nornir_napalm.plugins.tasks import napalm_get
-from nornir_netmiko.tasks import netmiko_send_command
-
 from ..application import mcp
 from ..models import DeviceFilters
 from ..services.runner import runner
+from ..utils.helpers import napalm_getter
 from ..utils.security import CommandValidator
+from ..utils.tasks import napalm_get, netmiko_send_command
 
 logger = logging.getLogger(__name__)
 
@@ -25,11 +24,7 @@ async def get_device_facts(filters: DeviceFilters | None = None) -> dict:
     Returns:
         Raw NAPALM facts dictionary per host.
     """
-    return await runner.execute(
-        task=napalm_get,
-        filters=filters,
-        getters=["facts"],
-    )
+    return await napalm_getter(getters=["facts"], filters=filters)
 
 
 @mcp.tool()
@@ -46,10 +41,9 @@ async def get_device_configs(
     Returns:
         Raw NAPALM config dictionary per host.
     """
-    return await runner.execute(
-        task=napalm_get,
-        filters=filters,
+    return await napalm_getter(
         getters=["config"],
+        filters=filters,
         getters_options={"config": {"retrieve": source}},
     )
 
@@ -106,11 +100,7 @@ async def get_arp_table(
     Returns:
         Raw NAPALM ARP data per host.
     """
-    return await runner.execute(
-        task=napalm_get,
-        filters=filters,
-        getters=["arp_table"],
-    )
+    return await napalm_getter(getters=["arp_table"], filters=filters)
 
 
 @mcp.tool()
@@ -191,11 +181,7 @@ async def get_users(
     Returns:
         Raw NAPALM users data per host.
     """
-    return await runner.execute(
-        task=napalm_get,
-        filters=filters,
-        getters=["users"],
-    )
+    return await napalm_getter(getters=["users"], filters=filters)
 
 
 @mcp.tool()
@@ -233,17 +219,10 @@ async def get_bgp_neighbors(
     device_name: str | None = None,
 ) -> dict:
     """Get BGP neighbor information."""
-    if device_name and filters:
-        raise ValueError("Cannot specify both 'filters' and 'device_name'")
-
-    effective_filters = filters
-    if device_name:
-        effective_filters = DeviceFilters(hostname=device_name)
-
-    return await runner.execute(
-        task=napalm_get,
-        filters=effective_filters,
+    return await napalm_getter(
         getters=["bgp_neighbors"],
+        filters=filters,
+        device_name=device_name,
     )
 
 
@@ -253,17 +232,10 @@ async def get_bgp_neighbors_detail(
     device_name: str | None = None,
 ) -> dict:
     """Get detailed BGP neighbor information."""
-    if device_name and filters:
-        raise ValueError("Cannot specify both 'filters' and 'device_name'")
-
-    effective_filters = filters
-    if device_name:
-        effective_filters = DeviceFilters(hostname=device_name)
-
-    return await runner.execute(
-        task=napalm_get,
-        filters=effective_filters,
+    return await napalm_getter(
         getters=["bgp_neighbors_detail"],
+        filters=filters,
+        device_name=device_name,
     )
 
 
@@ -273,17 +245,10 @@ async def get_lldp_neighbors(
     device_name: str | None = None,
 ) -> dict:
     """Get LLDP neighbor information."""
-    if device_name and filters:
-        raise ValueError("Cannot specify both 'filters' and 'device_name'")
-
-    effective_filters = filters
-    if device_name:
-        effective_filters = DeviceFilters(hostname=device_name)
-
-    return await runner.execute(
-        task=napalm_get,
-        filters=effective_filters,
+    return await napalm_getter(
         getters=["lldp_neighbors"],
+        filters=filters,
+        device_name=device_name,
     )
 
 
@@ -293,17 +258,10 @@ async def get_lldp_neighbors_detail(
     device_name: str | None = None,
 ) -> dict:
     """Get detailed LLDP neighbor information."""
-    if device_name and filters:
-        raise ValueError("Cannot specify both 'filters' and 'device_name'")
-
-    effective_filters = filters
-    if device_name:
-        effective_filters = DeviceFilters(hostname=device_name)
-
-    return await runner.execute(
-        task=napalm_get,
-        filters=effective_filters,
+    return await napalm_getter(
         getters=["lldp_neighbors_detail"],
+        filters=filters,
+        device_name=device_name,
     )
 
 
@@ -313,17 +271,10 @@ async def get_interfaces(
     device_name: str | None = None,
 ) -> dict:
     """Get interface information."""
-    if device_name and filters:
-        raise ValueError("Cannot specify both 'filters' and 'device_name'")
-
-    effective_filters = filters
-    if device_name:
-        effective_filters = DeviceFilters(hostname=device_name)
-
-    return await runner.execute(
-        task=napalm_get,
-        filters=effective_filters,
+    return await napalm_getter(
         getters=["interfaces"],
+        filters=filters,
+        device_name=device_name,
     )
 
 
@@ -333,17 +284,10 @@ async def get_interfaces_ip(
     device_name: str | None = None,
 ) -> dict:
     """Get interface IP information."""
-    if device_name and filters:
-        raise ValueError("Cannot specify both 'filters' and 'device_name'")
-
-    effective_filters = filters
-    if device_name:
-        effective_filters = DeviceFilters(hostname=device_name)
-
-    return await runner.execute(
-        task=napalm_get,
-        filters=effective_filters,
+    return await napalm_getter(
         getters=["interfaces_ip"],
+        filters=filters,
+        device_name=device_name,
     )
 
 
@@ -365,13 +309,8 @@ async def get_bgp_config(
     Returns:
         BGP configuration information
     """
-    if device_name and filters:
-        raise ValueError("Cannot specify both 'filters' and 'device_name'")
-
-    effective_filters = filters
-    if device_name:
-        effective_filters = DeviceFilters(hostname=device_name)
-
-    return await runner.execute(
-        task=napalm_get, filters=effective_filters, getters=["bgp_config"]
+    return await napalm_getter(
+        getters=["bgp_config"],
+        filters=filters,
+        device_name=device_name,
     )

@@ -2,14 +2,13 @@
 
 import logging
 
-from nornir_napalm.plugins.tasks import napalm_get
-from nornir_netmiko.tasks import netmiko_file_transfer, netmiko_send_config
-
 from ..application import mcp
 from ..models import DeviceFilters
 from ..services.runner import runner
 from ..utils.config import ensure_backup_directory, write_config_to_file
+from ..utils.helpers import napalm_getter
 from ..utils.security import CommandValidator
+from ..utils.tasks import netmiko_file_transfer, netmiko_send_config
 
 logger = logging.getLogger(__name__)
 
@@ -67,10 +66,9 @@ async def backup_device_configs(
         Summary of saved file paths.
     """
     # 1. Get configurations (Raw NAPALM structure: {'config': {'running': '...'}})
-    result = await runner.execute(
-        task=napalm_get,
-        filters=filters,
+    result = await napalm_getter(
         getters=["config"],
+        filters=filters,
         getters_options={"config": {"retrieve": "running"}},
     )
 

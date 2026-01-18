@@ -60,46 +60,6 @@ class NetworkInstancesModel(DeviceNameModel):
     name: str = Field(default="")
 
 
-class PingModel(DeviceNameModel):
-    destination: str
-    source: str = ""
-    ttl: int = 255
-    timeout: int = 2
-    size: int = 100
-    count: int = 5
-    vrf: str = ""
-    source_interface: str = ""
-
-
-class TracerouteModel(DeviceNameModel):
-    destination: str
-    source: str = ""
-    ttl: int = 255
-    timeout: int = 2
-    vrf: str = ""
-
-
-# --- Result Models ---
-class PingProbe(BaseModel):
-    ip_address: str
-    rtt: float
-
-
-class PingSuccess(BaseModel):
-    probes_sent: int
-    packet_loss: float
-    rtt_min: float
-    rtt_max: float
-    rtt_avg: float
-    rtt_stddev: float
-    results: list[PingProbe]
-
-
-class PingResultModel(BaseModel):
-    success: PingSuccess | None = None
-    error: str | None = None
-
-
 class TracerouteHop(BaseModel):
     rtt: float
     ip_address: str

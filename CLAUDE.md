@@ -6,7 +6,34 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 This is a Nornir MCP (Model Context Protocol) Server - a network automation server that exposes Nornir capabilities to Claude for natural language interaction with network infrastructure. It combines NAPALM's standardized getters with Netmiko's flexible command execution for comprehensive network management.
 
-The server provides **23 tools** organized by intent: 15 monitoring tools, 2 networking tools, 3 management tools, 2 inventory tools, and 1 validation tool.
+The server provides **21 tools** organized by intent: 15 monitoring tools, 3 management tools, 2 inventory tools, and 1 validation tool.
+
+## Functional Requirements
+
+### Architectural Standards (MANDATORY)
+
+All code contributions MUST follow these established architectural patterns:
+
+#### Import Management (REQUIRED)
+- **Centralized Imports**: All Nornir task imports MUST be sourced from `utils/tasks.py`
+- **No Direct Imports**: Direct imports from `nornir_napalm` or `nornir_netmiko` are PROHIBITED in tool modules
+- **Single Source of Truth**: `utils/tasks.py` is the authoritative location for all task imports
+
+#### Execution Patterns (REQUIRED)  
+- **NAPALM Operations**: MUST use `napalm_getter()` helper for all NAPALM data retrieval
+- **Netmiko Operations**: MUST use direct `runner.execute()` for command execution
+- **Inventory Operations**: MUST use `get_nr() + apply_filters()` for metadata queries
+- **Domain Appropriateness**: Each operation type MUST use its designated pattern
+
+#### Helper Functions (REQUIRED)
+- **Parameter Normalization**: All tools MUST use `normalize_device_filters()` for device filtering
+- **Consistent Signatures**: Helper functions MUST maintain consistent parameter patterns
+- **No Code Duplication**: Common patterns MUST be abstracted into reusable helpers
+
+#### Code Quality Standards (REQUIRED)
+- **Linting Compliance**: All code MUST pass `ruff check` and `ruff format`
+- **Import Sorting**: All imports MUST be auto-sorted by ruff
+- **Type Safety**: Full type hints MUST be maintained where possible
 
 ## Architecture
 
@@ -17,7 +44,7 @@ The server follows a Service-Intent Pattern with the following structure:
 - **Service Layer** (`services/runner.py`): `NornirRunner` handles standardized execution, filtering, and result formatting
 - **Tool Categories** (`tools/`): Organized by intent
   - `monitoring.py`: Read-only commands (facts, interfaces, BGP, LLDP, configs, ARP/MAC tables, routing tables, users, VLANs, BGP configuration, network instances)
-  - `networking.py`: Connectivity testing tools (ping, traceroute)
+  
   - `management.py`: State-modifying commands (config commands, backups, file transfers)
   - `inventory.py`: Inventory-related operations
 - **Validation Layer** (`utils/validation_helpers.py`): Comprehensive input validation with helpful error messages
@@ -64,24 +91,46 @@ uv tool install git+https://github.com/sydasif/nornir-stack.git
 
 ## Development Workflow
 
-### Adding New Tools
+### Adding New Tools (MUST Follow Architectural Standards)
 
-1. Create a new function in appropriate module (`monitoring.py`, `networking.py`, `management.py`, or `inventory.py`)
-2. Use the `@mcp.tool()` decorator
-3. Include a `filters: DeviceFilters | None = None` parameter for device selection
-4. Leverage the `NornirRunner` service for standardized execution:
-
+1. Create a new function in appropriate module (`monitoring.py`, `management.py`, or `inventory.py`)
+2. **MANDATORY**: Import tasks from `utils/tasks.py` (not direct Nornir imports)
+3. **MANDATORY**: Use the `@mcp.tool()` decorator with standard `filters: DeviceFilters | None = None` parameter
+4. **MANDATORY**: Follow domain-appropriate execution patterns:
+   
+   **For NAPALM operations:**
    ```python
-   from .services.runner import runner
-
+   from ..utils.helpers import napalm_getter
+   
    @mcp.tool()
-   async def new_tool(filters: DeviceFilters | None = None) -> dict:
-       return await runner.execute(
-           task=your_nornir_task,
-           filters=filters,
-           # Additional parameters as needed
-       )
+   async def new_napalm_tool(filters: DeviceFilters | None = None) -> dict:
+       return await napalm_getter(getters=["some_data"], filters=filters)
    ```
+   
+   **For Netmiko operations:**
+   ```python
+   from ..utils.tasks import netmiko_send_command
+   from ..services.runner import runner
+   
+   @mcp.tool()
+   async def new_netmiko_tool(filters: DeviceFilters | None = None) -> dict:
+       return await runner.execute(task=netmiko_send_command, filters=filters, command_string="show something")
+   ```
+   
+   **For Inventory operations:**
+   ```python
+   from ..application import get_nr
+   from ..utils.filters import apply_filters
+   
+   @mcp.tool()
+   async def new_inventory_tool(filters: DeviceFilters | None = None) -> dict:
+       nr = get_nr()
+       if filters:
+           nr = apply_filters(nr, filters)
+       # process inventory data
+   ```
+
+5. **MANDATORY**: Add tests and ensure `ruff check` + `ruff format` compliance
 
 ### Adding Validation Models
 
@@ -125,3 +174,24 @@ Additional environment variables:
 - Command validation with configurable blacklists prevents dangerous operations
 - Input validation ensures all parameters are properly validated before execution
 - Sensitive data sanitization removes passwords and secrets from resource outputs
+
+## Architecture Improvements (MANDATORY PATTERNS)
+
+### Import Centralization (REQUIRED)
+- ✅ **IMPLEMENTED**: Centralized Nornir task imports in `utils/tasks.py`
+- ✅ **ENFORCED**: All tool modules MUST import from this centralized location
+- ✅ **MAINTAINED**: Direct Nornir imports are PROHIBITED in tool modules
+- **BENEFIT**: Simplifies Nornir version upgrades and reduces import scattering
+
+### Helper Functions (REQUIRED)
+- ✅ **IMPLEMENTED**: Reusable helper functions in `utils/helpers.py`:
+  - `normalize_device_filters()`: **MANDATORY** for device filter normalization
+  - `napalm_getter()`: **MANDATORY** for NAPALM getter execution
+- ✅ **ENFORCED**: These helpers MUST be used for their respective domains
+- **BENEFIT**: Consistent patterns without unnecessary abstraction layers
+
+### Tool Design Patterns (MANDATORY)
+- **NAPALM operations**: **MUST** use `napalm_getter()` helper for structured data retrieval
+- **Netmiko operations**: **MUST** use direct `runner.execute()` for command execution (appropriate for the domain)
+- **Inventory operations**: **MUST** use direct `get_nr() + apply_filters()` (appropriate for metadata queries)
+- **ENFORCEMENT**: New tools MUST follow these established patterns

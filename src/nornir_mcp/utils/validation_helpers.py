@@ -12,11 +12,7 @@ from ..models import (
     GetConfigModel,
     LLDPNeighborsDetailModel,
     NetworkInstancesModel,
-    PingModel,
-    PingResultModel,
     SendCommandModel,
-    TracerouteModel,
-    TracerouteResultModel,
 )
 
 logger = logging.getLogger("nornir-mcp.validation")
@@ -30,11 +26,6 @@ MODEL_MAP = {
     "BGPNeighborsDetailModel": BGPNeighborsDetailModel,
     "LLDPNeighborsDetailModel": LLDPNeighborsDetailModel,
     "NetworkInstancesModel": NetworkInstancesModel,
-    "PingModel": PingModel,
-    "TracerouteModel": TracerouteModel,
-    # result models
-    "PingResultModel": PingResultModel,
-    "TracerouteResultModel": TracerouteResultModel,
 }
 
 

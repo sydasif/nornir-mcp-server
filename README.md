@@ -2,13 +2,13 @@
 
 An MCP (Model Context Protocol) server built with **FastMCP** that exposes Nornir automation capabilities to Claude, enabling natural language interaction with network infrastructure. This server combines NAPALM's standardized getters with Netmiko's flexible command execution for comprehensive network management.
 
-The server provides **23 tools** organized by intent: 13 monitoring tools, 6 management tools, 2 inventory tools, and 2 networking tools.
+The server provides **21 tools** organized by intent: 13 monitoring tools, 6 management tools, and 2 inventory tools.
 
 ## Features
 
 - **Network Inventory Tools**: List devices, query groups, filter by attributes
 - **Monitoring Tools**: Read-only commands for network state retrieval (facts, interfaces, BGP, LLDP, configs, ARP/MAC tables, routing tables, users, VLANs, BGP configuration)
-- **Networking Tools**: Ping and traceroute capabilities for connectivity testing
+
 - **Management Tools**: State-modifying commands for network device management (config commands, backups, file transfers)
 - **Validation & Security**: Command validation with configurable blacklists, comprehensive input validation
 - **MCP Ecosystem**: Prompts system for guided troubleshooting workflows, resources for topology and command reference
@@ -169,10 +169,6 @@ The server provides the following MCP tools organized by intent:
 - `get_vlans`: Retrieve VLAN configuration details from network devices (with optional VLAN ID filtering)
 - `get_network_instances`: Retrieve network instances (VRFs) information (replaces the old advanced monitoring function)
 
-### Networking Tools (Connectivity Testing)
-
-- `ping`: Execute ping from devices to test connectivity
-- `traceroute`: Execute traceroute from devices for path analysis
 
 ### Management Tools (State-Modifying Commands)
 
@@ -342,24 +338,7 @@ run_show_commands(
 )
 ```
 
-#### Networking Tools
 
-**Connectivity Testing:**
-```bash
-# Ping from a device
-ping(destination="8.8.8.8", device_name="R1")
-
-# Ping with custom parameters
-ping(
-    destination="192.168.1.1",
-    device_name="R1",
-    count=10,
-    timeout=5
-)
-
-# Traceroute from a device
-traceroute(destination="google.com", device_name="R2")
-```
 
 #### Network Management
 
@@ -652,21 +631,7 @@ send_config_commands(
 )
 ```
 
-#### Networking Tools Filtering
-```bash
-# Ping from specific device
-ping(
-    destination="8.8.8.8",
-    device_name="R1",
-    filters={"hostname": "R1"}
-)
 
-# Traceroute from core routers
-traceroute(
-    destination="google.com",
-    filters={"group": "core_routers"}
-)
-```
 
 ### Filter Logic
 
@@ -1005,10 +970,9 @@ pytest tests/test_inventory.py
 To add new tools:
 
 1. Create a new module in `src/nornir_mcp/tools/` or add to existing modules:
-     - `monitoring.py` for read-only commands (including detailed network state queries)
-     - `networking.py` for connectivity testing tools
-     - `management.py` for state-modifying commands
-     - `inventory.py` for inventory-related operations
+      - `monitoring.py` for read-only commands (including detailed network state queries)
+      - `management.py` for state-modifying commands
+      - `inventory.py` for inventory-related operations
 2. Implement the tool using the `@mcp.tool()` decorator with a standard `filters` parameter of type `DeviceFilters`
 3. Leverage the `NornirRunner` service for standardized execution:
 
@@ -1025,6 +989,26 @@ To add new tools:
     ```
 
 4. Add tests in the `tests/` directory
+
+### Architecture Patterns
+
+The codebase embraces domain-appropriate patterns:
+- **NAPALM operations**: Use `napalm_getter` helper for structured data retrieval
+- **Netmiko operations**: Use direct `runner.execute()` for command execution
+- **Inventory operations**: Use direct `get_nr() + apply_filters()` for metadata queries
+
+### Import Centralization
+
+Nornir task imports are centralized in `src/nornir_mcp/utils/tasks.py`:
+- All tool modules import from the centralized location instead of direct Nornir imports
+- Makes Nornir version upgrades easier and reduces import scattering
+- Maintains type safety and IDE support
+
+### Helper Functions
+
+Reusable helper functions in `src/nornir_mcp/utils/helpers.py`:
+- `normalize_device_filters()`: Consistent device filter normalization across tools
+- `napalm_getter()`: Standardized NAPALM getter execution pattern
 
 ### Adding Validation Models
 
