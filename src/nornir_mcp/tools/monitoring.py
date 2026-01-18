@@ -1,11 +1,16 @@
 """Operational Tools - Read-only commands for network devices."""
 
+import logging
+
 from nornir_napalm.plugins.tasks import napalm_get
 from nornir_netmiko.tasks import netmiko_send_command
 
 from ..application import mcp
 from ..models import DeviceFilters
 from ..services.runner import runner
+from ..utils.security import CommandValidator
+
+logger = logging.getLogger(__name__)
 
 # --- Tools ---
 
@@ -155,6 +160,19 @@ async def run_show_commands(
     Returns:
         Dictionary mapping command -> host -> raw output
     """
+    # Initialize command validator to prevent dangerous commands
+    validator = CommandValidator()
+
+    # Validate each command before execution
+    for cmd in commands:
+        validation_error = validator.validate(cmd)
+        if validation_error:
+            logger.warning(f"Command validation failed for '{cmd}': {validation_error}")
+            return {
+                "error": True,
+                "validation_error": validation_error,
+                "failed_command": cmd,
+            }
 
     results = {}
     for cmd in commands:

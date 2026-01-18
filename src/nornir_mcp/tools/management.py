@@ -1,5 +1,7 @@
 """Configuration Tools - Tools that modify device state."""
 
+import logging
+
 from nornir_napalm.plugins.tasks import napalm_get
 from nornir_netmiko.tasks import netmiko_file_transfer, netmiko_send_config
 
@@ -7,6 +9,9 @@ from ..application import mcp
 from ..models import DeviceFilters
 from ..services.runner import runner
 from ..utils.config import ensure_backup_directory, write_config_to_file
+from ..utils.security import CommandValidator
+
+logger = logging.getLogger(__name__)
 
 
 @mcp.tool()
@@ -25,6 +30,20 @@ async def send_config_commands(
     """
     if not commands:
         raise ValueError("Command list cannot be empty")
+
+    # Initialize command validator to prevent dangerous commands
+    validator = CommandValidator()
+
+    # Validate each command before execution
+    for cmd in commands:
+        validation_error = validator.validate(cmd)
+        if validation_error:
+            logger.warning(f"Command validation failed for '{cmd}': {validation_error}")
+            return {
+                "error": True,
+                "validation_error": validation_error,
+                "failed_command": cmd,
+            }
 
     return await runner.execute(
         task=netmiko_send_config,

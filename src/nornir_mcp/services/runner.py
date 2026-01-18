@@ -31,19 +31,22 @@ class NornirRunner:
         """
         # 1. Setup & Filter
         nr = get_nr()
-        if filters is None:
-            filters = DeviceFilters()
-
-        try:
-            nr = apply_filters(nr, filters)
-        except ValueError as e:
-            return {"error": str(e)}
+        if filters is not None:
+            try:
+                nr = apply_filters(nr, filters)
+            except ValueError as e:
+                return {"error": str(e)}
+        # else: no filters provided, use entire inventory (default behavior)
 
         # 2. Execute in Thread (Non-blocking)
         result = await asyncio.to_thread(nr.run, task=task, **task_kwargs)
 
         # 3. Standardize Output (Simple extraction)
         return format_results(result)
+
+    def get_nr(self):
+        """Get a fresh Nornir instance for direct use."""
+        return get_nr()
 
 
 # Singleton instance for easy import

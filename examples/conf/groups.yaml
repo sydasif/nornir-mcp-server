@@ -1,0 +1,10 @@
+---
+# Sample groups configuration file
+
+cisco_ios:
+  platform: ios
+  username: cisco
+  password: cisco
+  data:
+    site: main_office
+    region: us_west

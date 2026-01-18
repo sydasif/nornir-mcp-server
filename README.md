@@ -2,15 +2,22 @@
 
 An MCP (Model Context Protocol) server built with **FastMCP** that exposes Nornir automation capabilities to Claude, enabling natural language interaction with network infrastructure. This server combines NAPALM's standardized getters with Netmiko's flexible command execution for comprehensive network management.
 
+The server provides **26 tools** organized by intent: 16 monitoring tools, 6 management tools, 2 inventory tools, and 2 networking tools.
+
 ## Features
 
 - **Network Inventory Tools**: List devices, query groups, filter by attributes
-- **Monitoring Tools**: Read-only commands for network state retrieval (facts, interfaces with IP addresses, BGP, LLDP, configs, ARP/MAC tables, routing tables, users, VLANs)
+- **Monitoring Tools**: Read-only commands for network state retrieval (facts, interfaces, BGP, LLDP, configs, ARP/MAC tables, routing tables, users, VLANs)
+- **Advanced Monitoring Tools**: Detailed BGP neighbors, LLDP neighbors, network instances (VRFs)
+- **Networking Tools**: Ping and traceroute capabilities for connectivity testing
 - **Management Tools**: State-modifying commands for network device management (config commands, backups, file transfers)
+- **Validation & Security**: Command validation with configurable blacklists, comprehensive input validation
+- **MCP Ecosystem**: Prompts system for guided troubleshooting workflows, resources for topology and command reference
 - **Service-Intent Architecture**: Clean separation between monitoring (read) and management (write) operations
 - **Device Filtering**: Supports hostname, group, attribute, and pattern-based filtering
 - **Structured Output**: Standardized result formatting with error handling
-- **Security Focused**: Sensitive information sanitization and intent-based access controls
+- **Security Focused**: Sensitive information sanitization, command validation, and intent-based access controls
+- **Production Ready**: Docker containerization, comprehensive configuration examples
 
 ## Prerequisites
 
@@ -39,77 +46,94 @@ pip install git+https://github.com/sydasif/nornir-stack.git
 
 ## Configuration
 
+The server looks for a `config.yaml` file in the current working directory. No environment variables are required.
+
+### Quick Start with Examples
+
+For immediate testing, copy the example configuration files:
+
+```bash
+# Copy example configuration files
+cp examples/conf/* .
+
+# Or use the provided config.yaml directly
+# (already includes references to examples/conf/ files)
+```
+
+### Configuration Structure
+
 Create a `config.yaml` file with your Nornir configuration:
 
 ```yaml
 inventory:
   plugin: SimpleInventory
   options:
-    host_file: "inventory/hosts.yaml"
-    group_file: "inventory/groups.yaml"
+    host_file: "examples/conf/hosts.yaml"
+    group_file: "examples/conf/groups.yaml"
+    defaults_file: "examples/conf/defaults.yaml"
 
 runner:
   plugin: threaded
   options:
-    num_workers: 10
+    num_workers: 100
 
 logging:
-  enabled: true
-  level: INFO
-  log_file: "nornir.log"
+  enabled: false
 ```
 
 ### Example Inventory Files
 
-**inventory/hosts.yaml**:
+**examples/conf/hosts.yaml**:
 
 ```yaml
-router-01:
-  hostname: 192.168.1.1
-  username: your_username
-  password: your_password
-  platform: cisco_ios
+R1:
+  hostname: 192.168.100.101
+  platform: ios
+  username: cisco
+  password: cisco
   groups:
-    - edge_routers
-    - production
+    - cisco_ios
   data:
-    site: datacenter-01
-    role: edge
-    vendor: cisco
+    role: core_router
 
-switch-01:
-  hostname: 192.168.1.2
-  username: your_username
-  password: your_password
-  platform: cisco_nxos
+R2:
+  hostname: 192.168.100.102
+  platform: ios
   groups:
-    - core_switches
-    - production
+    - cisco_ios
   data:
-    site: datacenter-01
-    role: core
+    role: core_router
+
+R3:
+  hostname: 192.168.100.103
+  platform: ios
+  groups:
+    - cisco_ios
+  data:
+    role: core_router
 ```
 
-**inventory/groups.yaml**:
+**examples/conf/groups.yaml**:
 
 ```yaml
-edge_routers:
-  username: group_default_username
-  password: group_default_password
+cisco_ios:
+  platform: ios
+  username: cisco
+  password: cisco
   data:
-    device_type: router
-    tier: edge
+    site: main_office
+    region: us_west
+```
 
-core_switches:
-  username: group_default_username
-  password: group_default_password
-  data:
-    device_type: switch
-    tier: core
+**examples/conf/defaults.yaml**:
 
-production:
-  data:
-    environment: production
+```yaml
+username: admin
+password: admin
+platform: ios
+data:
+  site: unknown
+  region: undefined
 ```
 
 ## Configuration
@@ -127,25 +151,41 @@ The server provides the following MCP tools organized by intent:
 - `list_devices`: Query network inventory with optional filters
 - `list_device_groups`: List all inventory groups and their member counts
 
-### Operational Tools (Read-Only Commands)
+### Monitoring Tools (Read-Only Commands)
 
 - `get_device_facts`: Basic device information (vendor, model, OS, uptime)
 - `get_interfaces_detailed`: Interface status, IP addresses, speed, errors
 - `get_bgp_detailed`: BGP neighbor state and address-family details merged per neighbor
 - `get_lldp_detailed`: Network topology via LLDP with summary and detailed information merged per interface
 - `get_device_configs`: Retrieve device configuration text (running, startup, or candidate)
-- `run_show_commands`: Execute show/display commands with optional parsing
+- `run_show_commands`: Execute show/display commands with optional parsing and security validation
 - `get_arp_table`: Retrieve the ARP table for network devices (IP-to-MAC mappings)
 - `get_mac_address_table`: Retrieve the MAC address table (CAM table) for switches
 - `get_routing_table`: Retrieve routing information from network devices (with optional VRF filtering)
 - `get_users`: Retrieve user account information from network devices
 - `get_vlans`: Retrieve VLAN configuration details from network devices (with optional VLAN ID filtering)
 
-### Configuration Tools (State-Modifying Commands)
+### Advanced Monitoring Tools (Detailed Network State)
 
-- `send_config_commands`: Send configuration commands to network devices via SSH (modifies device configuration)
+- `get_bgp_config`: Retrieve BGP configuration from devices
+- `get_bgp_neighbors_detail`: Obtain detailed BGP neighbor information
+- `get_lldp_neighbors_detail`: Obtain detailed LLDP neighbor information
+- `get_network_instances`: Retrieve network instances (VRFs) information
+
+### Networking Tools (Connectivity Testing)
+
+- `ping`: Execute ping from devices to test connectivity
+- `traceroute`: Execute traceroute from devices for path analysis
+
+### Management Tools (State-Modifying Commands)
+
+- `send_config_commands`: Send configuration commands to network devices via SSH with validation
 - `backup_device_configs`: Save device configuration to local disk
 - `file_copy`: Transfer files to/from network devices securely (supports SCP, SFTP, TFTP)
+
+### Validation & Security Tools
+
+- `validate_params`: Validate input parameters against Pydantic models with helpful error messages
 
 ## Usage
 
@@ -163,12 +203,28 @@ nornir-mcp
 fastmcp dev src/nornir_mcp/server.py
 ```
 
+### Docker Deployment
+
+```bash
+# Build and run with Docker Compose
+docker-compose up --build
+
+# Or run directly with Docker
+docker build -t nornir-mcp .
+docker run -v $(pwd)/examples/conf:/app/conf -p 8000:8000 nornir-mcp
+```
+
 ### Architecture
 
-The server implements a Version 2 Service-Intent Pattern with:
+The server implements a Service-Intent Pattern with:
 
-- **Services Layer**: `NornirRunner` service handles standardized execution, filtering, and result formatting
-- **Intent-Based Tools**: Organized into operational (read-only) and configuration (state-modifying) categories
+- **Application Layer** (`application.py`): Initializes FastMCP and manages Nornir configuration
+- **Server Entry Point** (`server.py`): Main entry point that registers tools, prompts, and resources
+- **Service Layer** (`services/runner.py`): `NornirRunner` handles standardized execution, filtering, and result formatting
+- **Tool Categories** (`tools/`): Organized by intent (monitoring, management, inventory, networking, advanced monitoring)
+- **Validation Layer** (`utils/validation_helpers.py`): Comprehensive input validation with helpful error messages
+- **Security Layer** (`utils/security.py`): Command validation with configurable blacklists
+- **MCP Ecosystem**: Prompts (`prompts.py`) and Resources (`resources.py`) for enhanced Claude integration
 - **Centralized Processing**: All tools leverage the same execution pipeline for consistency
 
 ### Claude Desktop Integration
@@ -228,13 +284,16 @@ Multiple filters are combined with AND logic. Claude will intelligently choose t
 
 ## Security Best Practices
 
-1. **Use read-only accounts** for network devices
-2. **Prefer SSH keys** over passwords
-3. **Set restrictive file permissions** on configuration files
-4. **Use environment variables** for credentials
-5. **Run in isolated management networks**
-6. **Enable audit logging** for compliance
-7. **Configuration backups are strictly sandboxed** to the local project directory to prevent path traversal vulnerabilities
+1. **Use read-only accounts** for network devices when possible
+2. **Prefer SSH keys** over passwords for authentication
+3. **Set restrictive file permissions** on configuration files (600 for YAML files)
+4. **Use environment variables** for credentials instead of hardcoded values
+5. **Run in isolated management networks** to limit exposure
+6. **Enable audit logging** for compliance and troubleshooting
+7. **Configuration backups are strictly sandboxed** to prevent path traversal vulnerabilities
+8. **Command validation** with configurable blacklists prevents dangerous operations
+9. **Input validation** ensures all parameters are properly validated before execution
+10. **Sensitive data sanitization** removes passwords and secrets from resource outputs
 
 ## Troubleshooting
 
@@ -270,23 +329,65 @@ pytest --cov=nornir_mcp
 To add new tools:
 
 1. Create a new module in `src/nornir_mcp/tools/` or add to existing modules:
-   - `monitoring.py` for read-only commands
-   - `management.py` for state-modifying commands
-   - `inventory.py` for inventory-related operations
+    - `monitoring.py` for read-only commands
+    - `advanced_monitoring.py` for detailed network state queries
+    - `networking.py` for connectivity testing tools
+    - `management.py` for state-modifying commands
+    - `inventory.py` for inventory-related operations
 2. Implement the tool using the `@mcp.tool()` decorator with a standard `filters` parameter of type `DeviceFilters`
 3. Leverage the `NornirRunner` service for standardized execution:
 
-   ```python
-   from ..services.runner import runner
+    ```python
+    from ..services.runner import runner
 
-   result = await runner.execute(
-       task=your_nornir_task,
-       filters=filters,
-       # Additional parameters as needed
-   )
-   ```
+    @mcp.tool()
+    async def new_tool(filters: DeviceFilters | None = None) -> dict:
+        return await runner.execute(
+            task=your_nornir_task,
+            filters=filters,
+            # Additional parameters as needed
+        )
+    ```
 
 4. Add tests in the `tests/` directory
+
+### Adding Validation Models
+
+To add new validation models for input validation:
+
+1. Add models to `src/nornir_mcp/models.py` following Pydantic conventions
+2. Register models in `MODEL_MAP` in `utils/validation_helpers.py`
+3. The `validate_params` tool will automatically support the new models
+
+### Adding Prompts
+
+To add troubleshooting prompts:
+
+1. Add prompt functions to `src/nornir_mcp/prompts.py` with names starting with `prompt_`
+2. Functions are automatically registered when the server starts
+
+### Adding Resources
+
+To add MCP resources:
+
+1. Add resource functions to `src/nornir_mcp/resources.py` with names starting with `resource_`
+2. Functions are automatically registered when the server starts
+
+### Command Security
+
+Configure command validation by creating a `conf/blacklist.yaml` file:
+
+```yaml
+exact_commands:
+  - reload
+  - erase startup-config
+keywords:
+  - erase
+  - format
+disallowed_patterns:
+  - ">"
+  - ";"
+```
 
 ## License
 
