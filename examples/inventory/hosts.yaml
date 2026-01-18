@@ -1,8 +1,8 @@
 router-edge-01:
   hostname: 192.168.1.1
   platform: cisco_ios
-  username: ${NETWORK_USER}
-  password: ${NETWORK_PASS}
+  username: admin
+  password: secure_password
   groups:
     - edge_routers
     - production
@@ -16,6 +16,8 @@ router-edge-01:
 switch-core-01:
   hostname: 192.168.2.1
   platform: cisco_nxos
+  username: admin
+  password: secure_password
   groups:
     - core_switches
     - production

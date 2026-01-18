@@ -1,7 +1,6 @@
 """Nornir MCP Application Context - Shared application components."""
 
 import logging
-import os
 from pathlib import Path
 
 from fastmcp import FastMCP
@@ -30,14 +29,12 @@ def get_nornir():
     Raises:
         ValueError: If no configuration file is found.
     """
-    config_file = os.getenv("NORNIR_CONFIG_FILE")
-    if not config_file:
-        # Try local config.yaml
-        config_file = Path.cwd() / "config.yaml"
-        if not config_file.exists():
-            raise ValueError(
-                "No Nornir config found. Set NORNIR_CONFIG_FILE or create config.yaml in current directory",
-            )
+    # Look for config file only in the current working directory
+    config_file = Path.cwd() / "config.yaml"
+    if not config_file.exists():
+        raise ValueError(
+            "No Nornir config found. Create config.yaml in current directory",
+        )
 
     return InitNornir(config_file=str(config_file))
 

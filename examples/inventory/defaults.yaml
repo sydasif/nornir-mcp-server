@@ -1,6 +1,6 @@
 ---
-username: ${NETWORK_USER}
-password: ${NETWORK_PASS}
+username: admin
+password: secure_password
 
 connection_options:
   napalm:

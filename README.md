@@ -66,8 +66,8 @@ logging:
 ```yaml
 router-01:
   hostname: 192.168.1.1
-  username: ${NETWORK_USER}
-  password: ${NETWORK_PASS}
+  username: your_username
+  password: your_password
   platform: cisco_ios
   groups:
     - edge_routers
@@ -79,8 +79,8 @@ router-01:
 
 switch-01:
   hostname: 192.168.1.2
-  username: ${NETWORK_USER}
-  password: ${NETWORK_PASS}
+  username: your_username
+  password: your_password
   platform: cisco_nxos
   groups:
     - core_switches
@@ -94,11 +94,15 @@ switch-01:
 
 ```yaml
 edge_routers:
+  username: group_default_username
+  password: group_default_password
   data:
     device_type: router
     tier: edge
 
 core_switches:
+  username: group_default_username
+  password: group_default_password
   data:
     device_type: switch
     tier: core
@@ -108,15 +112,9 @@ production:
     environment: production
 ```
 
-## Environment Variables
+## Configuration
 
-Set these environment variables:
-
-```bash
-export NORNIR_CONFIG_FILE=/absolute/path/to/config.yaml
-export NETWORK_USER=your_username
-export NETWORK_PASS=your_password
-```
+The server looks for a `config.yaml` file in the current working directory. No environment variables are required.
 
 ## Available Tools
 
@@ -150,12 +148,8 @@ The server provides the following MCP tools organized by intent:
 ### Running the Server
 
 ```bash
-# With environment variables set
-export NORNIR_CONFIG_FILE=/path/to/config.yaml
+# Ensure config.yaml exists in current directory and run
 nornir-mcp
-
-# Or with direct specification
-NORNIR_CONFIG_FILE=/path/to/config.yaml nornir-mcp
 ```
 
 ### Development Mode
@@ -182,12 +176,8 @@ Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
   "mcpServers": {
     "nornir-network": {
       "command": "nornir-mcp",
-      "args": [],
-      "env": {
-        "NORNIR_CONFIG_FILE": "/absolute/path/to/config.yaml",
-        "NETWORK_USER": "your-username",
-        "NETWORK_PASS": "your-password"
-      }
+      "workingDir": "/path/to/your/network/project",
+      "args": []
     }
   }
 }
@@ -246,7 +236,7 @@ Multiple filters are combined with AND logic. Claude will intelligently choose t
 
 ### Common Issues
 
-- **"No Nornir config found"**: Ensure `NORNIR_CONFIG_FILE` is set to an absolute path
+- **"No Nornir config found"**: Ensure `config.yaml` exists in the current working directory
 - **"Connection timeout"**: Verify network connectivity and SSH access
 - **"Authentication failed"**: Check credentials and device access
 - **"Platform not supported"**: Verify correct platform string in inventory
