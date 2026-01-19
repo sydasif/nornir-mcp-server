@@ -462,6 +462,7 @@ validate_params({}, "DeviceFilters")
 - `resource://inventory/hosts/{keyword}`: Filtered host search
 - `resource://inventory/groups`: Group information
 - `resource://cisco_ios_commands`: Command reference
+- `resource://napalm_getters`: NAPALM getters reference
 
 **Usage:**
 ```bash
@@ -953,6 +954,7 @@ Reference data accessible through Claude's resource system:
 
 #### Network Resources
 - **`resource://cisco_ios_commands`**: Cisco IOS command reference
+- **`resource://napalm_getters`**: NAPALM getters reference
 
 #### Using Resources
 ```bash

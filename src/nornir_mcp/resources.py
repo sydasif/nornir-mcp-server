@@ -17,6 +17,7 @@ Pre-registered resources:
 - resource://inventory/hosts -> list of inventory hosts
 - resource://inventory/groups -> list of inventory groups
 - resource://cisco_ios_commands -> parsed JSON from resources/cisco_ios_commands.json
+- resource://napalm_getters -> parsed JSON from resources/napalm_getters.json
 """
 
 from __future__ import annotations
@@ -44,6 +45,7 @@ RESOURCE_MAP: dict[str, object] = {
         "resource://inventory/groups/{keyword}",
     ],
     "resource_cisco_ios_commands": "resource://cisco_ios_commands",
+    "resource_napalm_getters": "resource://napalm_getters",
 }
 
 
@@ -138,6 +140,14 @@ def resource_cisco_ios_commands():
         return _load_json_resource("cisco_ios_commands.json")
     except FileNotFoundError:
         return {"error": "Cisco IOS commands resource file not found"}
+
+
+def resource_napalm_getters():
+    """Return parsed JSON from resources/napalm_getters.json"""
+    try:
+        return _load_json_resource("napalm_getters.json")
+    except FileNotFoundError:
+        return {"error": "NAPALM getters resource file not found"}
 
 
 def register_resources(mcp) -> None:
