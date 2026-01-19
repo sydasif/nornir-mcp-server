@@ -122,9 +122,14 @@ def resource_groups():
 
 
 def _load_json_resource(filename: str):
+    # Try multiple locations for resource files
+    # First, try relative to this file's location (for when resources are packaged with code)
     p = Path(__file__).resolve().parent / "resources" / filename
     if not p.exists():
-        # try workspace sibling (in case this file is in a package)
+        # Next, try relative to project root (one level up from this file's directory)
+        p = Path(__file__).resolve().parent.parent.parent / "resources" / filename
+    if not p.exists():
+        # Finally, try relative to current working directory (fallback)
         p = Path.cwd() / "resources" / filename
     if not p.exists():
         raise FileNotFoundError(f"Resource file not found: {p}")
