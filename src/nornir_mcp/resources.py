@@ -121,13 +121,25 @@ def resource_groups():
     return groups
 
 
+def _find_project_root():
+    """Find the project root by looking for pyproject.toml."""
+    current = Path(__file__).resolve().parent
+    while current.parent != current:
+        if (current / "pyproject.toml").exists():
+            return current
+        current = current.parent
+    # Fallback to assuming we're in src/nornir_mcp and project root is 3 levels up
+    return Path(__file__).resolve().parent.parent.parent
+
+
 def _load_json_resource(filename: str):
     # Try multiple locations for resource files
     # First, try relative to this file's location (for when resources are packaged with code)
     p = Path(__file__).resolve().parent / "resources" / filename
     if not p.exists():
-        # Next, try relative to project root (one level up from this file's directory)
-        p = Path(__file__).resolve().parent.parent.parent / "resources" / filename
+        # Next, try relative to project root
+        project_root = _find_project_root()
+        p = project_root / "resources" / filename
     if not p.exists():
         # Finally, try relative to current working directory (fallback)
         p = Path.cwd() / "resources" / filename
@@ -135,8 +147,6 @@ def _load_json_resource(filename: str):
         raise FileNotFoundError(f"Resource file not found: {p}")
     with p.open("r", encoding="utf-8") as fh:
         return json.load(fh)
-
-
 
 
 def resource_cisco_ios_commands():
