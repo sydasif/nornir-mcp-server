@@ -40,7 +40,7 @@ All code contributions MUST follow these established architectural patterns:
 The server follows a Service-Intent Pattern with the following structure:
 
 - **Application Layer** (`application.py`): Initializes FastMCP and manages Nornir configuration
-- **Server Entry Point** (`server.py`): Main entry point that registers tools, prompts, and resources
+- **Server Entry Point** (`server.py`): Main entry point that registers tools and prompts
 - **Service Layer** (`services/runner.py`): `NornirRunner` handles standardized execution, filtering, and result formatting
 - **Tool Categories** (`tools/`): Organized by intent
   - `monitoring.py`: Read-only commands (facts, interfaces, BGP, LLDP, configs, ARP/MAC tables, routing tables, users, VLANs, BGP configuration, network instances)
@@ -49,7 +49,7 @@ The server follows a Service-Intent Pattern with the following structure:
   - `inventory.py`: Inventory-related operations
 - **Validation Layer** (`utils/validation_helpers.py`): Comprehensive input validation with helpful error messages
 - **Security Layer** (`utils/security.py`): Command validation with configurable blacklists
-- **MCP Ecosystem** (`prompts.py`, `resources.py`): Enhanced Claude integration with troubleshooting workflows and reference data
+- **MCP Ecosystem** (`prompts.py`): Enhanced Claude integration with troubleshooting workflows
 - **Utility Modules** (`utils/`): Filtering, formatting, security, and configuration utilities
 - **Data Models** (`models.py`): Pydantic models for request/response handling
 
@@ -143,10 +143,7 @@ uv tool install git+https://github.com/sydasif/nornir-stack.git
 1. Add prompt functions to `src/nornir_mcp/prompts.py` with names starting with `prompt_`
 2. Prompts are automatically registered when the server starts
 
-### Adding Resources
 
-1. Add resource functions to `src/nornir_mcp/resources.py` with names starting with `resource_`
-2. Resources are automatically registered when the server starts
 
 ### Filtering
 
@@ -173,7 +170,7 @@ Additional environment variables:
 - SSH keys preferred over passwords
 - Command validation with configurable blacklists prevents dangerous operations
 - Input validation ensures all parameters are properly validated before execution
-- Sensitive data sanitization removes passwords and secrets from resource outputs
+- Sensitive data sanitization removes passwords and secrets from outputs
 
 ## Architecture Improvements (MANDATORY PATTERNS)
 

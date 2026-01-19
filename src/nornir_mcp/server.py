@@ -66,15 +66,6 @@ except Exception as e:
     logger.warning(f"Could not import or register prompts from prompts.py: {e}")
 
 
-# Register resources from resources.py so users can add resource_* functions
-try:
-    from .resources import register_resources
-
-    register_resources(mcp)
-except Exception as e:
-    logger.warning(f"Could not import or register resources from resources.py: {e}")
-
-
 def main():
     """Entry point for FastMCP."""
     mcp.run()

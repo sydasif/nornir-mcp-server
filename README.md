@@ -12,7 +12,7 @@ The server provides **11 tools** organized by technology: 6 NAPALM tools (struct
 
 - **Management Tools**: State-modifying commands for network device management (config commands, backups, file transfers)
 - **Validation & Security**: Command validation with configurable blacklists, comprehensive input validation
-- **MCP Ecosystem**: Prompts system for guided troubleshooting workflows, resources for command reference
+- **MCP Ecosystem**: Prompts system for guided troubleshooting workflows
 - **Service-Intent Architecture**: Clean separation between monitoring (read) and management (write) operations
 - **Device Filtering**: Supports hostname, group, attribute, and pattern-based filtering
 - **Structured Output**: Standardized result formatting with error handling
@@ -455,20 +455,7 @@ validate_params({}, "DeviceFilters")
 # They provide structured troubleshooting workflows
 ```
 
-#### Resources (Reference Data)
 
-**Available Resources:**
-- `resource://inventory/hosts`: Device inventory with metadata
-- `resource://inventory/hosts/{keyword}`: Filtered host search
-- `resource://inventory/groups`: Group information
-- `resource://cisco_ios_commands`: Command reference
-- `resource://napalm_getters`: NAPALM getters reference
-
-**Usage:**
-```bash
-# Access via Claude's resource system
-# These provide contextual information for troubleshooting
-```
 
 ### Advanced Configuration
 
@@ -526,12 +513,12 @@ runner:
 The server implements a Service-Intent Pattern with:
 
 - **Application Layer** (`application.py`): Initializes FastMCP and manages Nornir configuration
-- **Server Entry Point** (`server.py`): Main entry point that registers tools, prompts, and resources
+- **Server Entry Point** (`server.py`): Main entry point that registers tools and prompts
 - **Service Layer** (`services/runner.py`): `NornirRunner` handles standardized execution, filtering, and result formatting
 - **Tool Categories** (`tools/`): Organized by intent (monitoring, management, inventory, networking, advanced monitoring)
 - **Validation Layer** (`utils/validation_helpers.py`): Comprehensive input validation with helpful error messages
 - **Security Layer** (`utils/security.py`): Command validation with configurable blacklists
-- **MCP Ecosystem**: Prompts (`prompts.py`) and Resources (`resources.py`) for enhanced Claude integration
+- **MCP Ecosystem**: Prompts (`prompts.py`) for enhanced Claude integration
 - **Centralized Processing**: All tools leverage the same execution pipeline for consistency
 
 ### Claude Desktop Integration
@@ -1070,10 +1057,8 @@ To add troubleshooting prompts:
 
 ### Adding Resources
 
-To add MCP resources:
 
-1. Add resource functions to `src/nornir_mcp/resources.py` with names starting with `resource_`
-2. Functions are automatically registered when the server starts
+
 
 ### Command Security
 
@@ -1117,7 +1102,7 @@ uv run fastmcp dev src/nornir_mcp/server.py
 1. **New Tools**: Follow the service-intent pattern in appropriate tool module
 2. **New Platforms**: Add platform support in inventory configuration
 3. **New Prompts**: Add to `prompts.py` with `prompt_` prefix
-4. **New Resources**: Add to `resources.py` with `resource_` prefix
+
 5. **New Validation**: Add models to `models.py` and register in validation helpers
 
 ### Code Standards
@@ -1136,7 +1121,7 @@ uv run fastmcp dev src/nornir_mcp/server.py
 - **Technology separation**: NAPALM tools in monitoring.py, Netmiko tools in management.py
 - **Advanced validation** with Pydantic models
 - **Command security** with configurable blacklists
-- **MCP ecosystem** with prompts and resources
+- **MCP ecosystem** with prompts
 - **Docker containerization**
 - **Comprehensive documentation**
 

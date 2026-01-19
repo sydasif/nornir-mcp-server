@@ -26,7 +26,7 @@ build-backend = "setuptools.build_meta"
 where = ["src"]
 
 [tool.setuptools.package-data]
-nornir_mcp = ["resources/*"]
+
 
 [dependency-groups]
 dev = ["ruff>=0.14.11"]
