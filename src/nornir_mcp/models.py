@@ -60,12 +60,3 @@ class NetworkInstancesModel(DeviceNameModel):
     name: str = Field(default="")
 
 
-class TracerouteHop(BaseModel):
-    rtt: float
-    ip_address: str
-    host_name: str | None = None
-
-
-class TracerouteResultModel(BaseModel):
-    success: dict[str, TracerouteHop] | None = None
-    error: str | None = None
