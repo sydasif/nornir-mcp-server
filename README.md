@@ -12,7 +12,7 @@ The server provides **11 tools** organized by technology: 6 NAPALM tools (struct
 
 - **Management Tools**: State-modifying commands for network device management (config commands, backups, file transfers)
 - **Validation & Security**: Command validation with configurable blacklists, comprehensive input validation
-- **MCP Ecosystem**: Prompts system for guided troubleshooting workflows, resources for topology and command reference
+- **MCP Ecosystem**: Prompts system for guided troubleshooting workflows, resources for command reference
 - **Service-Intent Architecture**: Clean separation between monitoring (read) and management (write) operations
 - **Device Filtering**: Supports hostname, group, attribute, and pattern-based filtering
 - **Structured Output**: Standardized result formatting with error handling
@@ -461,7 +461,6 @@ validate_params({}, "DeviceFilters")
 - `resource://inventory/hosts`: Device inventory with metadata
 - `resource://inventory/hosts/{keyword}`: Filtered host search
 - `resource://inventory/groups`: Group information
-- `resource://topology`: Network topology data
 - `resource://cisco_ios_commands`: Command reference
 
 **Usage:**
@@ -595,7 +594,7 @@ For Linux/Windows, the config file is typically at:
 **Accessing Resources:**
 ```bash
 # Reference data
-"Show me the network topology"
+"Show me the device inventory"
 "What commands are available for Cisco IOS devices?"
 "List all hosts in the inventory"
 "Find devices with 'core' in their name"
@@ -953,13 +952,12 @@ Reference data accessible through Claude's resource system:
 - **`resource://inventory/groups`**: Group membership information
 
 #### Network Resources
-- **`resource://topology`**: Network topology visualization
 - **`resource://cisco_ios_commands`**: Cisco IOS command reference
 
 #### Using Resources
 ```bash
 # Access reference data
-"Show me the network topology"
+"Show me the device inventory"
 "What commands are available for Cisco devices?"
 "Find all core routers in the inventory"
 "Show devices with 'edge' in their name"

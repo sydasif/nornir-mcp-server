@@ -16,7 +16,6 @@ Registration rules:
 Pre-registered resources:
 - resource://inventory/hosts -> list of inventory hosts
 - resource://inventory/groups -> list of inventory groups
-- resource://topology -> parsed JSON from resources/topology.json
 - resource://cisco_ios_commands -> parsed JSON from resources/cisco_ios_commands.json
 """
 
@@ -44,7 +43,6 @@ RESOURCE_MAP: dict[str, object] = {
         "resource://inventory/groups",
         "resource://inventory/groups/{keyword}",
     ],
-    "resource_topology": "resource://topology",
     "resource_cisco_ios_commands": "resource://cisco_ios_commands",
 }
 
@@ -132,12 +130,6 @@ def _load_json_resource(filename: str):
         return json.load(fh)
 
 
-def resource_topology():
-    """Return parsed JSON from resources/topology.json"""
-    try:
-        return _load_json_resource("topology.json")
-    except FileNotFoundError:
-        return {"error": "Topology resource file not found"}
 
 
 def resource_cisco_ios_commands():

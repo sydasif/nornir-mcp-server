@@ -49,7 +49,7 @@ The server follows a Service-Intent Pattern with the following structure:
   - `inventory.py`: Inventory-related operations
 - **Validation Layer** (`utils/validation_helpers.py`): Comprehensive input validation with helpful error messages
 - **Security Layer** (`utils/security.py`): Command validation with configurable blacklists
-- **MCP Ecosystem** (`prompts.py`, `resources.py`): Enhanced Claude integration with troubleshooting workflows and topology data
+- **MCP Ecosystem** (`prompts.py`, `resources.py`): Enhanced Claude integration with troubleshooting workflows and reference data
 - **Utility Modules** (`utils/`): Filtering, formatting, security, and configuration utilities
 - **Data Models** (`models.py`): Pydantic models for request/response handling
 
