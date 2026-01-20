@@ -58,5 +58,3 @@ class LLDPNeighborsDetailModel(DeviceNameModel):
 
 class NetworkInstancesModel(DeviceNameModel):
     name: str = Field(default="")
-
-

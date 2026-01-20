@@ -86,7 +86,6 @@ def register_prompts(mcp) -> None:
 
     The registration uses `mcp.prompt()(callable)` for each matching object.
     """
-    import inspect
 
     # Iterate over module globals and register functions prefixed with `prompt_`
     for name, obj in list(globals().items()):
