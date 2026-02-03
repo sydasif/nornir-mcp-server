@@ -10,7 +10,7 @@ from nornir import InitNornir
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    handlers=[logging.FileHandler(".mcp.log"), logging.StreamHandler()],
+    handlers=[logging.FileHandler("nornir_mcp.log"), logging.StreamHandler()],
 )
 
 logger = logging.getLogger("nornir-mcp")

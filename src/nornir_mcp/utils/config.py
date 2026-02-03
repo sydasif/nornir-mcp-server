@@ -16,6 +16,9 @@ def ensure_backup_directory(backup_dir: str) -> Path:
     Raises:
         ValueError: If the backup directory path attempts to traverse outside the safe root
     """
+    # Sanitize the input to prevent path traversal
+    backup_dir = str(backup_dir).replace("..", "").replace("/", "_").replace("\\", "_")
+
     # 1. Resolve absolute paths
     target_path = Path(backup_dir).resolve()
     # 2. Define strict root (e.g., current directory)

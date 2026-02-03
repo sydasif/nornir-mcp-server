@@ -108,43 +108,8 @@ def make_validate_params(nr_mgr):
                 "correct_example": _example_from_model(model_cls),
             }
         except ValidationError as ve:
-            missing_required = []
-            if isinstance(raw, dict):
-                # pydantic v2: model_fields -> FieldInfo with is_required
-                fields = getattr(model_cls, "model_fields", None)
-                if fields is None:
-                    fields = getattr(model_cls, "__fields__", {})
-                for fname, field in fields.items():
-                    is_required = getattr(field, "is_required", None)
-                    if is_required is None:
-                        is_required = getattr(field, "required", False)
-                    if is_required and fname not in raw:
-                        missing_required.append(fname)
-
-            # Build a helpful suggested_payload when client used common alternate keys
-            suggested_payload = None
-            if isinstance(raw, dict):
-                if "name" in raw and "device_name" in missing_required:
-                    suggested_payload = {"device_name": raw.get("name")}
-                elif "hostname" in raw and "device_name" in missing_required:
-                    try:
-                        hosts = nr_mgr.list_hosts()
-                        match = next(
-                            (
-                                h
-                                for h in hosts
-                                if h.get("hostname") == raw.get("hostname")
-                            ),
-                            None,
-                        )
-                        if match:
-                            suggested_payload = {"device_name": match.get("name")}
-                        else:
-                            suggested_payload = {
-                                "device_name": f"<name from list_all_hosts for hostname {raw.get('hostname')}>"
-                            }
-                    except Exception:
-                        suggested_payload = {"device_name": "<inventory_name>"}
+            missing_required = _get_missing_required_fields(model_cls, raw)
+            suggested_payload = _build_suggested_payload(raw, missing_required, nr_mgr)
 
             formatted = _format_validation_error(ve)
             if "device_name" in missing_required:
@@ -163,4 +128,49 @@ def make_validate_params(nr_mgr):
                 "note": "If you provided 'name' or 'hostname', map it to the inventory 'name' and send it as 'device_name'. Call list_all_hosts() to discover inventory names.",
             }
 
-    return validate_params
+
+def _get_missing_required_fields(model_cls, raw):
+    """Helper function to extract missing required fields from validation error."""
+    missing_required = []
+    if isinstance(raw, dict):
+        # pydantic v2: model_fields -> FieldInfo with is_required
+        fields = getattr(model_cls, "model_fields", None)
+        if fields is None:
+            # fallback for older pydantic versions
+            fields = getattr(model_cls, "__fields__", {})
+        for fname, field in fields.items():
+            is_required = getattr(field, "is_required", None)
+            if is_required is None:
+                # pydantic v1 compatibility: Field has 'required'
+                is_required = getattr(field, "required", False)
+            if is_required and fname not in raw:
+                missing_required.append(fname)
+    return missing_required
+
+
+def _build_suggested_payload(raw, missing_required, nr_mgr):
+    """Helper function to build suggested payload for common validation errors."""
+    suggested_payload = None
+    if isinstance(raw, dict):
+        if "name" in raw and "device_name" in missing_required:
+            suggested_payload = {"device_name": raw.get("name")}
+        elif "hostname" in raw and "device_name" in missing_required:
+            try:
+                hosts = nr_mgr.list_hosts()
+                match = next(
+                    (
+                        h
+                        for h in hosts
+                        if h.get("hostname") == raw.get("hostname")
+                    ),
+                    None,
+                )
+                if match:
+                    suggested_payload = {"device_name": match.get("name")}
+                else:
+                    suggested_payload = {
+                        "device_name": f"<name from list_all_hosts for hostname {raw.get('hostname')}>"
+                    }
+            except Exception:
+                suggested_payload = {"device_name": "<inventory_name>"}
+    return suggested_payload

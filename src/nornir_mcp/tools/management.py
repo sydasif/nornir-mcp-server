@@ -37,7 +37,7 @@ async def send_config_commands(
     # Initialize command validator to prevent dangerous commands
     validator = CommandValidator()
 
-    # Validate each command before execution
+    # Validate ALL commands before execution
     for cmd in commands:
         validation_error = validator.validate(cmd)
         if validation_error:
@@ -153,7 +153,7 @@ async def run_show_commands(
     # Initialize command validator to prevent dangerous commands
     validator = CommandValidator()
 
-    # Validate each command before execution
+    # Validate ALL commands before execution
     for cmd in commands:
         validation_error = validator.validate(cmd)
         if validation_error:

@@ -27,7 +27,7 @@ class CommandValidator:
         }
         if not file_path.exists():
             logger.warning(
-                f"Blacklist file not found at '{file_path}'. Command validation will be limited."
+                "Blacklist file not found. Command validation will be limited."
             )
             return default_blacklist
         try:

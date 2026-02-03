@@ -96,10 +96,10 @@ def register_prompts(mcp) -> None:
         try:
             # Use the mcp.prompt decorator to register the prompt function
             mcp.prompt()(obj)
-        except Exception:
+        except Exception as e:
             # Keep things robust: log to stdout if registration fails
             # We avoid importing the server logger to prevent circular imports.
             import traceback
 
-            print(f"Failed to register prompt '{name}':")
+            print(f"Failed to register prompt '{name}': {str(e)}")
             traceback.print_exc()

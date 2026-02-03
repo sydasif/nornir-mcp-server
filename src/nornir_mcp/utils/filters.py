@@ -45,8 +45,7 @@ def apply_filters(nr: Nornir, filters: DeviceFilters) -> Nornir:
     if len(nr.inventory.hosts) == 0:
         raise ValueError(
             f"No devices matched the provided filters. "
-            f"Original inventory: {original_count} devices. "
-            f"Filters applied: {filters.model_dump(exclude_none=True)}"
+            f"Original inventory had {original_count} devices."
         )
 
     return nr
