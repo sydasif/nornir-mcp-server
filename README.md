@@ -207,6 +207,10 @@ LOG_LEVEL=DEBUG nornir-mcp
 fastmcp dev src/nornir_mcp/server.py
 ```
 
+Note: `fastmcp dev src/nornir_mcp/server.py` can fail with relative-import errors
+when loading a file path directly. If you hit that, use `nornir-mcp` for local
+development instead.
+
 #### Docker Deployment
 ```bash
 # Build and run with Docker Compose (recommended)
@@ -708,6 +712,11 @@ Claude automatically translates natural language to appropriate filters:
 
 ### Common Issues & Solutions
 
+#### Dependency Issues
+- **"redis typing error / TypeError on import"**
+  - The server pins `redis<5` for compatibility with FastMCP/docket
+  - Run `uv sync` to ensure the correct version is installed
+
 #### Configuration Issues
 - **"No Nornir config found"**
   - Ensure `config.yaml` exists in current working directory
@@ -744,6 +753,10 @@ Claude automatically translates natural language to appropriate filters:
   - Check device OS version compatibility
 
 #### Tool-Specific Issues
+- **"fastmcp dev ... attempted relative import with no known parent package"**
+  - Run `nornir-mcp` instead of `fastmcp dev` when using a file path
+  - The FastMCP file loader does not treat the module as a package
+
 - **"Command blocked by security policy"**
   - Command contains blacklisted keywords
   - Modify `conf/blacklist.yaml` or use different command
@@ -1095,6 +1108,11 @@ uv run ruff format .
 
 # Development server
 uv run fastmcp dev src/nornir_mcp/server.py
+```
+
+If `fastmcp dev` fails with a relative import error, run:
+```bash
+uv run nornir-mcp
 ```
 
 ### Adding Features
