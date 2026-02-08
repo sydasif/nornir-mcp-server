@@ -1,9 +1,9 @@
 """Validation helpers and factory functions."""
 
 import logging
-from typing import Any, get_origin
+from typing import Any, Protocol, get_origin
 
-from pydantic import ValidationError
+from pydantic import BaseModel, ValidationError
 
 from ..models import (
     BGPConfigModel,
@@ -18,7 +18,7 @@ from ..models import (
 logger = logging.getLogger("nornir-mcp.validation")
 
 # Model map (input + result models)
-MODEL_MAP = {
+MODEL_MAP: dict[str, type[BaseModel]] = {
     "DeviceNameModel": DeviceNameModel,
     "GetConfigModel": GetConfigModel,
     "SendCommandModel": SendCommandModel,
@@ -29,7 +29,7 @@ MODEL_MAP = {
 }
 
 
-def _example_from_model(cls) -> dict[str, Any]:
+def _example_from_model(cls: type[BaseModel]) -> dict[str, Any]:
     example: dict[str, Any] = {}
     # Pydantic v2: use model_fields and FieldInfo.is_required
     fields = getattr(cls, "model_fields", None)
@@ -81,14 +81,21 @@ def _format_validation_error(exc: ValidationError) -> dict[str, Any]:
     }
 
 
-def make_validate_params(nr_mgr):
+class HostLister(Protocol):
+    def list_hosts(self) -> list[dict[str, Any]]:
+        ...
+
+
+def make_validate_params(nr_mgr: HostLister):
     """Return an async validate_params function bound to the provided nr_mgr.
 
     This avoids circular imports: server creates nr_mgr then registers
     mcp.tool()(make_validate_params(nr_mgr)).
     """
 
-    async def validate_params(raw: dict[str, Any], model_name: str = "DeviceNameModel"):
+    async def validate_params(
+        raw: dict[str, Any], model_name: str = "DeviceNameModel"
+    ) -> dict[str, Any]:
         logger.info(f"[Tool] validate_params called for model {model_name}")
         model_cls = MODEL_MAP.get(model_name)
         if model_cls is None:
@@ -129,7 +136,9 @@ def make_validate_params(nr_mgr):
             }
 
 
-def _get_missing_required_fields(model_cls, raw):
+def _get_missing_required_fields(
+    model_cls: type[BaseModel], raw: dict[str, Any]
+) -> list[str]:
     """Helper function to extract missing required fields from validation error."""
     missing_required = []
     if isinstance(raw, dict):
@@ -148,7 +157,9 @@ def _get_missing_required_fields(model_cls, raw):
     return missing_required
 
 
-def _build_suggested_payload(raw, missing_required, nr_mgr):
+def _build_suggested_payload(
+    raw: dict[str, Any], missing_required: list[str], nr_mgr: HostLister
+) -> dict[str, Any] | None:
     """Helper function to build suggested payload for common validation errors."""
     suggested_payload = None
     if isinstance(raw, dict):
@@ -158,11 +169,7 @@ def _build_suggested_payload(raw, missing_required, nr_mgr):
             try:
                 hosts = nr_mgr.list_hosts()
                 match = next(
-                    (
-                        h
-                        for h in hosts
-                        if h.get("hostname") == raw.get("hostname")
-                    ),
+                    (h for h in hosts if h.get("hostname") == raw.get("hostname")),
                     None,
                 )
                 if match:

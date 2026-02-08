@@ -1,5 +1,7 @@
 """Nornir MCP Server inventory tools."""
 
+from typing import Any
+
 from ..application import get_nr, mcp
 from ..models import DeviceFilters
 from ..utils.filters import apply_filters
@@ -10,7 +12,7 @@ async def list_network_devices(
     query_type: str = "all",
     details: bool = False,
     filters: DeviceFilters | None = None,
-) -> dict:
+) -> dict[str, Any]:
     """List network devices and inventory information.
 
     Consolidated tool that provides flexible access to inventory data including
@@ -29,7 +31,7 @@ async def list_network_devices(
         filters = DeviceFilters()
     nr = apply_filters(nr, filters)
 
-    result = {}
+    result: dict[str, Any] = {}
 
     if query_type in ("devices", "all"):
         devices = []

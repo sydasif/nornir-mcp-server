@@ -4,6 +4,7 @@ import asyncio
 from collections.abc import Callable
 from typing import Any
 
+from nornir.core import Nornir
 from nornir.core.task import Result
 
 from ..application import get_nr
@@ -20,7 +21,7 @@ class NornirRunner:
         task: Callable[..., Result],
         filters: DeviceFilters | None = None,
         **task_kwargs: Any,
-    ) -> dict:
+    ) -> dict[str, Any]:
         """
         Execute a Nornir task and return raw results.
 
@@ -44,7 +45,7 @@ class NornirRunner:
         # 3. Standardize Output (Simple extraction)
         return format_results(result)
 
-    def get_nr(self):
+    def get_nr(self) -> Nornir:
         """Get a fresh Nornir instance for direct use."""
         return get_nr()
 

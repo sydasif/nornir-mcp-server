@@ -49,3 +49,6 @@ def apply_filters(nr: Nornir, filters: DeviceFilters) -> Nornir:
         )
 
     return nr
+
+
+__all__: list[str] = ["apply_filters"]

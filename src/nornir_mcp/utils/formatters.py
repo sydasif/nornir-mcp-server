@@ -3,10 +3,12 @@
 Contains functions to format Nornir results into standard response formats.
 """
 
+from typing import Any
+
 from nornir.core.task import AggregatedResult
 
 
-def format_results(result: AggregatedResult) -> dict:
+def format_results(result: AggregatedResult) -> dict[str, Any]:
     """Simple extraction of Nornir results.
 
     Returns a dictionary mapping hostname to the raw result data.
@@ -18,7 +20,7 @@ def format_results(result: AggregatedResult) -> dict:
     Returns:
         Dictionary {hostname: raw_result_data | error_dict}
     """
-    formatted = {}
+    formatted: dict[str, Any] = {}
 
     for host, multi_result in result.items():
         if multi_result.failed:

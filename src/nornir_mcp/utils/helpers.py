@@ -1,6 +1,6 @@
 """Helper functions for simplifying tool implementations."""
 
-from nornir_napalm.plugins.tasks import napalm_get
+from typing import Any, Mapping
 
 from ..models import DeviceFilters
 from ..services.runner import runner
@@ -34,8 +34,8 @@ async def napalm_getter(
     getters: list[str],
     filters: DeviceFilters | None = None,
     device_name: str | None = None,
-    getters_options: dict | None = None,
-) -> dict:
+    getters_options: Mapping[str, Any] | None = None,
+) -> dict[str, Any]:
     """Simplified wrapper for NAPALM getters.
 
     Args:
@@ -47,6 +47,8 @@ async def napalm_getter(
     Returns:
         Raw NAPALM results dictionary per host
     """
+    from nornir_napalm.plugins.tasks import napalm_get
+
     effective_filters = normalize_device_filters(filters, device_name)
 
     if getters_options:

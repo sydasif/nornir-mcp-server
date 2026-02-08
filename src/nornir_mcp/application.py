@@ -1,10 +1,27 @@
 """Nornir MCP Application Context - Shared application components."""
 
 import logging
+import logging.handlers
 from pathlib import Path
 
 from fastmcp import FastMCP
 from nornir import InitNornir
+from nornir.core import Nornir
+
+class _NullSysLogHandler(logging.Handler):
+    def emit(self, record: logging.LogRecord) -> None:
+        return None
+
+
+def _disable_syslog_handler_if_unavailable() -> None:
+    try:
+        handler = logging.handlers.SysLogHandler()
+        handler.close()
+    except Exception:
+        logging.handlers.SysLogHandler = _NullSysLogHandler  # type: ignore[assignment]
+
+
+_disable_syslog_handler_if_unavailable()
 
 # Configure logging
 logging.basicConfig(
@@ -20,7 +37,7 @@ mcp = FastMCP("Nornir Network Automation")
 
 
 # Initialize Nornir from config
-def get_nornir():
+def get_nornir() -> Nornir:
     """Initialize and return a Nornir instance from configuration file.
 
     Returns:
@@ -39,7 +56,7 @@ def get_nornir():
     return InitNornir(config_file=str(config_file))
 
 
-def get_nr():
+def get_nr() -> Nornir:
     """Get a fresh Nornir instance for each request.
 
     Returns:

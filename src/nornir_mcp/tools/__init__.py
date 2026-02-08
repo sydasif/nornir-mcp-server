@@ -11,3 +11,5 @@ from . import (  # noqa: F401
     management,
     monitoring,
 )
+
+__all__: list[str] = ["inventory", "management", "monitoring"]

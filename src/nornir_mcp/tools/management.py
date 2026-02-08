@@ -1,6 +1,7 @@
 """Netmiko Tools - CLI commands and file operations for network devices."""
 
 import logging
+from typing import Any
 
 from ..application import mcp
 from ..models import DeviceFilters
@@ -21,7 +22,7 @@ logger = logging.getLogger(__name__)
 async def send_config_commands(
     commands: list[str],
     filters: DeviceFilters | None = None,
-) -> dict:
+) -> dict[str, Any]:
     """Send configuration commands to network devices.
 
     Args:
@@ -59,7 +60,7 @@ async def send_config_commands(
 async def backup_device_configs(
     filters: DeviceFilters | None = None,
     path: str = "./backups",
-) -> dict:
+) -> dict[str, Any]:
     """Save device configuration to the local disk.
 
     Args:
@@ -111,7 +112,7 @@ async def file_copy(
     direction: str = "scp",
     file_system: str | None = None,
     disable_md5: bool = False,
-) -> dict:
+) -> dict[str, Any]:
     """Transfer files to/from network devices securely.
 
     Args:
@@ -140,7 +141,7 @@ async def file_copy(
 async def run_show_commands(
     commands: list[str],
     filters: DeviceFilters | None = None,
-) -> dict:
+) -> dict[str, Any]:
     """Execute raw CLI show commands via SSH.
 
     Args:
@@ -164,7 +165,7 @@ async def run_show_commands(
                 "failed_command": cmd,
             }
 
-    results = {}
+    results: dict[str, Any] = {}
     for cmd in commands:
         results[cmd] = await runner.execute(
             task=netmiko_send_command,

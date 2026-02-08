@@ -9,6 +9,8 @@ expect from the LLM and should return a List[Message] (the same shape
 used by the MCP prompt decorators).
 """
 
+from typing import Any
+
 from mcp.server.fastmcp.prompts.base import Message
 
 
@@ -81,7 +83,7 @@ def prompt_troubleshoot_interface(
     ]
 
 
-def register_prompts(mcp) -> None:
+def register_prompts(mcp: Any) -> None:
     """Register all prompt_* callables in this module with the given MCP instance.
 
     The registration uses `mcp.prompt()(callable)` for each matching object.
@@ -96,10 +98,10 @@ def register_prompts(mcp) -> None:
         try:
             # Use the mcp.prompt decorator to register the prompt function
             mcp.prompt()(obj)
-        except Exception as e:
+        except Exception as exc:
             # Keep things robust: log to stdout if registration fails
             # We avoid importing the server logger to prevent circular imports.
             import traceback
 
-            print(f"Failed to register prompt '{name}': {str(e)}")
+            print(f"Failed to register prompt '{name}': {exc}")
             traceback.print_exc()

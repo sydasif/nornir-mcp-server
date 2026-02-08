@@ -4,7 +4,7 @@ from datetime import datetime
 from pathlib import Path
 
 
-def ensure_backup_directory(backup_dir: str) -> Path:
+def ensure_backup_directory(backup_dir: str | Path) -> Path:
     """Create backup directory if it doesn't exist.
 
     Args:
@@ -46,8 +46,5 @@ def write_config_to_file(hostname: str, content: str, folder: Path) -> str:
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     filename = f"{hostname}_{timestamp}.cfg"
     filepath = folder / filename
-
-    with open(filepath, "w", encoding="utf-8") as f:
-        f.write(content)
-
+    filepath.write_text(content, encoding="utf-8")
     return str(filepath)

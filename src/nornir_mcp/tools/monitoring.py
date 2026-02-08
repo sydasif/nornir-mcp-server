@@ -1,6 +1,7 @@
 """NAPALM Tools - Structured data retrieval from network devices."""
 
 import logging
+from typing import Any, Mapping
 
 from ..application import mcp
 from ..models import DeviceFilters
@@ -12,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 
 @mcp.tool()
-async def get_device_facts(filters: DeviceFilters | None = None) -> dict:
+async def get_device_facts(filters: DeviceFilters | None = None) -> dict[str, Any]:
     """Retrieve basic device information (Vendor, OS, Uptime).
 
     Args:
@@ -28,7 +29,7 @@ async def get_device_facts(filters: DeviceFilters | None = None) -> dict:
 async def get_device_configs(
     filters: DeviceFilters | None = None,
     source: str = "running",
-) -> dict:
+) -> dict[str, Any]:
     """Retrieve raw device configuration data.
 
     Args:
@@ -49,7 +50,7 @@ async def get_device_configs(
 async def get_bgp_neighbors(
     filters: DeviceFilters | None = None,
     device_name: str | None = None,
-) -> dict:
+) -> dict[str, Any]:
     """Get BGP neighbor information."""
     return await napalm_getter(
         getters=["bgp_neighbors"],
@@ -62,7 +63,7 @@ async def get_bgp_neighbors(
 async def get_interfaces(
     filters: DeviceFilters | None = None,
     device_name: str | None = None,
-) -> dict:
+) -> dict[str, Any]:
     """Get interface information."""
     return await napalm_getter(
         getters=["interfaces"],
@@ -75,7 +76,7 @@ async def get_interfaces(
 async def get_interfaces_ip(
     filters: DeviceFilters | None = None,
     device_name: str | None = None,
-) -> dict:
+) -> dict[str, Any]:
     """Get interface IP information."""
     return await napalm_getter(
         getters=["interfaces_ip"],
@@ -89,8 +90,8 @@ async def run_napalm_getter(
     getters: list[str],
     filters: DeviceFilters | None = None,
     device_name: str | None = None,
-    getters_options: dict | None = None,
-) -> dict:
+    getters_options: Mapping[str, Any] | None = None,
+) -> dict[str, Any]:
     """Execute one or more NAPALM getters on network devices.
 
     Args:

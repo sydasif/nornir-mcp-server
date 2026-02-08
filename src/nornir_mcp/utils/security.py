@@ -3,6 +3,7 @@
 import logging
 import re
 from pathlib import Path
+from typing import Any
 
 import yaml
 
@@ -12,7 +13,7 @@ logger = logging.getLogger(__name__)
 class CommandValidator:
     """Handles validation of commands against a configurable blacklist."""
 
-    def __init__(self, blacklist_file: Path | None = None):
+    def __init__(self, blacklist_file: Path | None = None) -> None:
         if blacklist_file is None:
             # Look for blacklist file in conf directory relative to current working directory
             blacklist_file = Path.cwd() / "conf" / "blacklist.yaml"
@@ -20,7 +21,7 @@ class CommandValidator:
         self.blacklist = self._load_blacklist(blacklist_file)
 
     def _load_blacklist(self, file_path: Path) -> dict[str, list[str]]:
-        default_blacklist = {
+        default_blacklist: dict[str, list[str]] = {
             "exact_commands": [],
             "keywords": [],
             "disallowed_patterns": [],
@@ -31,8 +32,8 @@ class CommandValidator:
             )
             return default_blacklist
         try:
-            with open(file_path) as f:
-                data = yaml.safe_load(f)
+            with open(file_path, encoding="utf-8") as handle:
+                data = yaml.safe_load(handle)
                 if data is None:
                     logger.warning(
                         f"Blacklist file '{file_path}' is empty. Using default restrictions."
@@ -40,21 +41,18 @@ class CommandValidator:
                     return default_blacklist
 
                 # Normalize keys to lowercase and ensure values are lists of lowercase strings
-                normalized_data = {}
-                for k, v in data.items():
-                    if isinstance(v, list):
-                        normalized_data[k.lower()] = [str(item).lower() for item in v]
-                    else:
-                        normalized_data[k.lower()] = [str(v).lower()]
+                normalized_data: dict[str, list[str]] = {}
+                for key, value in data.items():
+                    normalized_data[key.lower()] = _normalize_blacklist_value(value)
 
                 default_blacklist.update(normalized_data)
                 logger.info(
                     f"Command blacklist loaded successfully from '{file_path}'."
                 )
                 return default_blacklist
-        except (OSError, yaml.YAMLError) as e:
+        except (OSError, yaml.YAMLError) as exc:
             logger.error(
-                f"Failed to load or parse blacklist file '{file_path}': {e}",
+                f"Failed to load or parse blacklist file '{file_path}': {exc}",
                 exc_info=True,
             )
             return default_blacklist
@@ -81,3 +79,9 @@ class CommandValidator:
                 return f"Command contains blacklisted keyword: '{keyword}'"
 
         return None
+
+
+def _normalize_blacklist_value(value: Any) -> list[str]:
+    if isinstance(value, list):
+        return [str(item).lower() for item in value]
+    return [str(value).lower()]

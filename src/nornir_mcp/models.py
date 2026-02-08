@@ -58,3 +58,15 @@ class LLDPNeighborsDetailModel(DeviceNameModel):
 
 class NetworkInstancesModel(DeviceNameModel):
     name: str = Field(default="")
+
+
+__all__: list[str] = [
+    "BGPConfigModel",
+    "BGPNeighborsDetailModel",
+    "DeviceFilters",
+    "DeviceNameModel",
+    "GetConfigModel",
+    "LLDPNeighborsDetailModel",
+    "NetworkInstancesModel",
+    "SendCommandModel",
+]
