@@ -8,6 +8,7 @@ from fastmcp import FastMCP
 from nornir import InitNornir
 from nornir.core import Nornir
 
+
 class _NullSysLogHandler(logging.Handler):
     def emit(self, record: logging.LogRecord) -> None:
         return None

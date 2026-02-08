@@ -1,6 +1,7 @@
 """Helper functions for simplifying tool implementations."""
 
-from typing import Any, Mapping
+from collections.abc import Mapping
+from typing import Any
 
 from ..models import DeviceFilters
 from ..services.runner import runner

@@ -1,7 +1,8 @@
 """NAPALM Tools - Structured data retrieval from network devices."""
 
 import logging
-from typing import Any, Mapping
+from collections.abc import Mapping
+from typing import Any
 
 from ..application import mcp
 from ..models import DeviceFilters
