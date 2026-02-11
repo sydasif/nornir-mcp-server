@@ -25,17 +25,20 @@ def format_results(result: AggregatedResult) -> dict[str, Any]:
     formatted: dict[str, Any] = {}
 
     for host, multi_result in result.items():
-        if multi_result.failed:
-            # Return error details directly
+        if not multi_result:
+            formatted[host] = error_response(
+                "No results returned",
+                code="empty_result",
+            )
+        elif multi_result.failed:
+            exc = multi_result[0].exception
             formatted[host] = error_response(
                 "Task failed",
                 code="task_failed",
-                exception=str(multi_result.exception),
-                traceback=getattr(multi_result.exception, "traceback", None),
+                exception=str(exc) if exc else "Unknown error",
+                traceback=getattr(exc, "traceback", None),
             )
         else:
-            # Return the raw result data directly (stripping Nornir's MultiResult wrapper)
-            # multi_result[0] is the result of the first (and usually only) task
             formatted[host] = multi_result[0].result
 
     return formatted

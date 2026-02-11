@@ -82,3 +82,22 @@ def _normalize_blacklist_value(value: Any) -> list[str]:
     if isinstance(value, list):
         return [str(item).lower() for item in value]
     return [str(value).lower()]
+
+
+# Module-level singleton instance
+_validator_instance: CommandValidator | None = None
+
+
+def get_command_validator() -> CommandValidator:
+    """Get the singleton CommandValidator instance.
+
+    Lazily initializes and caches the validator to avoid re-reading
+    the blacklist YAML file on every validation call.
+    """
+    global _validator_instance
+    if _validator_instance is None:
+        _validator_instance = CommandValidator()
+    return _validator_instance
+
+
+__all__ = ["CommandValidator", "get_command_validator"]

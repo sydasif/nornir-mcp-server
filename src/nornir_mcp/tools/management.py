@@ -9,9 +9,9 @@ from ..services.runner import runner
 from ..utils.config import ensure_backup_directory, write_config_to_file
 from ..utils.errors import error_response
 from ..utils.helpers import napalm_getter
-from ..utils.security import CommandValidator
+from ..utils.security import get_command_validator
 from ..utils.tasks import (
-    netmiko_send_command,
+    netmiko_send_commands,
     netmiko_send_config,
 )
 
@@ -22,7 +22,7 @@ def _validate_commands(commands: list[str]) -> dict[str, Any] | None:
     if not commands:
         raise ValueError("Command list cannot be empty")
 
-    validator = CommandValidator()
+    validator = get_command_validator()
     for cmd in commands:
         validation_error = validator.validate(cmd)
         if validation_error:
@@ -134,11 +134,19 @@ async def run_show_commands(
     if validation_error:
         return validation_error
 
-    results: dict[str, Any] = {}
-    for cmd in commands:
-        results[cmd] = await runner.execute(
-            task=netmiko_send_command,
-            filters=filters,
-            command_string=cmd,
-        )
+    raw = await runner.execute(
+        task=netmiko_send_commands,
+        filters=filters,
+        commands=commands,
+    )
+
+    results: dict[str, Any] = {cmd: {} for cmd in commands}
+    for host, host_data in raw.items():
+        if isinstance(host_data, dict) and "error" in host_data:
+            for cmd in commands:
+                results[cmd][host] = host_data
+        else:
+            for cmd in commands:
+                results[cmd][host] = host_data.get(cmd)
+
     return results

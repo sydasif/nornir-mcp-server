@@ -10,6 +10,9 @@ from nornir.core import Nornir
 
 
 class _NullSysLogHandler(logging.Handler):
+    def __init__(self) -> None:
+        super().__init__()
+
     def emit(self, record: logging.LogRecord) -> None:
         return None
 
@@ -24,12 +27,25 @@ def _disable_syslog_handler_if_unavailable() -> None:
 
 _disable_syslog_handler_if_unavailable()
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    handlers=[logging.FileHandler("nornir_mcp.log"), logging.StreamHandler()],
-)
+
+def _configure_logging() -> None:
+    """Configure logging based on environment variables.
+
+    Called at module import to set up logging. Respects LOG_LEVEL
+    environment variable. Can be called again to reconfigure.
+    """
+    import os
+
+    log_level = os.environ.get("LOG_LEVEL", "INFO").upper()
+    logging.basicConfig(
+        level=getattr(logging, log_level, logging.INFO),
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+        handlers=[logging.FileHandler("nornir_mcp.log"), logging.StreamHandler()],
+    )
+
+
+# Initialize logging on first use
+_configure_logging()
 
 logger = logging.getLogger("nornir-mcp")
 

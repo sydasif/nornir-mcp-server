@@ -131,7 +131,7 @@ def register_validate_params(mcp: Any, get_nr: Callable[[], Any]) -> None:
         mcp.tool(
             description="Validate input payloads against known Pydantic models; returns success, validation details, model schema, and example."
         )(make_validate_params(NornirHostLister(get_nr)))
-    except Exception as exc:
+    except (ValueError, RuntimeError) as exc:
         logger.warning("Failed to register 'validate_params' tool: %s", exc)
 
 
@@ -186,6 +186,8 @@ def make_validate_params(nr_mgr: HostLister):
                 "suggested_payload": suggested_payload,
                 "note": "If you provided 'name' or 'hostname', map it to the inventory 'name' and send it as 'device_name'. Call list_all_hosts() to discover inventory names.",
             }
+
+    return validate_params
 
 
 def _get_missing_required_fields(

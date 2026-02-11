@@ -1,7 +1,28 @@
 """Configuration retrieval and backup utilities."""
 
+import os
 from datetime import datetime
 from pathlib import Path
+
+# Cache config path at module load time to avoid CWD changes affecting security root
+_CONFIG_PATH = Path("config.yaml").resolve()
+
+
+def _get_security_root() -> Path:
+    """Get the security root directory for backup operations.
+
+    Uses NORNIR_MCP_ROOT environment variable if set, otherwise
+    falls back to the directory containing the Nornir config.yaml.
+    """
+    if root_env := os.environ.get("NORNIR_MCP_ROOT"):
+        return Path(root_env).expanduser().resolve()
+
+    # Fall back to config.yaml directory for stability (using cached path)
+    if _CONFIG_PATH.exists():
+        return _CONFIG_PATH.parent
+
+    # Final fallback to CWD (for backward compatibility)
+    return Path.cwd().resolve()
 
 
 def ensure_backup_directory(backup_dir: str | Path) -> Path:
@@ -16,8 +37,8 @@ def ensure_backup_directory(backup_dir: str | Path) -> Path:
     Raises:
         ValueError: If the backup directory path attempts to traverse outside the safe root
     """
-    # Resolve the path and ensure it stays within the current working directory
-    root_path = Path.cwd().resolve()
+    # Resolve the path and ensure it stays within the security root
+    root_path = _get_security_root()
     requested = Path(backup_dir).expanduser()
     if requested.is_absolute():
         target_path = requested.resolve()
