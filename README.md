@@ -29,16 +29,26 @@ The server provides **11 tools** organized by intent: 6 NAPALM tools (structured
 
 ```bash
 # Install the server as a tool
-uv tool install git+https://github.com/sydasif/nornir-stack.git
+uv tool install git+https://github.com/sydasif/nornir-mcp-server.git
 
 # Or install from local source
 uv sync
 ```
 
+#### Upgrade the uv tool
+
+```bash
+# Upgrade the installed tool from GitHub
+uv tool upgrade "nornir-mcp-server @ git+https://github.com/sydasif/nornir-mcp-server.git"
+
+# Upgrade from a specific ref (branch, tag, or commit)
+uv tool upgrade "nornir-mcp-server @ git+https://github.com/sydasif/nornir-mcp-server.git@main"
+```
+
 ### Using pip
 
 ```bash
-pip install git+https://github.com/sydasif/nornir-stack.git
+pip install git+https://github.com/sydasif/nornir-mcp-server.git
 ```
 
 ## Configuration
