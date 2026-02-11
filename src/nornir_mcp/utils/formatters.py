@@ -31,13 +31,37 @@ def format_results(result: AggregatedResult) -> dict[str, Any]:
                 code="empty_result",
             )
         elif multi_result.failed:
-            exc = multi_result[0].exception
-            formatted[host] = error_response(
-                "Task failed",
-                code="task_failed",
-                exception=str(exc) if exc else "Unknown error",
-                traceback=getattr(exc, "traceback", None),
-            )
+            # Check if the result contains detailed error information
+            # This allows atomic config tasks to return structured error data
+            first_result = multi_result[0]
+            if hasattr(first_result, 'result') and isinstance(first_result.result, dict):
+                result_data = first_result.result
+                # Check if it's our atomic config error format
+                if "failed_command" in result_data or "error_output" in result_data:
+                    # Preserve the detailed error information
+                    formatted[host] = {
+                        **result_data,
+                        "error": True,
+                        "code": "config_command_failed",
+                    }
+                else:
+                    # Regular failed result
+                    exc = multi_result[0].exception
+                    formatted[host] = error_response(
+                        "Task failed",
+                        code="task_failed",
+                        exception=str(exc) if exc else "Unknown error",
+                        traceback=getattr(exc, "traceback", None),
+                        result=result_data,
+                    )
+            else:
+                exc = multi_result[0].exception
+                formatted[host] = error_response(
+                    "Task failed",
+                    code="task_failed",
+                    exception=str(exc) if exc else "Unknown error",
+                    traceback=getattr(exc, "traceback", None),
+                )
         else:
             formatted[host] = multi_result[0].result
 
