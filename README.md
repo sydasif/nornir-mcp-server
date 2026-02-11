@@ -244,6 +244,8 @@ docker run -v $(pwd)/examples/conf:/app/conf \
 - `LOG_LEVEL`: Set logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
 - `MCP_HOST`: Server host (default: localhost)
 - `MCP_PORT`: Server port (default: 8000)
+- `NORNIR_MCP_TIMEOUT`: Task execution timeout in seconds (default: 300)
+- `NORNIR_MCP_ROOT`: Security root directory for backups (default: config.yaml directory)
 
 ### MCP Tools Usage Guide
 
@@ -812,6 +814,14 @@ python -c "import yaml; yaml.safe_load(open('config.yaml')); print('Config synta
 - **Large inventory**: Use filters to target specific devices
 - **Network latency**: Optimize worker count in runner config
 - **Device performance**: Some devices respond slower than others
+- **Multiple show commands**: `run_show_commands` batches all commands over a single SSH connection per device for efficiency
+
+#### Connection Timeouts
+
+If commands are timing out:
+- Increase timeout: `export NORNIR_MCP_TIMEOUT=600` (10 minutes)
+- Check device responsiveness: `ssh user@device "show version"`
+- Verify network stability and latency
 
 #### Memory Usage
 

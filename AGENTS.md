@@ -43,3 +43,5 @@
 - Use `examples/conf/*` as a starting point for inventory.
 - `conf/blacklist.yaml` controls command validation for Netmiko tools; keep it restricted for safety.
 - Tool errors follow a standard shape: `{"error": true, "code": "...", "message": "...", "details": {...}}`.
+- Use `NORNIR_MCP_TIMEOUT` environment variable to configure task timeout (default: 300 seconds).
+- Use `NORNIR_MCP_ROOT` environment variable to set the security root directory for backups (defaults to config.yaml directory).
