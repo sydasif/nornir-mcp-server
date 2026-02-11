@@ -18,7 +18,7 @@ def _disable_syslog_handler_if_unavailable() -> None:
     try:
         handler = logging.handlers.SysLogHandler()
         handler.close()
-    except Exception:
+    except (OSError, RuntimeError):
         logging.handlers.SysLogHandler = _NullSysLogHandler  # type: ignore[assignment]
 
 

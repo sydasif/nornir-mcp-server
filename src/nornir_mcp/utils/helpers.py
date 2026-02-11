@@ -52,14 +52,12 @@ async def napalm_getter(
 
     effective_filters = normalize_device_filters(filters, device_name)
 
-    if getters_options:
-        return await runner.execute(
-            task=napalm_get,
-            filters=effective_filters,
-            getters=getters,
-            getters_options=getters_options,
-        )
-    else:
-        return await runner.execute(
-            task=napalm_get, filters=effective_filters, getters=getters
-        )
+    task_kwargs: dict[str, Any] = {"getters": getters}
+    if getters_options is not None:
+        task_kwargs["getters_options"] = getters_options
+
+    return await runner.execute(
+        task=napalm_get,
+        filters=effective_filters,
+        **task_kwargs,
+    )

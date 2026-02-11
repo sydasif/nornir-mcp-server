@@ -9,7 +9,7 @@ from nornir.core.filter import F
 from ..models import DeviceFilters
 
 
-def apply_filters(nr: Nornir, filters: DeviceFilters) -> Nornir:
+def apply_filters(nr: Nornir, filters: DeviceFilters | None) -> Nornir:
     """Apply filters to Nornir inventory using the F object.
 
     If no filters are provided, returns the unfiltered Nornir instance,
@@ -26,6 +26,9 @@ def apply_filters(nr: Nornir, filters: DeviceFilters) -> Nornir:
         ValueError: If filters result in zero matching hosts
     """
     original_count = len(nr.inventory.hosts)
+
+    if filters is None:
+        return nr
 
     # If no filters provided, return unfiltered (all hosts)
     if not any([filters.hostname, filters.group, filters.platform]):

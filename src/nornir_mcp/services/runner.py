@@ -9,6 +9,7 @@ from nornir.core.task import Result
 
 from ..application import get_nr
 from ..models import DeviceFilters
+from ..utils.errors import error_response
 from ..utils.filters import apply_filters
 from ..utils.formatters import format_results
 
@@ -32,12 +33,10 @@ class NornirRunner:
         """
         # 1. Setup & Filter
         nr = get_nr()
-        if filters is not None:
-            try:
-                nr = apply_filters(nr, filters)
-            except ValueError as e:
-                return {"error": str(e)}
-        # else: no filters provided, use entire inventory (default behavior)
+        try:
+            nr = apply_filters(nr, filters)
+        except ValueError as e:
+            return error_response(str(e), code="filter_error")
 
         # 2. Execute in Thread (Non-blocking)
         result = await asyncio.to_thread(nr.run, task=task, **task_kwargs)

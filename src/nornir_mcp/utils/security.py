@@ -32,24 +32,21 @@ class CommandValidator:
             )
             return default_blacklist
         try:
-            with open(file_path, encoding="utf-8") as handle:
-                data = yaml.safe_load(handle)
-                if data is None:
-                    logger.warning(
-                        f"Blacklist file '{file_path}' is empty. Using default restrictions."
-                    )
-                    return default_blacklist
-
-                # Normalize keys to lowercase and ensure values are lists of lowercase strings
-                normalized_data: dict[str, list[str]] = {}
-                for key, value in data.items():
-                    normalized_data[key.lower()] = _normalize_blacklist_value(value)
-
-                default_blacklist.update(normalized_data)
-                logger.info(
-                    f"Command blacklist loaded successfully from '{file_path}'."
+            data = yaml.safe_load(file_path.read_text(encoding="utf-8"))
+            if data is None:
+                logger.warning(
+                    f"Blacklist file '{file_path}' is empty. Using default restrictions."
                 )
                 return default_blacklist
+
+            normalized_data = {
+                key.lower(): _normalize_blacklist_value(value)
+                for key, value in data.items()
+            }
+
+            default_blacklist.update(normalized_data)
+            logger.info(f"Command blacklist loaded successfully from '{file_path}'.")
+            return default_blacklist
         except (OSError, yaml.YAMLError) as exc:
             logger.error(
                 f"Failed to load or parse blacklist file '{file_path}': {exc}",

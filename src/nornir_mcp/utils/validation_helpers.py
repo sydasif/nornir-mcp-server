@@ -1,6 +1,8 @@
 """Validation helpers and factory functions."""
 
 import logging
+from collections.abc import Callable
+from dataclasses import dataclass
 from typing import Any, Protocol, get_origin
 
 from pydantic import BaseModel, ValidationError
@@ -14,6 +16,7 @@ from ..models import (
     NetworkInstancesModel,
     SendCommandModel,
 )
+from ..utils.errors import error_response
 
 logger = logging.getLogger("nornir-mcp.validation")
 
@@ -64,12 +67,23 @@ def _example_from_model(cls: type[BaseModel]) -> dict[str, Any]:
             default = None
             if hasattr(field, "default"):
                 default = field.default
-            elif hasattr(field, "default_factory"):
+            elif (
+                hasattr(field, "default_factory") and field.default_factory is not None
+            ):
                 default = field.default_factory()
             else:
                 default = field.default
             example[name] = default
     return example
+
+
+def _model_info(model_cls: type[BaseModel]) -> dict[str, Any]:
+    schema = model_cls.model_json_schema()
+    return {
+        "model_schema": schema,
+        "model_schema_json": schema,
+        "correct_example": _example_from_model(model_cls),
+    }
 
 
 def _format_validation_error(exc: ValidationError) -> dict[str, Any]:
@@ -82,8 +96,43 @@ def _format_validation_error(exc: ValidationError) -> dict[str, Any]:
 
 
 class HostLister(Protocol):
+    def list_hosts(self) -> list[dict[str, Any]]: ...
+
+
+@dataclass(frozen=True)
+class NornirHostLister:
+    get_nr: Callable[[], Any]
+
     def list_hosts(self) -> list[dict[str, Any]]:
-        ...
+        nr = self.get_nr()
+        hosts_info: list[dict[str, Any]] = []
+        sensitive_keys = {"password", "secret"}
+        for name, host_obj in nr.inventory.hosts.items():
+            safe_data = {
+                k: v
+                for k, v in (host_obj.data or {}).items()
+                if k not in sensitive_keys
+            }
+            hosts_info.append(
+                {
+                    "name": name,
+                    "hostname": host_obj.hostname,
+                    "platform": host_obj.platform,
+                    "groups": [g.name for g in host_obj.groups],
+                    "data": safe_data,
+                }
+            )
+        return hosts_info
+
+
+def register_validate_params(mcp: Any, get_nr: Callable[[], Any]) -> None:
+    """Register the validate_params tool using the provided MCP instance."""
+    try:
+        mcp.tool(
+            description="Validate input payloads against known Pydantic models; returns success, validation details, model schema, and example."
+        )(make_validate_params(NornirHostLister(get_nr)))
+    except Exception as exc:
+        logger.warning("Failed to register 'validate_params' tool: %s", exc)
 
 
 def make_validate_params(nr_mgr: HostLister):
@@ -101,8 +150,11 @@ def make_validate_params(nr_mgr: HostLister):
         if model_cls is None:
             return {
                 "success": False,
-                "error": "unknown_model",
-                "available_models": list(MODEL_MAP.keys()),
+                **error_response(
+                    f"Unknown model '{model_name}'",
+                    code="unknown_model",
+                    available_models=list(MODEL_MAP.keys()),
+                ),
             }
 
         try:
@@ -110,9 +162,7 @@ def make_validate_params(nr_mgr: HostLister):
             return {
                 "success": True,
                 "validated": raw,
-                "model_schema": model_cls.model_json_schema(),
-                "model_schema_json": model_cls.model_json_schema(),
-                "correct_example": _example_from_model(model_cls),
+                **_model_info(model_cls),
             }
         except ValidationError as ve:
             missing_required = _get_missing_required_fields(model_cls, raw)
@@ -127,10 +177,12 @@ def make_validate_params(nr_mgr: HostLister):
 
             return {
                 "success": False,
+                **error_response(
+                    "Validation failed",
+                    code="validation_failed",
+                ),
                 "validation": formatted,
-                "correct_example": _example_from_model(model_cls),
-                "model_schema": model_cls.model_json_schema(),
-                "model_schema_json": model_cls.model_json_schema(),
+                **_model_info(model_cls),
                 "suggested_payload": suggested_payload,
                 "note": "If you provided 'name' or 'hostname', map it to the inventory 'name' and send it as 'device_name'. Call list_all_hosts() to discover inventory names.",
             }

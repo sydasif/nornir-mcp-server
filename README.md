@@ -2,19 +2,16 @@
 
 An MCP (Model Context Protocol) server built with **FastMCP** that exposes Nornir automation capabilities to Claude, enabling natural language interaction with network infrastructure. This server combines NAPALM's standardized getters with Netmiko's flexible command execution for comprehensive network management.
 
-The server provides **11 tools** organized by technology: 6 NAPALM tools (structured data), 4 Netmiko tools (CLI operations), and 1 inventory tool.
+The server provides **11 tools** organized by intent: 6 NAPALM tools (structured data), 3 Netmiko-backed tools (CLI operations), 1 inventory tool, and 1 validation tool.
 
 ## Features
 
 - **Network Inventory Tools**: List devices, query groups, filter by attributes
 - **NAPALM Tools**: Structured data retrieval from network devices (facts, interfaces, BGP, configs)
-- **Netmiko Tools**: CLI commands and file operations for network devices (config changes, backups, file transfers)
-
-- **Management Tools**: State-modifying commands for network device management (config commands, backups, file transfers)
+- **Management Tools**: CLI show/config commands and configuration backups
 - **Validation & Security**: Command validation with configurable blacklists, comprehensive input validation
-- **MCP Ecosystem**: Prompts system for guided troubleshooting workflows
 - **Service-Intent Architecture**: Clean separation between monitoring (read) and management (write) operations
-- **Device Filtering**: Supports hostname, group, attribute, and pattern-based filtering
+- **Device Filtering**: Supports hostname, group, and platform filters
 - **Structured Output**: Standardized result formatting with error handling
 - **Security Focused**: Sensitive information sanitization, command validation, and intent-based access controls
 - **Production Ready**: Docker containerization, comprehensive configuration examples
@@ -136,10 +133,6 @@ data:
   region: undefined
 ```
 
-## Configuration
-
-The server looks for a `config.yaml` file in the current working directory. No environment variables are required.
-
 ## Available Tools
 
 All tools accept a standard `filters` object for device selection.
@@ -159,20 +152,32 @@ The server provides the following MCP tools organized by intent:
 - `get_device_configs`: Retrieve device configuration text (running, startup, or candidate)
 - `run_napalm_getter`: Execute any NAPALM getter for flexible data retrieval (arp_table, mac_address_table, network_instances, users, vlans, bgp_neighbors_detail, lldp_neighbors, lldp_neighbors_detail, bgp_config, and more)
 
-### Netmiko Tools (CLI Commands & File Operations)
+### Management Tools (CLI Commands & Backups)
 
 - `send_config_commands`: Send configuration commands to network devices via SSH with validation
-- `backup_device_configs`: Save device configuration to local disk
-- `run_show_commands`: Execute show/display commands with optional parsing and security validation
-
-### Management Tools (State-Modifying Commands)
-
-- `send_config_commands`: Send configuration commands to network devices via SSH with validation
+- `run_show_commands`: Execute show/display commands with security validation
 - `backup_device_configs`: Save device configuration to local disk
 
 ### Validation & Security Tools
 
 - `validate_params`: Validate input parameters against Pydantic models with helpful error messages
+
+### Error Responses
+
+Most tools return errors in a standard shape:
+
+```json
+{
+  "error": true,
+  "code": "some_error_code",
+  "message": "Human-readable summary",
+  "details": {
+    "optional": "context"
+  }
+}
+```
+
+Per-host task failures follow the same shape inside the host result.
 
 ## Usage
 
@@ -279,9 +284,6 @@ get_interfaces()
 
 # Get interface info for specific device
 get_interfaces(filters={"hostname": "R1"})
-
-# Get interface counters
-get_interfaces_counters()
 
 # Get interface IP information
 get_interfaces_ip()
@@ -407,12 +409,12 @@ send_config_commands(
 )
 
 # Backup configurations
-backup_device_configs(backup_directory="./backups")
+backup_device_configs(path="./backups")
 
 # Backup specific device configs
 backup_device_configs(
     filters={"group": "production"},
-    backup_directory="./backups"
+    path="./backups"
 )
 ```
 
@@ -424,18 +426,18 @@ backup_device_configs(
 # Validate device parameters
 validate_params({"device_name": "R1"}, "DeviceNameModel")
 
-# Validate ping parameters
+# Validate config or show command parameters
 validate_params({
     "device_name": "R1",
-    "destination": "8.8.8.8",
-    "count": 5
-}, "PingModel")
+    "commands": ["show version"]
+}, "SendCommandModel")
 
-# Get validation schema
-validate_params({}, "DeviceFilters")
+# Validate BGP config parameters
+validate_params({
+    "device_name": "R1",
+    "neighbor": "10.0.0.1"
+}, "BGPConfigModel")
 ```
-
-### MCP Ecosystem Features
 
 ### Advanced Configuration
 
@@ -495,7 +497,7 @@ The server implements a Service-Intent Pattern with:
 - **Application Layer** (`application.py`): Initializes FastMCP and manages Nornir configuration
 - **Server Entry Point** (`server.py`): Main entry point that registers tools
 - **Service Layer** (`services/runner.py`): `NornirRunner` handles standardized execution, filtering, and result formatting
-- **Tool Categories** (`tools/`): Organized by intent (monitoring, management, inventory, networking, advanced monitoring)
+- **Tool Categories** (`tools/`): Organized by intent (monitoring, management, inventory)
 - **Validation Layer** (`utils/validation_helpers.py`): Comprehensive input validation with helpful error messages
 - **Security Layer** (`utils/security.py`): Command validation with configurable blacklists
 - **Centralized Processing**: All tools leverage the same execution pipeline for consistency
@@ -537,11 +539,6 @@ For Linux/Windows, the config file is typically at:
 # Monitoring
 "Check interface status on all switches"
 "Show BGP neighbors for core routers"
-"Get routing table from R2"
-
-# Connectivity testing
-"Ping 8.8.8.8 from R1"
-"Traceroute to google.com from R3"
 
 # Configuration
 "Backup running configs for all devices"
@@ -550,25 +547,6 @@ For Linux/Windows, the config file is typically at:
 # Validation
 "Validate these BGP parameters: neighbor 10.0.0.1 remote-as 65001"
 "Check if this device name is valid: R1"
-```
-
-**Using Prompts:**
-
-```bash
-# Structured troubleshooting
-"I need to troubleshoot a BGP session issue with neighbor 10.0.0.1 on device R1"
-"Help me diagnose why interface GigabitEthernet0/0 is down on switch S1"
-"There's a general network connectivity problem in the datacenter"
-```
-
-**Accessing Resources:**
-
-```bash
-# Reference data
-"Show me the device inventory"
-"What commands are available for Cisco IOS devices?"
-"List all hosts in the inventory"
-"Find devices with 'core' in their name"
 ```
 
 ## Device Filtering
@@ -608,16 +586,17 @@ get_bgp_neighbors(filters={"platform": "cisco_ios"})
 
 ```bash
 # Multiple filters (AND logic)
-list_devices(filters={"platform": "cisco_ios", "group": "production"})
+list_network_devices(query_type="devices", filters={"platform": "cisco_ios", "group": "production"})
 
 # Specific interface on specific device (note: separate tools now)
 get_interfaces(filters={"hostname": "R1"})
 get_interfaces_ip(filters={"hostname": "R1"})
 
-# Routing table for specific VRF on specific devices
-get_routing_table(
-    filters={"group": "core_routers"},
-    vrf="VPN1"
+# Network instances for a specific VRF on specific devices
+run_napalm_getter(
+    getters=["network_instances"],
+    getters_options={"network_instances": {"name": "VPN1"}},
+    filters={"group": "core_routers"}
 )
 ```
 
@@ -627,7 +606,7 @@ get_routing_table(
 # Backup configs for production devices
 backup_device_configs(
     filters={"group": "production"},
-    backup_directory="./backups"
+    path="./backups"
 )
 
 # Configure specific device
@@ -750,7 +729,7 @@ Claude automatically translates natural language to appropriate filters:
 - **"Device not found in inventory"**
   - Check device name spelling in filters
   - Verify device exists in inventory files
-  - Use `list_devices()` to see available devices
+  - Use `list_network_devices(query_type="devices")` to see available devices
 
 - **"Validation error"**
   - Check parameter types and required fields
@@ -867,7 +846,7 @@ send_config_commands(
 # Backup all production configs
 backup_device_configs(
     filters={"group": "production"},
-    backup_directory="./backups/prod-$(date +%Y%m%d)"
+    path="./backups/prod-$(date +%Y%m%d)"
 )
 ```
 
@@ -903,41 +882,14 @@ routing = run_napalm_getter(getters=['network_instances'])
 
 ```bash
 # Combine with other systems
-devices = list_devices()
-for device in devices:
+inventory = list_network_devices(query_type="devices")
+for device in inventory["devices"]["devices"]:
     if device["platform"] == "cisco_ios":
         config = get_device_configs(filters={"hostname": device["name"]})
         # Process config, update CMDB, etc.
 ```
 
-## MCP Ecosystem Deep Dive
-
-### Resources System
-
-Reference data accessible through Claude's resource system:
-
-#### Inventory Resources
-
-- **`resource://inventory/hosts`**: Complete device inventory
-- **`resource://inventory/hosts/{keyword}`**: Filtered device search
-- **`resource://inventory/groups`**: Group membership information
-
-#### Network Resources
-
-- **`resource://cisco_ios_commands`**: Cisco IOS command reference
-- **`resource://napalm_getters`**: NAPALM getters reference
-
-#### Using Resources
-
-```bash
-# Access reference data
-"Show me the device inventory"
-"What commands are available for Cisco devices?"
-"Find all core routers in the inventory"
-"Show devices with 'edge' in their name"
-```
-
-### Validation System
+## Validation System
 
 Comprehensive input validation with helpful error messages:
 
@@ -947,15 +899,14 @@ Comprehensive input validation with helpful error messages:
 # Device name validation
 validate_params({"device_name": "R1"}, "DeviceNameModel")
 
-# Ping parameters validation
+# Command parameters validation
 validate_params({
     "device_name": "R1",
-    "destination": "8.8.8.8",
-    "count": 5
-}, "PingModel")
+    "command": "show version"
+}, "SendCommandModel")
 
 # Get schema information
-result = validate_params({}, "DeviceFilters")
+result = validate_params({}, "DeviceNameModel")
 # Returns model schema and example values
 ```
 
@@ -1039,8 +990,6 @@ To add new validation models for input validation:
 2. Register models in `MODEL_MAP` in `utils/validation_helpers.py`
 3. The `validate_params` tool will automatically support the new models
 
-### Adding Resources
-
 ### Command Security
 
 Configure command validation by creating a `conf/blacklist.yaml` file:
@@ -1067,7 +1016,7 @@ git clone https://github.com/your-org/nornir-mcp-server.git
 cd nornir-mcp-server
 uv sync
 
-# Run tests
+# Run tests (if present)
 uv run pytest
 
 # Run linter
@@ -1093,15 +1042,15 @@ uv run nornir-mcp
 ### Code Standards
 
 - **Linting**: `ruff check` and `ruff format`
-- **Testing**: pytest with coverage reporting
+- **Testing**: pytest with coverage reporting (when tests are added)
 - **Documentation**: Update README and docstrings
-- **Commits**: Conventional commit format
+- **Commits**: Short, imperative messages (e.g., "Fix ruff lint issues")
 
 ## Version History
 
 ### v1.0.0 - Technology-Based Organization
 
-- **11 MCP tools** across 3 categories (6 NAPALM, 4 Netmiko, 1 inventory)
+- **11 MCP tools** across 4 categories (6 NAPALM, 3 Netmiko, 1 inventory, 1 validation)
 - **Simplified API**: 5 essential NAPALM tools + 1 generic `run_napalm_getter` for flexibility
 - **Consolidated inventory**: Single `list_network_devices` tool replaces 2 separate inventory tools
 - **Technology separation**: NAPALM tools in monitoring.py, Netmiko tools in management.py

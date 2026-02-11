@@ -4,6 +4,7 @@ from typing import Any
 
 from ..application import get_nr, mcp
 from ..models import DeviceFilters
+from ..utils.errors import error_response
 from ..utils.filters import apply_filters
 
 
@@ -26,9 +27,13 @@ async def list_network_devices(
     Returns:
         Dictionary containing inventory data based on query_type
     """
+    if query_type not in ("devices", "groups", "all"):
+        return error_response(
+            f"Invalid query_type '{query_type}'. Must be 'devices', 'groups', or 'all'",
+            code="invalid_query_type",
+        )
+
     nr = get_nr()
-    if filters is None:
-        filters = DeviceFilters()
     nr = apply_filters(nr, filters)
 
     result: dict[str, Any] = {}
@@ -60,10 +65,5 @@ async def list_network_devices(
                     groups[group.name]["members"].append(host_name)
 
         result["groups"] = {"groups": groups}
-
-    if query_type not in ("devices", "groups", "all"):
-        return {
-            "error": f"Invalid query_type '{query_type}'. Must be 'devices', 'groups', or 'all'"
-        }
 
     return result

@@ -42,3 +42,4 @@
 - Keep `config.yaml` in the repo root when running locally.
 - Use `examples/conf/*` as a starting point for inventory.
 - `conf/blacklist.yaml` controls command validation for Netmiko tools; keep it restricted for safety.
+- Tool errors follow a standard shape: `{"error": true, "code": "...", "message": "...", "details": {...}}`.

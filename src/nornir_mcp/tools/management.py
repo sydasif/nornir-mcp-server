@@ -7,6 +7,7 @@ from ..application import mcp
 from ..models import DeviceFilters
 from ..services.runner import runner
 from ..utils.config import ensure_backup_directory, write_config_to_file
+from ..utils.errors import error_response
 from ..utils.helpers import napalm_getter
 from ..utils.security import CommandValidator
 from ..utils.tasks import (
@@ -15,6 +16,27 @@ from ..utils.tasks import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+def _validate_commands(commands: list[str]) -> dict[str, Any] | None:
+    if not commands:
+        raise ValueError("Command list cannot be empty")
+
+    validator = CommandValidator()
+    for cmd in commands:
+        validation_error = validator.validate(cmd)
+        if validation_error:
+            logger.warning(
+                "Command validation failed for %r: %s", cmd, validation_error
+            )
+            return error_response(
+                "Command validation failed",
+                code="command_validation_failed",
+                validation_error=validation_error,
+                failed_command=cmd,
+            )
+
+    return None
 
 
 @mcp.tool()
@@ -31,22 +53,9 @@ async def send_config_commands(
     Returns:
         Raw output from the configuration execution per host.
     """
-    if not commands:
-        raise ValueError("Command list cannot be empty")
-
-    # Initialize command validator to prevent dangerous commands
-    validator = CommandValidator()
-
-    # Validate ALL commands before execution
-    for cmd in commands:
-        validation_error = validator.validate(cmd)
-        if validation_error:
-            logger.warning(f"Command validation failed for '{cmd}': {validation_error}")
-            return {
-                "error": True,
-                "validation_error": validation_error,
-                "failed_command": cmd,
-            }
+    validation_error = _validate_commands(commands)
+    if validation_error:
+        return validation_error
 
     return await runner.execute(
         task=netmiko_send_config,
@@ -92,13 +101,17 @@ async def backup_device_configs(
                     "path": file_path,
                 }
             else:
-                backup_results[hostname] = {
-                    "status": "warning",
-                    "message": "Empty configuration content",
-                }
+                backup_results[hostname] = error_response(
+                    "Empty configuration content",
+                    code="empty_config",
+                )
         else:
             # Propagate error info found in data
-            backup_results[hostname] = {"status": "failed", "details": data}
+            backup_results[hostname] = error_response(
+                "Configuration backup failed",
+                code="backup_failed",
+                result=data,
+            )
 
     return backup_results
 
@@ -117,19 +130,9 @@ async def run_show_commands(
     Returns:
         Dictionary mapping command -> host -> raw output
     """
-    # Initialize command validator to prevent dangerous commands
-    validator = CommandValidator()
-
-    # Validate ALL commands before execution
-    for cmd in commands:
-        validation_error = validator.validate(cmd)
-        if validation_error:
-            logger.warning(f"Command validation failed for '{cmd}': {validation_error}")
-            return {
-                "error": True,
-                "validation_error": validation_error,
-                "failed_command": cmd,
-            }
+    validation_error = _validate_commands(commands)
+    if validation_error:
+        return validation_error
 
     results: dict[str, Any] = {}
     for cmd in commands:
