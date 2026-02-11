@@ -166,7 +166,6 @@ The server provides the following MCP tools organized by intent:
 - `file_copy`: Transfer files to/from network devices securely (supports SCP, SFTP, TFTP)
 - `run_show_commands`: Execute show/display commands with optional parsing and security validation
 
-
 ### Management Tools (State-Modifying Commands)
 
 - `send_config_commands`: Send configuration commands to network devices via SSH with validation
@@ -182,11 +181,13 @@ The server provides the following MCP tools organized by intent:
 ### Quick Start
 
 1. **Copy example configuration:**
+
 ```bash
 cp examples/conf/* .
 ```
 
 2. **Run the server:**
+
 ```bash
 nornir-mcp
 ```
@@ -196,6 +197,7 @@ nornir-mcp
 ### Running the Server
 
 #### Local Development
+
 ```bash
 # Basic startup
 nornir-mcp
@@ -212,6 +214,7 @@ when loading a file path directly. If you hit that, use `nornir-mcp` for local
 development instead.
 
 #### Docker Deployment
+
 ```bash
 # Build and run with Docker Compose (recommended)
 docker compose up --build
@@ -224,6 +227,7 @@ docker run -v $(pwd)/examples/conf:/app/conf \
 ```
 
 #### Environment Variables
+
 - `LOG_LEVEL`: Set logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
 - `MCP_HOST`: Server host (default: localhost)
 - `MCP_PORT`: Server port (default: 8000)
@@ -233,6 +237,7 @@ docker run -v $(pwd)/examples/conf:/app/conf \
 #### Inventory Management
 
 **List network devices:**
+
 ```bash
 # Get all devices in inventory
 list_network_devices(query_type="devices")
@@ -256,6 +261,7 @@ list_network_devices(query_type="devices", details=True)
 #### Network Monitoring
 
 **Device Information:**
+
 ```bash
 # Get basic facts for all devices
 get_device_facts()
@@ -268,6 +274,7 @@ get_device_facts(filters={"platform": "cisco_ios"})
 ```
 
 **Interface Monitoring:**
+
 ```bash
 # Get detailed interface info for all devices
 get_interfaces()
@@ -283,6 +290,7 @@ get_interfaces_ip()
 ```
 
 **Routing & Connectivity:**
+
 ```bash
 # Get routing table
 run_napalm_getter(getters=['network_instances'])
@@ -298,6 +306,7 @@ run_napalm_getter(getters=['mac_address_table'])
 ```
 
 **Protocol-Specific Monitoring:**
+
 ```bash
 # Get BGP neighbors
 get_bgp_neighbors()
@@ -316,6 +325,7 @@ run_napalm_getter(getters=['lldp_neighbors_detail'])
 ```
 
 **Configuration & Users:**
+
 ```bash
 # Get running configuration
 get_device_configs(retrieve="running")
@@ -331,6 +341,7 @@ run_napalm_getter(getters=['vlans'])
 ```
 
 **Advanced NAPALM Getters:**
+
 ```bash
 # Get any NAPALM getter by name
 run_napalm_getter(getters=['facts'])
@@ -352,6 +363,7 @@ run_napalm_getter(
 ```
 
 **Custom Commands:**
+
 ```bash
 # Run safe show commands
 run_show_commands(commands=["show version", "show interfaces"])
@@ -367,25 +379,24 @@ run_show_commands(
 
 The following tools were removed in favor of the generic `run_napalm_getter` tool:
 
-| Removed Tool | New Usage |
-|-------------|-----------|
-| `get_arp_table()` | `run_napalm_getter(getters=['arp_table'])` |
-| `get_mac_address_table()` | `run_napalm_getter(getters=['mac_address_table'])` |
+| Removed Tool                    | New Usage                                                                                                   |
+| ------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| `get_arp_table()`               | `run_napalm_getter(getters=['arp_table'])`                                                                  |
+| `get_mac_address_table()`       | `run_napalm_getter(getters=['mac_address_table'])`                                                          |
 | `get_routing_table(vrf='VPN1')` | `run_napalm_getter(getters=['network_instances'], getters_options={'network_instances': {'name': 'VPN1'}})` |
-| `get_users()` | `run_napalm_getter(getters=['users'])` |
-| `get_vlans()` | `run_napalm_getter(getters=['vlans'])` |
-| `get_bgp_neighbors_detail()` | `run_napalm_getter(getters=['bgp_neighbors_detail'])` |
-| `get_lldp_neighbors()` | `run_napalm_getter(getters=['lldp_neighbors'])` |
-| `get_lldp_neighbors_detail()` | `run_napalm_getter(getters=['lldp_neighbors_detail'])` |
-| `get_bgp_config()` | `run_napalm_getter(getters=['bgp_config'])` |
+| `get_users()`                   | `run_napalm_getter(getters=['users'])`                                                                      |
+| `get_vlans()`                   | `run_napalm_getter(getters=['vlans'])`                                                                      |
+| `get_bgp_neighbors_detail()`    | `run_napalm_getter(getters=['bgp_neighbors_detail'])`                                                       |
+| `get_lldp_neighbors()`          | `run_napalm_getter(getters=['lldp_neighbors'])`                                                             |
+| `get_lldp_neighbors_detail()`   | `run_napalm_getter(getters=['lldp_neighbors_detail'])`                                                      |
+| `get_bgp_config()`              | `run_napalm_getter(getters=['bgp_config'])`                                                                 |
 
 The `run_napalm_getter` tool provides flexibility to access any NAPALM getter while simplifying the API surface. All common getters (facts, interfaces, interfaces_ip, bgp_neighbors, config) are still available as dedicated tools for convenience.
-
-
 
 #### Network Management
 
 **Configuration Management:**
+
 ```bash
 # Send configuration commands (SAFE - validated)
 send_config_commands(
@@ -408,6 +419,7 @@ backup_device_configs(
 ```
 
 **File Operations:**
+
 ```bash
 # Copy file to device
 file_copy(
@@ -429,6 +441,7 @@ file_copy(
 #### Validation & Security
 
 **Input Validation:**
+
 ```bash
 # Validate device parameters
 validate_params({"device_name": "R1"}, "DeviceNameModel")
@@ -449,17 +462,17 @@ validate_params({}, "DeviceFilters")
 #### Prompts (Guided Troubleshooting)
 
 **Available Prompts:**
+
 - `prompt_troubleshoot_network_issue`: General network troubleshooting
 - `prompt_troubleshoot_bgp`: BGP session troubleshooting
 - `prompt_troubleshoot_interface`: Interface issue troubleshooting
 
 **Usage:**
+
 ```bash
 # These prompts are available in Claude when using the MCP server
 # They provide structured troubleshooting workflows
 ```
-
-
 
 ### Advanced Configuration
 
@@ -545,12 +558,14 @@ Add to `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS)
 ```
 
 For Linux/Windows, the config file is typically at:
+
 - Linux: `~/.config/Claude/claude_desktop_config.json`
 - Windows: `%APPDATA%\Claude\claude_desktop_config.json`
 
 #### Using MCP Features in Claude
 
 **Natural Language Commands:**
+
 ```bash
 # Device inventory
 "Show me all network devices"
@@ -576,6 +591,7 @@ For Linux/Windows, the config file is typically at:
 ```
 
 **Using Prompts:**
+
 ```bash
 # Structured troubleshooting
 "I need to troubleshoot a BGP session issue with neighbor 10.0.0.1 on device R1"
@@ -584,6 +600,7 @@ For Linux/Windows, the config file is typically at:
 ```
 
 **Accessing Resources:**
+
 ```bash
 # Reference data
 "Show me the device inventory"
@@ -607,6 +624,7 @@ The server supports schema-agnostic filtering through a Pydantic model:
 ### Filtering Examples
 
 #### Basic Filtering
+
 ```bash
 # No filters - target all devices
 get_device_facts()
@@ -625,6 +643,7 @@ get_bgp_neighbors(filters={"platform": "cisco_ios"})
 ```
 
 #### Advanced Filtering
+
 ```bash
 # Multiple filters (AND logic)
 list_devices(filters={"platform": "cisco_ios", "group": "production"})
@@ -641,6 +660,7 @@ get_routing_table(
 ```
 
 #### Configuration Management Filtering
+
 ```bash
 # Backup configs for production devices
 backup_device_configs(
@@ -660,8 +680,6 @@ send_config_commands(
     filters={"platform": "cisco_ios"}
 )
 ```
-
-
 
 ### Filter Logic
 
@@ -713,11 +731,13 @@ Claude automatically translates natural language to appropriate filters:
 ### Common Issues & Solutions
 
 #### Dependency Issues
+
 - **"redis typing error / TypeError on import"**
   - The server pins `redis<5` for compatibility with FastMCP/docket
   - Run `uv sync` to ensure the correct version is installed
 
 #### Configuration Issues
+
 - **"No Nornir config found"**
   - Ensure `config.yaml` exists in current working directory
   - Copy from `examples/conf/config.yaml` if needed
@@ -729,6 +749,7 @@ Claude automatically translates natural language to appropriate filters:
   - Copy example inventory files: `cp examples/conf/* .`
 
 #### Connection Issues
+
 - **"Connection timeout"**
   - Verify SSH access to devices: `ssh user@device-hostname`
   - Check network connectivity and firewall rules
@@ -742,6 +763,7 @@ Claude automatically translates natural language to appropriate filters:
   - Check for expired passwords or account lockouts
 
 #### Platform Issues
+
 - **"Platform not supported"**
   - Verify correct platform string in inventory
   - Supported platforms: `cisco_ios`, `cisco_nxos`, `arista_eos`, etc.
@@ -753,6 +775,7 @@ Claude automatically translates natural language to appropriate filters:
   - Check device OS version compatibility
 
 #### Tool-Specific Issues
+
 - **"fastmcp dev ... attempted relative import with no known parent package"**
   - Run `nornir-mcp` instead of `fastmcp dev` when using a file path
   - The FastMCP file loader does not treat the module as a package
@@ -773,6 +796,7 @@ Claude automatically translates natural language to appropriate filters:
   - Refer to model schemas for correct parameter structure
 
 #### Docker Issues
+
 - **"Permission denied"**
   - Ensure Docker daemon is running: `docker info`
   - Add user to docker group: `sudo usermod -aG docker $USER`
@@ -786,6 +810,7 @@ Claude automatically translates natural language to appropriate filters:
 ### Debugging & Logging
 
 #### Enable Debug Logging
+
 ```bash
 # Environment variable
 export LOG_LEVEL=DEBUG
@@ -796,6 +821,7 @@ LOG_LEVEL=DEBUG nornir-mcp
 ```
 
 #### Log Levels
+
 - `DEBUG`: Detailed execution information, API calls, command output
 - `INFO`: General operational messages, task completion
 - `WARNING`: Non-critical issues, deprecated features
@@ -803,6 +829,7 @@ LOG_LEVEL=DEBUG nornir-mcp
 - `CRITICAL`: System-level failures
 
 #### Log File Configuration
+
 ```yaml
 logging:
   enabled: true
@@ -812,6 +839,7 @@ logging:
 ```
 
 #### Common Debug Commands
+
 ```bash
 # Test basic connectivity
 ping device-hostname
@@ -829,11 +857,13 @@ python -c "import yaml; yaml.safe_load(open('config.yaml')); print('Config synta
 ### Performance Issues
 
 #### Slow Command Execution
+
 - **Large inventory**: Use filters to target specific devices
 - **Network latency**: Optimize worker count in runner config
 - **Device performance**: Some devices respond slower than others
 
 #### Memory Usage
+
 - **Large outputs**: Use filters to limit device count
 - **Config backups**: Clean up old backup files regularly
 - **Concurrent tasks**: Reduce `num_workers` if memory constrained
@@ -841,6 +871,7 @@ python -c "import yaml; yaml.safe_load(open('config.yaml')); print('Config synta
 ### Getting Help
 
 #### Community Resources
+
 - **GitHub Issues**: Report bugs and request features
 - **Documentation**: Check this README and CLAUDE.md
 - **Nornir Docs**: https://nornir.tech/
@@ -848,7 +879,9 @@ python -c "import yaml; yaml.safe_load(open('config.yaml')); print('Config synta
 - **Netmiko Docs**: https://netmiko.readthedocs.io/
 
 #### Diagnostic Information
+
 When reporting issues, include:
+
 - Server version and platform
 - Full error message and traceback
 - Configuration (redact sensitive data)
@@ -923,6 +956,7 @@ for device in devices:
 The server includes structured prompts for common troubleshooting scenarios:
 
 #### Available Prompts
+
 - **`prompt_troubleshoot_network_issue`**: Generic network problem diagnosis
   - Usage: "I need to troubleshoot a connectivity issue on device R1"
   - Provides: Step-by-step systematic approach
@@ -936,6 +970,7 @@ The server includes structured prompts for common troubleshooting scenarios:
   - Provides: Interface-specific troubleshooting steps
 
 #### Using Prompts in Claude
+
 ```bash
 # Natural language triggers prompt selection
 "Troubleshoot BGP issues on router R2"
@@ -948,15 +983,18 @@ The server includes structured prompts for common troubleshooting scenarios:
 Reference data accessible through Claude's resource system:
 
 #### Inventory Resources
+
 - **`resource://inventory/hosts`**: Complete device inventory
 - **`resource://inventory/hosts/{keyword}`**: Filtered device search
 - **`resource://inventory/groups`**: Group membership information
 
 #### Network Resources
+
 - **`resource://cisco_ios_commands`**: Cisco IOS command reference
 - **`resource://napalm_getters`**: NAPALM getters reference
 
 #### Using Resources
+
 ```bash
 # Access reference data
 "Show me the device inventory"
@@ -970,6 +1008,7 @@ Reference data accessible through Claude's resource system:
 Comprehensive input validation with helpful error messages:
 
 #### Model Validation
+
 ```bash
 # Device name validation
 validate_params({"device_name": "R1"}, "DeviceNameModel")
@@ -987,7 +1026,9 @@ result = validate_params({}, "DeviceFilters")
 ```
 
 #### Error Handling
+
 Validation provides:
+
 - **Success/failure status**
 - **Detailed error messages**
 - **Correct parameter examples**
@@ -1013,29 +1054,30 @@ pytest tests/test_inventory.py
 To add new tools:
 
 1. Create a new module in `src/nornir_mcp/tools/` or add to existing modules:
-      - `monitoring.py` for read-only commands (including detailed network state queries)
-      - `management.py` for state-modifying commands
-      - `inventory.py` for inventory-related operations
+   - `monitoring.py` for read-only commands (including detailed network state queries)
+   - `management.py` for state-modifying commands
+   - `inventory.py` for inventory-related operations
 2. Implement the tool using the `@mcp.tool()` decorator with a standard `filters` parameter of type `DeviceFilters`
 3. Leverage the `NornirRunner` service for standardized execution:
 
-    ```python
-    from ..services.runner import runner
+   ```python
+   from ..services.runner import runner
 
-    @mcp.tool()
-    async def new_tool(filters: DeviceFilters | None = None) -> dict:
-        return await runner.execute(
-            task=your_nornir_task,
-            filters=filters,
-            # Additional parameters as needed
-        )
-    ```
+   @mcp.tool()
+   async def new_tool(filters: DeviceFilters | None = None) -> dict:
+       return await runner.execute(
+           task=your_nornir_task,
+           filters=filters,
+           # Additional parameters as needed
+       )
+   ```
 
 4. Add tests in the `tests/` directory
 
 ### Architecture Patterns
 
 The codebase embraces domain-appropriate patterns:
+
 - **NAPALM operations**: Use `napalm_getter` helper for structured data retrieval
 - **Netmiko operations**: Use direct `runner.execute()` for command execution
 - **Inventory operations**: Use direct `get_nr() + apply_filters()` for metadata queries
@@ -1043,6 +1085,7 @@ The codebase embraces domain-appropriate patterns:
 ### Import Centralization
 
 Nornir task imports are centralized in `src/nornir_mcp/utils/tasks.py`:
+
 - All tool modules import from the centralized location instead of direct Nornir imports
 - Makes Nornir version upgrades easier and reduces import scattering
 - Maintains type safety and IDE support
@@ -1050,6 +1093,7 @@ Nornir task imports are centralized in `src/nornir_mcp/utils/tasks.py`:
 ### Helper Functions
 
 Reusable helper functions in `src/nornir_mcp/utils/helpers.py`:
+
 - `normalize_device_filters()`: Consistent device filter normalization across tools
 - `napalm_getter()`: Standardized NAPALM getter execution pattern
 
@@ -1069,9 +1113,6 @@ To add troubleshooting prompts:
 2. Functions are automatically registered when the server starts
 
 ### Adding Resources
-
-
-
 
 ### Command Security
 
@@ -1111,6 +1152,7 @@ uv run fastmcp dev src/nornir_mcp/server.py
 ```
 
 If `fastmcp dev` fails with a relative import error, run:
+
 ```bash
 uv run nornir-mcp
 ```
@@ -1121,7 +1163,7 @@ uv run nornir-mcp
 2. **New Platforms**: Add platform support in inventory configuration
 3. **New Prompts**: Add to `prompts.py` with `prompt_` prefix
 
-5. **New Validation**: Add models to `models.py` and register in validation helpers
+4. **New Validation**: Add models to `models.py` and register in validation helpers
 
 ### Code Standards
 
@@ -1133,6 +1175,7 @@ uv run nornir-mcp
 ## Version History
 
 ### v1.0.0 - Technology-Based Organization
+
 - **11 MCP tools** across 3 categories (6 NAPALM, 4 Netmiko, 1 inventory)
 - **Simplified API**: 5 essential NAPALM tools + 1 generic `run_napalm_getter` for flexibility
 - **Consolidated inventory**: Single `list_network_devices` tool replaces 2 separate inventory tools
