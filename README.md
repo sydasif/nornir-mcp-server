@@ -163,14 +163,12 @@ The server provides the following MCP tools organized by intent:
 
 - `send_config_commands`: Send configuration commands to network devices via SSH with validation
 - `backup_device_configs`: Save device configuration to local disk
-- `file_copy`: Transfer files to/from network devices securely (supports SCP, SFTP, TFTP)
 - `run_show_commands`: Execute show/display commands with optional parsing and security validation
 
 ### Management Tools (State-Modifying Commands)
 
 - `send_config_commands`: Send configuration commands to network devices via SSH with validation
 - `backup_device_configs`: Save device configuration to local disk
-- `file_copy`: Transfer files to/from network devices securely (supports SCP, SFTP, TFTP)
 
 ### Validation & Security Tools
 
@@ -418,26 +416,6 @@ backup_device_configs(
 )
 ```
 
-**File Operations:**
-
-```bash
-# Copy file to device
-file_copy(
-    source_file="./configs/new_config.txt",
-    dest_file="running-config",
-    direction="put",
-    filters={"hostname": "R1"}
-)
-
-# Copy file from device
-file_copy(
-    source_file="running-config",
-    dest_file="./backups/running-config.txt",
-    direction="get",
-    filters={"hostname": "R1"}
-)
-```
-
 #### Validation & Security
 
 **Input Validation:**
@@ -458,21 +436,6 @@ validate_params({}, "DeviceFilters")
 ```
 
 ### MCP Ecosystem Features
-
-#### Prompts (Guided Troubleshooting)
-
-**Available Prompts:**
-
-- `prompt_troubleshoot_network_issue`: General network troubleshooting
-- `prompt_troubleshoot_bgp`: BGP session troubleshooting
-- `prompt_troubleshoot_interface`: Interface issue troubleshooting
-
-**Usage:**
-
-```bash
-# These prompts are available in Claude when using the MCP server
-# They provide structured troubleshooting workflows
-```
 
 ### Advanced Configuration
 
@@ -530,12 +493,11 @@ runner:
 The server implements a Service-Intent Pattern with:
 
 - **Application Layer** (`application.py`): Initializes FastMCP and manages Nornir configuration
-- **Server Entry Point** (`server.py`): Main entry point that registers tools and prompts
+- **Server Entry Point** (`server.py`): Main entry point that registers tools
 - **Service Layer** (`services/runner.py`): `NornirRunner` handles standardized execution, filtering, and result formatting
 - **Tool Categories** (`tools/`): Organized by intent (monitoring, management, inventory, networking, advanced monitoring)
 - **Validation Layer** (`utils/validation_helpers.py`): Comprehensive input validation with helpful error messages
 - **Security Layer** (`utils/security.py`): Command validation with configurable blacklists
-- **MCP Ecosystem**: Prompts (`prompts.py`) for enhanced Claude integration
 - **Centralized Processing**: All tools leverage the same execution pipeline for consistency
 
 ### Claude Desktop Integration
@@ -928,7 +890,6 @@ bgp = get_bgp_neighbors()
 
 # Automated troubleshooting using generic NAPALM getter
 if "BGP neighbor down" in some_condition:
-    # Use prompt_troubleshoot_bgp
     detailed_bgp = run_napalm_getter(getters=['bgp_neighbors_detail'])  # Detailed neighbor information
     bgp_config = run_napalm_getter(getters=['bgp_config'])
 
@@ -950,33 +911,6 @@ for device in devices:
 ```
 
 ## MCP Ecosystem Deep Dive
-
-### Prompts System
-
-The server includes structured prompts for common troubleshooting scenarios:
-
-#### Available Prompts
-
-- **`prompt_troubleshoot_network_issue`**: Generic network problem diagnosis
-  - Usage: "I need to troubleshoot a connectivity issue on device R1"
-  - Provides: Step-by-step systematic approach
-
-- **`prompt_troubleshoot_bgp`**: BGP session analysis
-  - Usage: "BGP session with neighbor 10.0.0.1 is down on R1"
-  - Provides: BGP-specific diagnostic workflow
-
-- **`prompt_troubleshoot_interface`**: Interface problem resolution
-  - Usage: "Interface GigabitEthernet0/0 is down on switch S1"
-  - Provides: Interface-specific troubleshooting steps
-
-#### Using Prompts in Claude
-
-```bash
-# Natural language triggers prompt selection
-"Troubleshoot BGP issues on router R2"
-"Help diagnose interface problems on switch S1"
-"Network connectivity issues in the branch office"
-```
 
 ### Resources System
 
@@ -1105,13 +1039,6 @@ To add new validation models for input validation:
 2. Register models in `MODEL_MAP` in `utils/validation_helpers.py`
 3. The `validate_params` tool will automatically support the new models
 
-### Adding Prompts
-
-To add troubleshooting prompts:
-
-1. Add prompt functions to `src/nornir_mcp/prompts.py` with names starting with `prompt_`
-2. Functions are automatically registered when the server starts
-
 ### Adding Resources
 
 ### Command Security
@@ -1161,9 +1088,7 @@ uv run nornir-mcp
 
 1. **New Tools**: Follow the service-intent pattern in appropriate tool module
 2. **New Platforms**: Add platform support in inventory configuration
-3. **New Prompts**: Add to `prompts.py` with `prompt_` prefix
-
-4. **New Validation**: Add models to `models.py` and register in validation helpers
+3. **New Validation**: Add models to `models.py` and register in validation helpers
 
 ### Code Standards
 
@@ -1182,7 +1107,6 @@ uv run nornir-mcp
 - **Technology separation**: NAPALM tools in monitoring.py, Netmiko tools in management.py
 - **Advanced validation** with Pydantic models
 - **Command security** with configurable blacklists
-- **MCP ecosystem** with prompts
 - **Docker containerization**
 - **Comprehensive documentation**
 

@@ -58,15 +58,6 @@ except Exception as exc:
     logger.warning("Failed to register 'validate_params' tool: %s", exc)
 
 
-# Register prompts from prompts.py so users can add their own prompt_* functions
-try:
-    from .prompts import register_prompts
-
-    register_prompts(mcp)
-except Exception as exc:
-    logger.warning("Could not import or register prompts from prompts.py: %s", exc)
-
-
 def main() -> None:
     """Entry point for FastMCP."""
     mcp.run()
