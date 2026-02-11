@@ -16,15 +16,14 @@ def ensure_backup_directory(backup_dir: str | Path) -> Path:
     Raises:
         ValueError: If the backup directory path attempts to traverse outside the safe root
     """
-    # Sanitize the input to prevent path traversal
-    backup_dir = str(backup_dir).replace("..", "").replace("/", "_").replace("\\", "_")
-
-    # 1. Resolve absolute paths
-    target_path = Path(backup_dir).resolve()
-    # 2. Define strict root (e.g., current directory)
+    # Resolve the path and ensure it stays within the current working directory
     root_path = Path.cwd().resolve()
+    requested = Path(backup_dir).expanduser()
+    if requested.is_absolute():
+        target_path = requested.resolve()
+    else:
+        target_path = (root_path / requested).resolve()
 
-    # 3. Check if target is within root
     if not target_path.is_relative_to(root_path):
         raise ValueError(f"Security Error: Backup directory must be within {root_path}")
 
