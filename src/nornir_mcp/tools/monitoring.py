@@ -14,28 +14,34 @@ logger = logging.getLogger(__name__)
 
 
 @mcp.tool()
-async def get_device_facts(filters: DeviceFilters | None = None) -> dict[str, Any]:
+async def get_device_facts(
+    filters: DeviceFilters | None = None,
+    timeout: int | None = None,
+) -> dict[str, Any]:
     """Retrieve basic device information (Vendor, OS, Uptime).
 
     Args:
         filters: DeviceFilters object containing filter criteria
+        timeout: Optional timeout in seconds for the operation
 
     Returns:
         Raw NAPALM facts dictionary per host.
     """
-    return await napalm_getter(getters=["facts"], filters=filters)
+    return await napalm_getter(getters=["facts"], filters=filters, timeout=timeout)
 
 
 @mcp.tool()
 async def get_device_configs(
     filters: DeviceFilters | None = None,
     source: str = "running",
+    timeout: int | None = None,
 ) -> dict[str, Any]:
     """Retrieve raw device configuration data.
 
     Args:
         filters: DeviceFilters object containing filter criteria
         source: Configuration source (running, startup, candidate)
+        timeout: Optional timeout in seconds for the operation
 
     Returns:
         Raw NAPALM config dictionary per host.
@@ -44,6 +50,7 @@ async def get_device_configs(
         getters=["config"],
         filters=filters,
         getters_options={"config": {"retrieve": source}},
+        timeout=timeout,
     )
 
 
@@ -51,12 +58,20 @@ async def get_device_configs(
 async def get_bgp_neighbors(
     filters: DeviceFilters | None = None,
     device_name: str | None = None,
+    timeout: int | None = None,
 ) -> dict[str, Any]:
-    """Get BGP neighbor information."""
+    """Get BGP neighbor information.
+
+    Args:
+        filters: DeviceFilters object containing filter criteria
+        device_name: Single device name (alternative to filters)
+        timeout: Optional timeout in seconds for the operation
+    """
     return await napalm_getter(
         getters=["bgp_neighbors"],
         filters=filters,
         device_name=device_name,
+        timeout=timeout,
     )
 
 
@@ -64,12 +79,20 @@ async def get_bgp_neighbors(
 async def get_interfaces(
     filters: DeviceFilters | None = None,
     device_name: str | None = None,
+    timeout: int | None = None,
 ) -> dict[str, Any]:
-    """Get interface information."""
+    """Get interface information.
+
+    Args:
+        filters: DeviceFilters object containing filter criteria
+        device_name: Single device name (alternative to filters)
+        timeout: Optional timeout in seconds for the operation
+    """
     return await napalm_getter(
         getters=["interfaces"],
         filters=filters,
         device_name=device_name,
+        timeout=timeout,
     )
 
 
@@ -77,12 +100,20 @@ async def get_interfaces(
 async def get_interfaces_ip(
     filters: DeviceFilters | None = None,
     device_name: str | None = None,
+    timeout: int | None = None,
 ) -> dict[str, Any]:
-    """Get interface IP information."""
+    """Get interface IP information.
+
+    Args:
+        filters: DeviceFilters object containing filter criteria
+        device_name: Single device name (alternative to filters)
+        timeout: Optional timeout in seconds for the operation
+    """
     return await napalm_getter(
         getters=["interfaces_ip"],
         filters=filters,
         device_name=device_name,
+        timeout=timeout,
     )
 
 
@@ -92,6 +123,7 @@ async def run_napalm_getter(
     filters: DeviceFilters | None = None,
     device_name: str | None = None,
     getters_options: Mapping[str, Any] | None = None,
+    timeout: int | None = None,
 ) -> dict[str, Any]:
     """Execute one or more NAPALM getters on network devices.
 
@@ -100,6 +132,7 @@ async def run_napalm_getter(
         filters: DeviceFilters for multi-device operations
         device_name: Single device name (alternative to filters)
         getters_options: Optional getter-specific options
+        timeout: Optional timeout in seconds for the operation
 
     Returns:
         Structured NAPALM data per host
@@ -109,4 +142,5 @@ async def run_napalm_getter(
         filters=filters,
         device_name=device_name,
         getters_options=getters_options,
+        timeout=timeout,
     )

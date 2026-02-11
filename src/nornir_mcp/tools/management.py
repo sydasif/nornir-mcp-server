@@ -3,6 +3,8 @@
 import logging
 from typing import Any
 
+from nornir_napalm.plugins.tasks import napalm_configure
+
 from ..application import mcp
 from ..models import DeviceFilters
 from ..services.runner import runner
@@ -12,7 +14,7 @@ from ..utils.helpers import napalm_getter
 from ..utils.security import get_command_validator
 from ..utils.tasks import (
     netmiko_send_commands,
-    netmiko_send_config,
+    netmiko_send_config_atomic,
 )
 
 logger = logging.getLogger(__name__)
@@ -43,37 +45,70 @@ def _validate_commands(commands: list[str]) -> dict[str, Any] | None:
 async def send_config_commands(
     commands: list[str],
     filters: DeviceFilters | None = None,
+    dry_run: bool = False,
+    timeout: int | None = None,
+    exit_on_error: bool = True,
 ) -> dict[str, Any]:
     """Send configuration commands to network devices.
 
     Args:
         commands: List of configuration commands
         filters: DeviceFilters object containing filter criteria
+        dry_run: If True, preview changes without applying (uses NAPALM for supported platforms)
+        timeout: Optional timeout in seconds for the operation
+        exit_on_error: If True (default), stop execution on first error. Commands are applied atomically.
 
     Returns:
         Raw output from the configuration execution per host.
+        On error, includes details about which command failed.
     """
     validation_error = _validate_commands(commands)
     if validation_error:
         return validation_error
 
-    return await runner.execute(
-        task=netmiko_send_config,
-        filters=filters,
-        config_commands=commands,
-    )
+    if dry_run:
+        # Use NAPALM for dry-run capability (returns diff)
+        config_text = "\n".join(commands)
+        return await runner.execute(
+            task=napalm_configure,
+            filters=filters,
+            timeout=timeout,
+            configuration=config_text,
+            dry_run=True,
+        )
+
+    if exit_on_error:
+        # Use atomic config sending with error checking
+        return await runner.execute(
+            task=netmiko_send_config_atomic,
+            filters=filters,
+            timeout=timeout,
+            commands=commands,
+            exit_on_error=True,
+        )
+    else:
+        # Legacy behavior - send all commands at once
+        return await runner.execute(
+            task=netmiko_send_config_atomic,
+            filters=filters,
+            timeout=timeout,
+            commands=commands,
+            exit_on_error=False,
+        )
 
 
 @mcp.tool()
 async def backup_device_configs(
     filters: DeviceFilters | None = None,
     path: str = "./backups",
+    timeout: int | None = None,
 ) -> dict[str, Any]:
     """Save device configuration to the local disk.
 
     Args:
         filters: DeviceFilters object containing filter criteria
         path: Directory path to save backup files
+        timeout: Optional timeout in seconds for the operation
 
     Returns:
         Summary of saved file paths.
@@ -83,6 +118,7 @@ async def backup_device_configs(
         getters=["config"],
         filters=filters,
         getters_options={"config": {"retrieve": "running"}},
+        timeout=timeout,
     )
 
     backup_path = ensure_backup_directory(path)
@@ -120,12 +156,14 @@ async def backup_device_configs(
 async def run_show_commands(
     commands: list[str],
     filters: DeviceFilters | None = None,
+    timeout: int | None = None,
 ) -> dict[str, Any]:
     """Execute raw CLI show commands via SSH.
 
     Args:
         commands: List of show commands to execute
         filters: DeviceFilters object containing filter criteria
+        timeout: Optional timeout in seconds for the operation
 
     Returns:
         Dictionary mapping command -> host -> raw output
@@ -137,6 +175,7 @@ async def run_show_commands(
     raw = await runner.execute(
         task=netmiko_send_commands,
         filters=filters,
+        timeout=timeout,
         commands=commands,
     )
 
