@@ -14,7 +14,7 @@ def _get_security_root() -> Path:
     Uses NORNIR_MCP_ROOT environment variable if set, otherwise
     falls back to the directory containing the Nornir config.yaml.
     """
-    if root_env := os.environ.get("NORNIR_MCP_ROOT"):
+    if root_env := os.environ.get("NORNIR_MCP_ROOT"):  # pyright: ignore[reportCallIssue]
         return Path(root_env).expanduser().resolve()
 
     # Fall back to config.yaml directory for stability (using cached path)
