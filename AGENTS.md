@@ -5,7 +5,6 @@
 - `src/nornir_mcp/`: application code.
 - `src/nornir_mcp/tools/`: MCP tools grouped by intent (`inventory.py`, `monitoring.py`, `management.py`).
 - `src/nornir_mcp/utils/`: helpers, validation, filters, security, config, and tasks.
-- `examples/conf/`: sample Nornir inventory files.
 - `config.yaml`: Nornir config (expected in repo root when running locally).
 
 ## Build, Test, and Development Commands
@@ -40,7 +39,6 @@
 ## Security & Configuration Tips
 
 - Keep `config.yaml` in the repo root when running locally.
-- Use `examples/conf/*` as a starting point for inventory.
 - Command validation is hardcoded in `utils/security.py` with a simple denylist for dangerous commands.
 - Tool errors follow a standard shape: `{"error": true, "code": "...", "message": "...", "details": {...}}`.
 - Use `NORNIR_MCP_TIMEOUT` environment variable to configure task timeout (default: 300 seconds).

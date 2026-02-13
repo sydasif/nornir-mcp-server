@@ -1,9 +1,0 @@
----
-# Sample defaults configuration file
-
-username: admin
-password: admin
-platform: ios
-data:
-  site: unknown
-  region: undefined
