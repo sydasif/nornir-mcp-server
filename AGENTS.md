@@ -5,7 +5,7 @@
 - `src/nornir_mcp/`: application code.
 - `src/nornir_mcp/tools/`: MCP tools grouped by intent (`inventory.py`, `monitoring.py`, `management.py`).
 - `src/nornir_mcp/utils/`: helpers, validation, filters, security, config, and tasks.
-- `config.yaml`: Nornir config (expected in repo root when running locally).
+- `config.yaml`: Nornir config (User provided; expected in directory when running).
 
 ## Build, Test, and Development Commands
 

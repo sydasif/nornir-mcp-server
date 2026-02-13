@@ -55,13 +55,9 @@ pip install git+https://github.com/sydasif/nornir-mcp-server.git
 
 ## ⚡ Quick Start
 
-
-
 1.  **Initialize Configuration**:
 
     Create a `config.yaml` and basic inventory files in your working directory. See [Minimal Inventory Example](#-minimal-inventory-example) below.
-
-
 
 2.  **Launch the Server**:
 
@@ -71,93 +67,53 @@ pip install git+https://github.com/sydasif/nornir-mcp-server.git
 
     ```
 
-
-
 3.  **Verify Inventory**:
 
     The server will look for `config.yaml` in the current directory to load your Nornir inventory.
 
-
-
 ---
-
-
 
 ## 📦 Minimal Inventory Example
 
-
-
 To get started quickly, create these three files in your project root:
-
-
 
 **`hosts.yaml`**
 
 ```yaml
-
 R1:
-
   hostname: 192.168.1.1
-
   platform: ios
-
   groups:
-
     - cisco_ios
-
 ```
-
-
 
 **`groups.yaml`**
 
 ```yaml
-
 cisco_ios:
-
   platform: ios
-
   username: admin
-
   password: password
-
 ```
-
-
 
 **`defaults.yaml`**
 
 ```yaml
-
 # Global defaults
-
 data:
-
   site: NYC
-
 ```
-
-
 
 **`config.yaml`**
 
 ```yaml
-
 inventory:
-
   plugin: SimpleInventory
-
   options:
-
     host_file: "hosts.yaml"
-
     group_file: "groups.yaml"
-
     defaults_file: "defaults.yaml"
-
 ```
-
-
 
 ---
 

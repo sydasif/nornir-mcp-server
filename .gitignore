@@ -26,3 +26,10 @@ node_modules/
 htmlcov/
 .coverage
 .claude/
+
+# Nornir Configuration
+config.yaml
+hosts.yaml
+groups.yaml
+defaults.yaml
+backups/
