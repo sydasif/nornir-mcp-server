@@ -17,7 +17,7 @@ The Nornir MCP Server provides a specialized set of tools for network engineers 
 - **Dual-Engine Architecture**: Combines NAPALM's normalized getters with Netmiko's robust SSH command execution.
 - **Intelligent Filtering**: Schema-agnostic device selection by hostname, group, or platform.
 - **Security First**: Built-in command blacklisting, input validation (Pydantic), and sensitive data sanitization.
-- **Production Ready**: Full Docker support, comprehensive logging, and asynchronous execution.
+- **Production Ready**: Comprehensive logging and asynchronous execution.
 
 ---
 

@@ -13,7 +13,6 @@
 - `nornir-mcp`: run the server using `config.yaml` in the current directory.
 - `LOG_LEVEL=DEBUG nornir-mcp`: run with verbose logging.
 - `fastmcp dev src/nornir_mcp/server.py`: dev server (may fail due to relative-import loading); prefer `nornir-mcp` if you hit import errors.
-- `docker compose up --build`: run via Docker.
 - `uv run ruff check .` and `uv run ruff format .`: lint and format.
 
 ## Coding Style & Naming Conventions
