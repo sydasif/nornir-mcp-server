@@ -7,26 +7,6 @@ from fastmcp import FastMCP
 from nornir import InitNornir
 from nornir.core import Nornir
 
-
-def _configure_logging() -> None:
-    """Configure logging based on environment variables.
-
-    Called at module import to set up logging. Respects LOG_LEVEL
-    environment variable. Can be called again to reconfigure.
-    """
-    import os
-
-    log_level = os.environ.get("LOG_LEVEL", "INFO").upper()
-    logging.basicConfig(
-        level=getattr(logging, log_level, logging.INFO),
-        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-        handlers=[logging.FileHandler("nornir_mcp.log"), logging.StreamHandler()],
-    )
-
-
-# Initialize logging on first use
-_configure_logging()
-
 logger = logging.getLogger("nornir-mcp")
 
 # Initialize FastMCP with metadata

@@ -14,4 +14,7 @@ runner:
     num_workers: 100
 
 logging:
-  enabled: false
+  enabled: true
+  level: INFO
+  log_file: "nornir.log"
+  to_console: false
