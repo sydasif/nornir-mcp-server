@@ -2,9 +2,9 @@
 
 from typing import Any
 
-from ..application import get_nr, mcp
+from ..application import get_nornir, mcp
 from ..models import DeviceFilters
-from ..utils.errors import error_response
+from ..utils.common import error_response
 from ..utils.filters import apply_filters
 
 
@@ -33,7 +33,7 @@ async def list_network_devices(
             code="invalid_query_type",
         )
 
-    nr = get_nr()
+    nr = get_nornir()
     nr = apply_filters(nr, filters)
 
     result: dict[str, Any] = {}

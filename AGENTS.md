@@ -41,7 +41,6 @@
 
 - Keep `config.yaml` in the repo root when running locally.
 - Use `examples/conf/*` as a starting point for inventory.
-- `conf/blacklist.yaml` controls command validation for Netmiko tools; keep it restricted for safety.
+- Command validation is hardcoded in `utils/security.py` with a simple denylist for dangerous commands.
 - Tool errors follow a standard shape: `{"error": true, "code": "...", "message": "...", "details": {...}}`.
 - Use `NORNIR_MCP_TIMEOUT` environment variable to configure task timeout (default: 300 seconds).
-- Use `NORNIR_MCP_ROOT` environment variable to set the security root directory for backups (defaults to config.yaml directory).

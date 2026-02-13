@@ -9,11 +9,10 @@ from nornir.core import Nornir
 from nornir.core.exceptions import NornirExecutionError
 from nornir.core.task import Result
 
-from ..application import get_nr
+from ..application import get_nornir
 from ..models import DeviceFilters
-from ..utils.errors import error_response
+from ..utils.common import error_response, format_results
 from ..utils.filters import apply_filters
-from ..utils.formatters import format_results
 
 # Default timeout: 5 minutes for network operations
 DEFAULT_TIMEOUT = int(os.environ.get("NORNIR_MCP_TIMEOUT", "300"))
@@ -29,16 +28,19 @@ class NornirRunner:
         timeout: int | None = None,
         **task_kwargs: Any,
     ) -> dict[str, Any]:
-        """
-        Execute a Nornir task and return raw results.
+        """Execute a Nornir task and return formatted results.
 
-        1. Gets fresh Nornir instance
-        2. Applies Filters
-        3. Offloads blocking task to thread with timeout
-        4. Returns raw results dictionary
+        Args:
+            task: Nornir task function to execute
+            filters: Optional filters to select specific devices
+            timeout: Optional timeout in seconds (default: NORNIR_MCP_TIMEOUT env var)
+            **task_kwargs: Additional arguments passed to the task
+
+        Returns:
+            Dictionary mapping hostname to task results or error responses
         """
         # 1. Setup & Filter
-        nr = get_nr()
+        nr = get_nornir()
         try:
             nr = apply_filters(nr, filters)
         except ValueError as e:
@@ -65,9 +67,9 @@ class NornirRunner:
         # 3. Standardize Output (Simple extraction)
         return format_results(result)
 
-    def get_nr(self) -> Nornir:
+    def get_nornir(self) -> Nornir:
         """Get a fresh Nornir instance for direct use."""
-        return get_nr()
+        return get_nornir()
 
 
 # Singleton instance for easy import

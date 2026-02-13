@@ -4,116 +4,101 @@ import logging
 from collections.abc import Mapping
 from typing import Any
 
+from nornir_napalm.plugins.tasks import napalm_get
+
 from ..application import mcp
 from ..models import DeviceFilters
-from ..utils.helpers import napalm_getter
+from ..services.runner import runner
 
 logger = logging.getLogger(__name__)
-
-# --- Tools ---
 
 
 @mcp.tool()
 async def get_device_facts(
     filters: DeviceFilters | None = None,
-    timeout: int | None = None,
 ) -> dict[str, Any]:
     """Retrieve basic device information (Vendor, OS, Uptime).
 
     Args:
         filters: DeviceFilters object containing filter criteria
-        timeout: Optional timeout in seconds for the operation
 
     Returns:
         Raw NAPALM facts dictionary per host.
     """
-    return await napalm_getter(getters=["facts"], filters=filters, timeout=timeout)
+    return await runner.execute(
+        task=napalm_get,
+        filters=filters,
+        getters=["facts"],
+    )
 
 
 @mcp.tool()
 async def get_device_configs(
     filters: DeviceFilters | None = None,
     source: str = "running",
-    timeout: int | None = None,
 ) -> dict[str, Any]:
     """Retrieve raw device configuration data.
 
     Args:
         filters: DeviceFilters object containing filter criteria
         source: Configuration source (running, startup, candidate)
-        timeout: Optional timeout in seconds for the operation
 
     Returns:
         Raw NAPALM config dictionary per host.
     """
-    return await napalm_getter(
-        getters=["config"],
+    return await runner.execute(
+        task=napalm_get,
         filters=filters,
+        getters=["config"],
         getters_options={"config": {"retrieve": source}},
-        timeout=timeout,
     )
 
 
 @mcp.tool()
 async def get_bgp_neighbors(
     filters: DeviceFilters | None = None,
-    device_name: str | None = None,
-    timeout: int | None = None,
 ) -> dict[str, Any]:
     """Get BGP neighbor information.
 
     Args:
         filters: DeviceFilters object containing filter criteria
-        device_name: Single device name (alternative to filters)
-        timeout: Optional timeout in seconds for the operation
     """
-    return await napalm_getter(
-        getters=["bgp_neighbors"],
+    return await runner.execute(
+        task=napalm_get,
         filters=filters,
-        device_name=device_name,
-        timeout=timeout,
+        getters=["bgp_neighbors"],
     )
 
 
 @mcp.tool()
 async def get_interfaces(
     filters: DeviceFilters | None = None,
-    device_name: str | None = None,
-    timeout: int | None = None,
 ) -> dict[str, Any]:
     """Get interface information.
 
     Args:
         filters: DeviceFilters object containing filter criteria
-        device_name: Single device name (alternative to filters)
-        timeout: Optional timeout in seconds for the operation
     """
-    return await napalm_getter(
-        getters=["interfaces"],
+    return await runner.execute(
+        task=napalm_get,
         filters=filters,
-        device_name=device_name,
-        timeout=timeout,
+        getters=["interfaces"],
     )
 
 
 @mcp.tool()
 async def get_interfaces_ip(
     filters: DeviceFilters | None = None,
-    device_name: str | None = None,
-    timeout: int | None = None,
 ) -> dict[str, Any]:
     """Get interface IP information.
 
     Args:
         filters: DeviceFilters object containing filter criteria
-        device_name: Single device name (alternative to filters)
-        timeout: Optional timeout in seconds for the operation
     """
-    return await napalm_getter(
-        getters=["interfaces_ip"],
+    return await runner.execute(
+        task=napalm_get,
         filters=filters,
-        device_name=device_name,
-        timeout=timeout,
+        getters=["interfaces_ip"],
     )
 
 
@@ -121,26 +106,24 @@ async def get_interfaces_ip(
 async def run_napalm_getter(
     getters: list[str],
     filters: DeviceFilters | None = None,
-    device_name: str | None = None,
     getters_options: Mapping[str, Any] | None = None,
-    timeout: int | None = None,
 ) -> dict[str, Any]:
     """Execute one or more NAPALM getters on network devices.
 
     Args:
         getters: List of NAPALM getter names (e.g., ['facts', 'interfaces', 'arp_table'])
         filters: DeviceFilters for multi-device operations
-        device_name: Single device name (alternative to filters)
         getters_options: Optional getter-specific options
-        timeout: Optional timeout in seconds for the operation
 
     Returns:
         Structured NAPALM data per host
     """
-    return await napalm_getter(
-        getters=getters,
+    kwargs: dict[str, Any] = {"getters": getters}
+    if getters_options is not None:
+        kwargs["getters_options"] = getters_options
+
+    return await runner.execute(
+        task=napalm_get,
         filters=filters,
-        device_name=device_name,
-        getters_options=getters_options,
-        timeout=timeout,
+        **kwargs,
     )

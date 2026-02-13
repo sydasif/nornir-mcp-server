@@ -27,46 +27,4 @@ class DeviceFilters(BaseModel):
         return value
 
 
-# --- Pydantic Models for Input Validation ---
-class DeviceNameModel(BaseModel):
-    device_name: str = Field(
-        ..., description="The unique device name as defined in the Nornir inventory."
-    )
-
-
-class GetConfigModel(DeviceNameModel):
-    retrieve: str = Field(default="running")
-
-
-class SendCommandModel(DeviceNameModel):
-    command: str | None = Field(None)
-    commands: list[str] | None = Field(None)
-
-
-class BGPConfigModel(DeviceNameModel):
-    group: str = Field(default="")
-    neighbor: str = Field(default="")
-
-
-class BGPNeighborsDetailModel(DeviceNameModel):
-    neighbor_address: str = Field(default="")
-
-
-class LLDPNeighborsDetailModel(DeviceNameModel):
-    interface: str = Field(default="")
-
-
-class NetworkInstancesModel(DeviceNameModel):
-    name: str = Field(default="")
-
-
-__all__: list[str] = [
-    "BGPConfigModel",
-    "BGPNeighborsDetailModel",
-    "DeviceFilters",
-    "DeviceNameModel",
-    "GetConfigModel",
-    "LLDPNeighborsDetailModel",
-    "NetworkInstancesModel",
-    "SendCommandModel",
-]
+__all__: list[str] = ["DeviceFilters"]

@@ -1,6 +1,6 @@
 """Nornir MCP Server - Network Automation Server."""
 
-from .application import get_nr, mcp
+from .application import mcp
 
 # Import the new intent-based modules
 from .tools import (  # noqa: F401
@@ -8,9 +8,6 @@ from .tools import (  # noqa: F401
     management,
     monitoring,
 )
-from .utils.validation_helpers import register_validate_params
-
-register_validate_params(mcp, get_nr)
 
 
 def main() -> None:
