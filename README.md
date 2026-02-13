@@ -171,19 +171,29 @@ disallowed_patterns: ["&&", "||", ">"]
 
 ---
 
-## 🤖 Claude Integration
+## 🤖 CLI Integration
 
-Add the following to your `claude_desktop_config.json`:
+Add the following to your claude config:
 
 ```json
 {
   "mcpServers": {
-    "nornir-network": {
-      "command": "nornir-mcp",
-      "workingDir": "/path/to/network/configs",
-      "env": {
-        "LOG_LEVEL": "INFO"
-      }
+    "nornir": {
+      "command": "nornir-mcp"
+    }
+  }
+}
+```
+
+Add the following to your opencode config:
+
+```json
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "nornir": {
+      "type": "local",
+      "command": ["nornir-mcp"]
     }
   }
 }
