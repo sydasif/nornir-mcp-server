@@ -159,15 +159,15 @@ logging:
   level: INFO
 ```
 
-### Security Blacklist (`blacklist.yaml`)
+### Command Security
 
-Prevent dangerous operations by defining prohibited commands and patterns:
+The server includes a built-in security engine that validates all CLI commands against a multi-stage denylist before execution. This prevents accidental or malicious use of destructive commands.
 
-```yaml
-exact_commands: ["reload", "write erase"]
-keywords: ["erase", "format", "delete"]
-disallowed_patterns: ["&&", "||", ">"]
-```
+**Default Protections:**
+
+- **Blocked Commands**: `reload`, `write erase`, `erase startup-config`, etc.
+- **Restricted Keywords**: `erase`, `format`, `delete`.
+- **Chaining & Redirection**: Prevents use of `;`, `&&`, `>`, and `<` to ensure single-command integrity.
 
 ---
 
@@ -210,7 +210,7 @@ Add the following to your opencode config:
 
 ## 🔒 Security
 
-- **Command Validation**: All CLI inputs pass through a multi-stage blacklist filter.
+- **Command Validation**: All CLI inputs pass through a multi-stage built-in denylist filter (Exact commands, Keywords, and Patterns).
 - **Credential Management**: Supports environment variables and Nornir's native secure handling.
 - **Path Sandboxing**: Configuration backups are restricted to the defined root directory to prevent traversal.
 - **Data Masking**: Automatically strips sensitive patterns (passwords, SNMP strings) from tool outputs.
