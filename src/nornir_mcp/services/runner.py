@@ -16,10 +16,16 @@ from ..utils.filters import apply_filters
 
 # Default timeout: 5 minutes for network operations
 DEFAULT_TIMEOUT = int(os.environ.get("NORNIR_MCP_TIMEOUT", "300"))
+GLOBAL_ERROR_HOST = "__global__"
 
 
 class NornirRunner:
     """Orchestrates Nornir task execution."""
+
+    @staticmethod
+    def _global_error(message: str, code: str) -> dict[str, Any]:
+        """Return a host-indexed error payload for global failures."""
+        return {GLOBAL_ERROR_HOST: error_response(message, code=code)}
 
     async def execute(
         self,
@@ -40,11 +46,15 @@ class NornirRunner:
             Dictionary mapping hostname to task results or error responses
         """
         # 1. Setup & Filter
-        nr = get_nornir()
+        try:
+            nr = get_nornir()
+        except ValueError as e:
+            return self._global_error(str(e), code="config_error")
+
         try:
             nr = apply_filters(nr, filters)
         except ValueError as e:
-            return error_response(str(e), code="filter_error")
+            return self._global_error(str(e), code="filter_error")
 
         # 2. Execute in Thread (Non-blocking) with timeout
         timeout_secs = timeout if timeout is not None else DEFAULT_TIMEOUT
@@ -54,12 +64,12 @@ class NornirRunner:
                 timeout=timeout_secs,
             )
         except asyncio.TimeoutError:
-            return error_response(
+            return self._global_error(
                 f"Task execution timed out after {timeout_secs} seconds",
                 code="timeout_error",
             )
         except NornirExecutionError as e:
-            return error_response(
+            return self._global_error(
                 f"Nornir execution failed: {e}",
                 code="execution_error",
             )

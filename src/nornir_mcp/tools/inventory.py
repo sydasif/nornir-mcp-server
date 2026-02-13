@@ -33,8 +33,15 @@ async def list_network_devices(
             code="invalid_query_type",
         )
 
-    nr = get_nornir()
-    nr = apply_filters(nr, filters)
+    try:
+        nr = get_nornir()
+    except ValueError as e:
+        return error_response(str(e), code="config_error")
+
+    try:
+        nr = apply_filters(nr, filters)
+    except ValueError as e:
+        return error_response(str(e), code="filter_error")
 
     result: dict[str, Any] = {}
 

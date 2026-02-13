@@ -7,6 +7,7 @@ from .tools import (  # noqa: F401
     inventory,
     management,
     monitoring,
+    system,
 )
 
 

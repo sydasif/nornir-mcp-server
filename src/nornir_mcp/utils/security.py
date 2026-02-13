@@ -12,7 +12,7 @@ DENYLIST = {
         "format flash:",
     },
     "keywords": {"erase", "format", "delete"},
-    "patterns": [">", "<", ";", "&&"],
+    "patterns": [">", "<", ";", "&&", "||"],
 }
 
 

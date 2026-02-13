@@ -124,7 +124,11 @@ async def backup_device_configs(
         getters_options={"config": {"retrieve": "running"}},
     )
 
-    backup_path = ensure_backup_directory(path)
+    try:
+        backup_path = ensure_backup_directory(path)
+    except ValueError as e:
+        return error_response(str(e), code="security_error")
+
     backup_results = {}
 
     for hostname, data in result.items():
