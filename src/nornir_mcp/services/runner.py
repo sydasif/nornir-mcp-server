@@ -14,8 +14,6 @@ from ..models import DeviceFilters
 from ..utils.common import error_response, format_results
 from ..utils.filters import apply_filters
 
-# Default timeout: 5 minutes for network operations
-DEFAULT_TIMEOUT = int(os.environ.get("NORNIR_MCP_TIMEOUT", "300"))
 GLOBAL_ERROR_HOST = "__global__"
 
 
@@ -57,7 +55,11 @@ class NornirRunner:
             return self._global_error(str(e), code="filter_error")
 
         # 2. Execute in Thread (Non-blocking) with timeout
-        timeout_secs = timeout if timeout is not None else DEFAULT_TIMEOUT
+        timeout_secs = (
+            timeout
+            if timeout is not None
+            else int(os.environ.get("NORNIR_MCP_TIMEOUT", "300"))
+        )
         try:
             result = await asyncio.wait_for(
                 asyncio.to_thread(nr.run, task=task, **task_kwargs),

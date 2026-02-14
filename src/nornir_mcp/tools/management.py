@@ -4,7 +4,7 @@ import logging
 from typing import Any
 
 from nornir.core.task import Result, Task
-from nornir_napalm.plugins.tasks import napalm_configure, napalm_get
+from nornir_napalm.plugins.tasks import napalm_get
 from nornir_netmiko.tasks import netmiko_send_command, netmiko_send_config
 
 from ..application import mcp
@@ -68,14 +68,12 @@ def _validate_commands(commands: list[str]) -> dict[str, Any] | None:
 async def send_config_commands(
     commands: list[str],
     filters: DeviceFilters | None = None,
-    dry_run: bool = False,
 ) -> dict[str, Any]:
     """Send configuration commands to network devices.
 
     Args:
         commands: List of configuration commands
         filters: DeviceFilters object containing filter criteria
-        dry_run: If True, preview changes without applying (uses NAPALM for supported platforms)
 
     Returns:
         Raw output from the configuration execution per host.
@@ -84,17 +82,6 @@ async def send_config_commands(
     if validation_error:
         return validation_error
 
-    if dry_run:
-        # Use NAPALM for dry-run capability (returns diff)
-        config_text = "\n".join(commands)
-        return await runner.execute(
-            task=napalm_configure,
-            filters=filters,
-            configuration=config_text,
-            dry_run=True,
-        )
-
-    # Send configuration commands via Netmiko
     return await runner.execute(
         task=netmiko_send_config,
         filters=filters,
