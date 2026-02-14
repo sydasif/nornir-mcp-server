@@ -1012,7 +1012,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "fastmcp", specifier = ">=0.2.0" },
+    { name = "fastmcp", specifier = ">=0.2.0,<2.14.0" },
     { name = "napalm", specifier = ">=4.1.0" },
     { name = "netmiko", specifier = ">=4.3.0" },
     { name = "nornir", specifier = ">=3.4.0" },
