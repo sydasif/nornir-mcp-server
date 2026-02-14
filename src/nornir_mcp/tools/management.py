@@ -103,7 +103,7 @@ async def backup_device_configs(
     Returns:
         Summary of saved file paths.
     """
-    # 1. Get configurations (Raw NAPALM structure: {'config': {'running': '...'}})
+    # Get configurations
     result = await runner.execute(
         task=napalm_get,
         filters=filters,
@@ -111,37 +111,41 @@ async def backup_device_configs(
         getters_options={"config": {"retrieve": "running"}},
     )
 
+    # Setup backup directory
     try:
         backup_path = ensure_backup_directory(path)
     except ValueError as e:
         return error_response(str(e), code="security_error")
 
+    # Process results - flat structure with guard clauses
     backup_results = {}
-
     for hostname, data in result.items():
-        # Check if the host execution failed (data would be an error dict or missing keys)
-        if isinstance(data, dict) and "config" in data:
-            # Extract config content from raw NAPALM structure
-            config_content = data["config"].get("running", "")
-
-            if config_content:
-                file_path = write_config_to_file(hostname, config_content, backup_path)
-                backup_results[hostname] = {
-                    "status": "success",
-                    "path": file_path,
-                }
-            else:
-                backup_results[hostname] = error_response(
-                    "Empty configuration content",
-                    code="empty_config",
-                )
-        else:
-            # Propagate error info found in data
+        # Guard 1: Check for task execution errors
+        if isinstance(data, dict) and data.get("error"):
             backup_results[hostname] = error_response(
-                "Configuration backup failed",
+                "Backup task failed",
                 code="backup_failed",
-                result=data,
+                details=data,
             )
+            continue
+
+        # Guard 2: Extract config safely using chained .get()
+        config = (
+            data.get("config", {}).get("running", "") if isinstance(data, dict) else ""
+        )
+        if not config:
+            backup_results[hostname] = error_response(
+                "Empty or missing configuration",
+                code="empty_config",
+            )
+            continue
+
+        # Success case
+        file_path = write_config_to_file(hostname, config, backup_path)
+        backup_results[hostname] = {
+            "status": "success",
+            "path": file_path,
+        }
 
     return backup_results
 
