@@ -119,7 +119,7 @@ inventory:
 
 ## 🧰 Available Tools
 
-The server exposes 11 tools categorized by operational intent. All tools support an optional `filters` object.
+The server exposes 10 tools categorized by operational intent. All tools support an optional `filters` object.
 
 | Category       | Tool                    | Description                                            |
 | :------------- | :---------------------- | :----------------------------------------------------- |
@@ -133,7 +133,6 @@ The server exposes 11 tools categorized by operational intent. All tools support
 | **Management** | `run_show_commands`     | Execute arbitrary show commands safely.                |
 |                | `send_config_commands`  | Deploy configuration changes with validation.          |
 |                | `backup_device_configs` | Securely save configurations to local disk.            |
-| **System**     | `validate_params`       | Verify inputs against Pydantic models.                 |
 
 ---
 

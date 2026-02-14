@@ -5,7 +5,6 @@ import os
 from collections.abc import Callable
 from typing import Any
 
-from nornir.core import Nornir
 from nornir.core.exceptions import NornirExecutionError
 from nornir.core.task import Result
 
@@ -78,10 +77,6 @@ class NornirRunner:
 
         # 3. Standardize Output (Simple extraction)
         return format_results(result)
-
-    def get_nornir(self) -> Nornir:
-        """Get a fresh Nornir instance for direct use."""
-        return get_nornir()
 
 
 # Singleton instance for easy import
