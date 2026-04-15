@@ -15,6 +15,8 @@
 - `LOG_LEVEL=DEBUG nornir-mcp`: run with verbose logging.
 - `fastmcp dev src/nornir_mcp/server.py`: dev server (may fail due to relative-import loading); prefer `nornir-mcp` if you hit import errors.
 - `uv run ruff check . --fix` and `uv run ruff format .`: lint and format.
+- `uv run pytest`: run the test suite.
+- If `uv run` is unstable due to local environment state, use `.venv/bin/pytest` and `.venv/bin/ruff` directly.
 
 ## Coding Style & Naming Conventions
 
@@ -30,9 +32,10 @@
 
 ## Testing Guidelines
 
-- No automated test suite is currently present in the repository.
-- If you add tests, use `pytest` and name files `test_*.py`.
-- Run tests with `uv run pytest` once tests exist.
+- The repository now includes a pytest suite under `tests/`.
+- Add tests with `pytest` and name files `test_*.py`.
+- Keep tests focused on tool contracts, error payloads, filtering, and security validation.
+- Run tests with `uv run pytest` or `.venv/bin/pytest` if `uv run` is not behaving correctly.
 
 ## Commit & Pull Request Guidelines
 

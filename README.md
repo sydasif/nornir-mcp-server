@@ -1,7 +1,7 @@
 # Nornir MCP Server
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
+[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![MCP](https://img.shields.io/badge/MCP-Protocol-orange.svg)](https://modelcontextprotocol.io)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 
@@ -16,7 +16,7 @@ The Nornir MCP Server provides a specialized set of tools for network engineers 
 - **Multi-Vendor Support**: Standardized interaction for Cisco (IOS, NX-OS, XR), Arista (EOS), Juniper (Junos), and 100+ others.
 - **Dual-Engine Architecture**: Combines NAPALM's normalized getters with Netmiko's robust SSH command execution.
 - **Intelligent Filtering**: Schema-agnostic device selection by hostname, group, or platform.
-- **Security First**: Built-in command blacklisting, input validation (Pydantic), and sensitive data sanitization.
+- **Security First**: Built-in command blacklisting, input validation (Pydantic), and backup path restrictions.
 - **Production Ready**: Comprehensive logging and asynchronous execution.
 
 ---
@@ -30,6 +30,7 @@ The Nornir MCP Server provides a specialized set of tools for network engineers 
 - [Claude Integration](#-claude-integration)
 - [Security](#-security)
 - [Development](#-development)
+- [Testing](#-testing)
 
 ---
 
@@ -212,7 +213,6 @@ Add the following to your opencode config:
 - **Command Validation**: All CLI inputs pass through a multi-stage built-in denylist filter (Exact commands, Keywords, and Patterns).
 - **Credential Management**: Supports environment variables and Nornir's native secure handling.
 - **Path Sandboxing**: Configuration backups are restricted to the defined root directory to prevent traversal.
-- **Data Masking**: Automatically strips sensitive patterns (passwords, SNMP strings) from tool outputs.
 
 ---
 
@@ -230,6 +230,22 @@ uv run pytest
 # Lint and Format
 uv run ruff check . --fix
 uv run ruff format .
+```
+
+If `uv run` is unstable in the local environment, use `.venv/bin/pytest` and `.venv/bin/ruff` directly.
+
+---
+
+## ✅ Testing
+
+The repository includes a pytest suite under `tests/` covering filters, security validation, runner error handling, and backup behavior.
+
+```bash
+# Run the full test suite
+uv run pytest
+
+# Fallback if uv run is unstable
+.venv/bin/pytest
 ```
 
 ---

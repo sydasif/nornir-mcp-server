@@ -1,0 +1,115 @@
+import asyncio
+from collections.abc import Callable
+from typing import Any
+
+from nornir.core.exceptions import NornirExecutionError
+
+from nornir_mcp.services.runner import GLOBAL_ERROR_HOST, NornirRunner
+
+
+class FakeNornir:
+    def __init__(self, run_impl: Callable[..., Any]) -> None:
+        self.run_impl = run_impl
+
+    def run(self, **kwargs: Any) -> Any:
+        return self.run_impl(**kwargs)
+
+
+class FakeSubResult:
+    name = "task"
+
+    def __str__(self) -> str:
+        return "boom"
+
+
+class FakeMultiResult(list):
+    failed = True
+
+
+def test_execute_returns_config_error_when_config_is_missing(monkeypatch) -> None:
+    runner = NornirRunner()
+
+    def raise_config_error() -> None:
+        raise ValueError("missing config")
+
+    monkeypatch.setattr("nornir_mcp.services.runner.get_nornir", raise_config_error)
+
+    result = asyncio.run(runner.execute(task=lambda **_: None))
+
+    assert result == {
+        GLOBAL_ERROR_HOST: {
+            "error": True,
+            "code": "config_error",
+            "message": "missing config",
+        }
+    }
+
+
+def test_execute_returns_filter_error(monkeypatch) -> None:
+    runner = NornirRunner()
+    monkeypatch.setattr(
+        "nornir_mcp.services.runner.get_nornir",
+        lambda: FakeNornir(run_impl=lambda **_: {}),
+    )
+
+    def raise_filter_error(nr: FakeNornir, filters: Any) -> FakeNornir:
+        raise ValueError("bad filters")
+
+    monkeypatch.setattr("nornir_mcp.services.runner.apply_filters", raise_filter_error)
+
+    result = asyncio.run(runner.execute(task=lambda **_: None))
+
+    assert result == {
+        GLOBAL_ERROR_HOST: {
+            "error": True,
+            "code": "filter_error",
+            "message": "bad filters",
+        }
+    }
+
+
+def test_execute_returns_timeout_error(monkeypatch) -> None:
+    runner = NornirRunner()
+    monkeypatch.setattr(
+        "nornir_mcp.services.runner.get_nornir",
+        lambda: FakeNornir(run_impl=lambda **_: {}),
+    )
+    monkeypatch.setattr("nornir_mcp.services.runner.apply_filters", lambda nr, filters: nr)
+
+    async def raise_timeout(awaitable: Any, timeout: int) -> Any:
+        await awaitable
+        raise asyncio.TimeoutError
+
+    monkeypatch.setattr("nornir_mcp.services.runner.asyncio.wait_for", raise_timeout)
+
+    result = asyncio.run(runner.execute(task=lambda **_: None, timeout=5))
+
+    assert result == {
+        GLOBAL_ERROR_HOST: {
+            "error": True,
+            "code": "timeout_error",
+            "message": "Task execution timed out after 5 seconds",
+        }
+    }
+
+
+def test_execute_returns_execution_error(monkeypatch) -> None:
+    runner = NornirRunner()
+    monkeypatch.setattr(
+        "nornir_mcp.services.runner.get_nornir",
+        lambda: FakeNornir(run_impl=lambda **_: {}),
+    )
+    monkeypatch.setattr("nornir_mcp.services.runner.apply_filters", lambda nr, filters: nr)
+
+    async def raise_execution_error(awaitable: Any, timeout: int) -> Any:
+        await awaitable
+        raise NornirExecutionError({"leaf-1": FakeMultiResult([FakeSubResult()])})
+
+    monkeypatch.setattr("nornir_mcp.services.runner.asyncio.wait_for", raise_execution_error)
+
+    result = asyncio.run(runner.execute(task=lambda **_: None, timeout=5))
+
+    assert result[GLOBAL_ERROR_HOST]["error"] is True
+    assert result[GLOBAL_ERROR_HOST]["code"] == "execution_error"
+    assert "Nornir execution failed:" in result[GLOBAL_ERROR_HOST]["message"]
+    assert "leaf-1" in result[GLOBAL_ERROR_HOST]["message"]

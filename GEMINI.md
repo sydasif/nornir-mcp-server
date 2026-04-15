@@ -42,11 +42,14 @@ LOG_LEVEL=DEBUG nornir-mcp
 
 ### Testing
 
-There is currently no automated test suite. If adding tests, use `pytest`.
+The repository includes a pytest suite under `tests/`.
 
 ```bash
-# Placeholder for testing
-# uv run pytest
+# Run the full test suite
+uv run pytest
+
+# Fallback if uv run is unstable in the local environment
+.venv/bin/pytest
 ```
 
 ### Linting and Formatting
@@ -58,6 +61,10 @@ uv run ruff check .
 # Fix linting issues and format
 uv run ruff check . --fix
 uv run ruff format .
+
+# Fallback if uv run is unstable in the local environment
+.venv/bin/ruff check .
+.venv/bin/ruff format .
 ```
 
 ## Development Conventions
