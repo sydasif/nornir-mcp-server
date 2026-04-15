@@ -13,6 +13,23 @@ from ..services.runner import runner
 logger = logging.getLogger(__name__)
 
 
+async def _run_napalm_getters(
+    getters: list[str],
+    filters: DeviceFilters | None = None,
+    getters_options: Mapping[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Execute one or more NAPALM getters via the shared runner."""
+    kwargs: dict[str, Any] = {"getters": getters}
+    if getters_options is not None:
+        kwargs["getters_options"] = getters_options
+
+    return await runner.execute(
+        task=napalm_get,
+        filters=filters,
+        **kwargs,
+    )
+
+
 @mcp.tool()
 async def get_device_facts(
     filters: DeviceFilters | None = None,
@@ -25,11 +42,7 @@ async def get_device_facts(
     Returns:
         Raw NAPALM facts dictionary per host.
     """
-    return await runner.execute(
-        task=napalm_get,
-        filters=filters,
-        getters=["facts"],
-    )
+    return await _run_napalm_getters(["facts"], filters=filters)
 
 
 @mcp.tool()
@@ -46,10 +59,9 @@ async def get_device_configs(
     Returns:
         Raw NAPALM config dictionary per host.
     """
-    return await runner.execute(
-        task=napalm_get,
+    return await _run_napalm_getters(
+        ["config"],
         filters=filters,
-        getters=["config"],
         getters_options={"config": {"retrieve": source}},
     )
 
@@ -63,11 +75,7 @@ async def get_bgp_neighbors(
     Args:
         filters: DeviceFilters object containing filter criteria
     """
-    return await runner.execute(
-        task=napalm_get,
-        filters=filters,
-        getters=["bgp_neighbors"],
-    )
+    return await _run_napalm_getters(["bgp_neighbors"], filters=filters)
 
 
 @mcp.tool()
@@ -79,11 +87,7 @@ async def get_interfaces(
     Args:
         filters: DeviceFilters object containing filter criteria
     """
-    return await runner.execute(
-        task=napalm_get,
-        filters=filters,
-        getters=["interfaces"],
-    )
+    return await _run_napalm_getters(["interfaces"], filters=filters)
 
 
 @mcp.tool()
@@ -95,11 +99,7 @@ async def get_interfaces_ip(
     Args:
         filters: DeviceFilters object containing filter criteria
     """
-    return await runner.execute(
-        task=napalm_get,
-        filters=filters,
-        getters=["interfaces_ip"],
-    )
+    return await _run_napalm_getters(["interfaces_ip"], filters=filters)
 
 
 @mcp.tool()
@@ -118,12 +118,8 @@ async def run_napalm_getter(
     Returns:
         Structured NAPALM data per host
     """
-    kwargs: dict[str, Any] = {"getters": getters}
-    if getters_options is not None:
-        kwargs["getters_options"] = getters_options
-
-    return await runner.execute(
-        task=napalm_get,
+    return await _run_napalm_getters(
+        getters,
         filters=filters,
-        **kwargs,
+        getters_options=getters_options,
     )
