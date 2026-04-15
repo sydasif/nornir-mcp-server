@@ -93,6 +93,26 @@ def test_execute_returns_timeout_error(monkeypatch) -> None:
     }
 
 
+def test_execute_returns_timeout_config_error_for_invalid_env(monkeypatch) -> None:
+    runner = NornirRunner()
+    monkeypatch.setattr(
+        "nornir_mcp.services.runner.get_nornir",
+        lambda: FakeNornir(run_impl=lambda **_: {}),
+    )
+    monkeypatch.setattr("nornir_mcp.services.runner.apply_filters", lambda nr, filters: nr)
+    monkeypatch.setenv("NORNIR_MCP_TIMEOUT", "not-a-number")
+
+    result = asyncio.run(runner.execute(task=lambda **_: None))
+
+    assert result == {
+        GLOBAL_ERROR_HOST: {
+            "error": True,
+            "code": "timeout_config_error",
+            "message": "Invalid NORNIR_MCP_TIMEOUT value: 'not-a-number'",
+        }
+    }
+
+
 def test_execute_returns_execution_error(monkeypatch) -> None:
     runner = NornirRunner()
     monkeypatch.setattr(

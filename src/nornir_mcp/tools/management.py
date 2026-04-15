@@ -122,11 +122,12 @@ async def backup_device_configs(
     for hostname, data in result.items():
         # Guard 1: Check for task execution errors
         if isinstance(data, dict) and data.get("error"):
-            backup_results[hostname] = error_response(
+            backup_error = error_response(
                 "Backup task failed",
                 code="backup_failed",
-                details=data,
             )
+            backup_error["details"] = data
+            backup_results[hostname] = backup_error
             continue
 
         # Guard 2: Extract config safely using chained .get()

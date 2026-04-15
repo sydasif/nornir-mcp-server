@@ -24,6 +24,20 @@ class NornirRunner:
         """Return a host-indexed error payload for global failures."""
         return {GLOBAL_ERROR_HOST: error_response(message, code=code)}
 
+    @staticmethod
+    def _resolve_timeout(timeout: int | None) -> int:
+        """Resolve timeout from explicit value or environment configuration."""
+        if timeout is not None:
+            return timeout
+
+        raw_timeout = os.environ.get("NORNIR_MCP_TIMEOUT", "300")
+        try:
+            return int(raw_timeout)
+        except ValueError as exc:
+            raise ValueError(
+                f"Invalid NORNIR_MCP_TIMEOUT value: {raw_timeout!r}",
+            ) from exc
+
     async def execute(
         self,
         task: Callable[..., Result],
@@ -54,11 +68,11 @@ class NornirRunner:
             return self._global_error(str(e), code="filter_error")
 
         # 2. Execute in Thread (Non-blocking) with timeout
-        timeout_secs = (
-            timeout
-            if timeout is not None
-            else int(os.environ.get("NORNIR_MCP_TIMEOUT", "300"))
-        )
+        try:
+            timeout_secs = self._resolve_timeout(timeout)
+        except ValueError as e:
+            return self._global_error(str(e), code="timeout_config_error")
+
         try:
             result = await asyncio.wait_for(
                 asyncio.to_thread(nr.run, task=task, **task_kwargs),

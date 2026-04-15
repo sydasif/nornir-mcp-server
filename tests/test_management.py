@@ -43,11 +43,9 @@ def test_backup_device_configs_handles_runner_errors(monkeypatch, tmp_path: Path
             "code": "backup_failed",
             "message": "Backup task failed",
             "details": {
-                "details": {
-                    "error": True,
-                    "code": "task_failed",
-                    "message": "device failure",
-                }
+                "error": True,
+                "code": "task_failed",
+                "message": "device failure",
             },
         }
     }
