@@ -8,10 +8,9 @@ from typing import Any
 from nornir.core.exceptions import NornirExecutionError
 from nornir.core.task import Result
 
-from ..application import get_nornir
 from ..models import DeviceFilters
+from .inventory import InventoryConfigError, InventoryFilterError, get_filtered_nornir
 from ..utils.common import error_response, format_results
-from ..utils.filters import apply_filters
 
 GLOBAL_ERROR_HOST = "__global__"
 
@@ -58,13 +57,10 @@ class NornirRunner:
         """
         # 1. Setup & Filter
         try:
-            nr = get_nornir()
-        except ValueError as e:
+            nr = get_filtered_nornir(filters)
+        except InventoryConfigError as e:
             return self._global_error(str(e), code="config_error")
-
-        try:
-            nr = apply_filters(nr, filters)
-        except ValueError as e:
+        except InventoryFilterError as e:
             return self._global_error(str(e), code="filter_error")
 
         # 2. Execute in Thread (Non-blocking) with timeout

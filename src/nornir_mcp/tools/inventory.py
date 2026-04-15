@@ -2,10 +2,14 @@
 
 from typing import Any
 
-from ..application import get_nornir, mcp
+from ..application import mcp
 from ..models import DeviceFilters
+from ..services.inventory import (
+    InventoryConfigError,
+    InventoryFilterError,
+    get_filtered_nornir,
+)
 from ..utils.common import error_response
-from ..utils.filters import apply_filters
 
 
 @mcp.tool()
@@ -34,13 +38,10 @@ async def list_network_devices(
         )
 
     try:
-        nr = get_nornir()
-    except ValueError as e:
+        nr = get_filtered_nornir(filters)
+    except InventoryConfigError as e:
         return error_response(str(e), code="config_error")
-
-    try:
-        nr = apply_filters(nr, filters)
-    except ValueError as e:
+    except InventoryFilterError as e:
         return error_response(str(e), code="filter_error")
 
     result: dict[str, Any] = {}
