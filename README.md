@@ -17,6 +17,7 @@ The Nornir MCP Server provides a specialized set of tools for network engineers 
 - **Dual-Engine Architecture**: Combines NAPALM's normalized getters with Netmiko's robust SSH command execution.
 - **Intelligent Filtering**: Schema-agnostic device selection by hostname, group, or platform.
 - **Security First**: Built-in command blacklisting, input validation (Pydantic), and backup path restrictions.
+- **Per-Call Inventory Reloading**: Every MCP tool invocation reloads `config.yaml` and inventory data from disk.
 - **Production Ready**: Comprehensive logging and asynchronous execution.
 
 ---
@@ -139,6 +140,8 @@ The server exposes 10 tools categorized by operational intent. All tools support
 
 ## ⚙️ Configuration
 
+Every MCP tool call reloads `config.yaml` from the current working directory. The server does not cache a long-lived `Nornir` instance between requests.
+
 ### Nornir Setup (`config.yaml`)
 
 ```yaml
@@ -234,11 +237,16 @@ uv run ruff format .
 
 If `uv run` is unstable in the local environment, use `.venv/bin/pytest` and `.venv/bin/ruff` directly.
 
+Relevant internal paths:
+- `src/nornir_mcp/services/runner.py`: shared task execution and timeout handling.
+- `src/nornir_mcp/services/inventory.py`: shared inventory loading and filtering helper. This helper still reloads inventory from disk on every call.
+- `src/nornir_mcp/tools/monitoring.py`: fixed monitoring tools now share one internal NAPALM execution helper.
+
 ---
 
 ## ✅ Testing
 
-The repository includes a pytest suite under `tests/` covering filters, security validation, runner error handling, and backup behavior.
+The repository includes a pytest suite under `tests/` covering filters, inventory loading, inventory tools, security validation, runner error handling, and backup behavior.
 
 ```bash
 # Run the full test suite

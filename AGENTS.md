@@ -4,7 +4,7 @@
 
 - `src/nornir_mcp/`: application code.
 - `src/nornir_mcp/tools/`: MCP tools grouped by intent (`inventory.py`, `monitoring.py`, `management.py`).
-- `src/nornir_mcp/services/`: centralized execution service (`runner.py`).
+- `src/nornir_mcp/services/`: shared execution and inventory-loading helpers (`runner.py`, `inventory.py`).
 - `src/nornir_mcp/utils/`: shared helpers (`common.py`), filters, and command security.
 - `config.yaml`: Nornir config (User provided; expected in directory when running).
 
@@ -25,16 +25,17 @@
 - Tool functions are `snake_case` and decorated with `@mcp.tool()`.
 - Architectural rules (from current codebase):
   - Network task execution must go through `src/nornir_mcp/services/runner.py:runner.execute()`.
-  - Inventory filtering must use `src/nornir_mcp/utils/filters.py:apply_filters()`.
+  - Inventory loading and filtering should go through `src/nornir_mcp/services/inventory.py:get_filtered_nornir()`.
   - Standardized errors should use `src/nornir_mcp/utils/common.py:error_response()`.
   - CLI tools must validate commands with `src/nornir_mcp/utils/security.py:validate_command()` (or `_validate_commands()` in `management.py`).
   - Nornir initialization should come from `src/nornir_mcp/application.py:get_nornir()`.
+  - Each MCP tool invocation must reload `config.yaml` and inventory from disk; do not introduce a cached shared `Nornir` instance.
 
 ## Testing Guidelines
 
 - The repository now includes a pytest suite under `tests/`.
 - Add tests with `pytest` and name files `test_*.py`.
-- Keep tests focused on tool contracts, error payloads, filtering, and security validation.
+- Keep tests focused on tool contracts, error payloads, inventory loading behavior, filtering, and security validation.
 - Run tests with `uv run pytest` or `.venv/bin/pytest` if `uv run` is not behaving correctly.
 
 ## Commit & Pull Request Guidelines
