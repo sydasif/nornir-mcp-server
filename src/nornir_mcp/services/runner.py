@@ -13,7 +13,6 @@ from .inventory import (
     InventoryConfigError,
     InventoryFilterError,
     get_filtered_nornir,
-    inventory_error_code,
 )
 from ..utils.common import error_response, format_results
 
@@ -66,7 +65,7 @@ class NornirRunner:
         except (InventoryConfigError, InventoryFilterError) as exc:
             return self._global_error(
                 str(exc),
-                code=inventory_error_code(exc),
+                code=exc.code,
             )
 
         # 2. Execute in Thread (Non-blocking) with timeout
