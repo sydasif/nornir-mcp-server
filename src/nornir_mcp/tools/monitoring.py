@@ -4,6 +4,7 @@ import logging
 from collections.abc import Mapping
 from typing import Any
 
+from mcp.types import ToolAnnotations
 from nornir_napalm.plugins.tasks import napalm_get
 
 from ..application import mcp
@@ -30,7 +31,7 @@ async def _run_napalm_getters(
     )
 
 
-@mcp.tool()
+@mcp.tool(annotations=ToolAnnotations(readOnlyHint=True))
 async def get_device_facts(
     filters: DeviceFilters | None = None,
 ) -> dict[str, Any]:
@@ -45,70 +46,20 @@ async def get_device_facts(
     return await _run_napalm_getters(["facts"], filters=filters)
 
 
-@mcp.tool()
-async def get_device_configs(
-    filters: DeviceFilters | None = None,
-    source: str = "running",
-) -> dict[str, Any]:
-    """Retrieve raw device configuration data.
-
-    Args:
-        filters: DeviceFilters object containing filter criteria
-        source: Configuration source (running, startup, candidate)
-
-    Returns:
-        Raw NAPALM config dictionary per host.
-    """
-    return await _run_napalm_getters(
-        ["config"],
-        filters=filters,
-        getters_options={"config": {"retrieve": source}},
-    )
-
-
-@mcp.tool()
-async def get_bgp_neighbors(
-    filters: DeviceFilters | None = None,
-) -> dict[str, Any]:
-    """Get BGP neighbor information.
-
-    Args:
-        filters: DeviceFilters object containing filter criteria
-    """
-    return await _run_napalm_getters(["bgp_neighbors"], filters=filters)
-
-
-@mcp.tool()
-async def get_interfaces(
-    filters: DeviceFilters | None = None,
-) -> dict[str, Any]:
-    """Get interface information.
-
-    Args:
-        filters: DeviceFilters object containing filter criteria
-    """
-    return await _run_napalm_getters(["interfaces"], filters=filters)
-
-
-@mcp.tool()
-async def get_interfaces_ip(
-    filters: DeviceFilters | None = None,
-) -> dict[str, Any]:
-    """Get interface IP information.
-
-    Args:
-        filters: DeviceFilters object containing filter criteria
-    """
-    return await _run_napalm_getters(["interfaces_ip"], filters=filters)
-
-
-@mcp.tool()
+@mcp.tool(annotations=ToolAnnotations(readOnlyHint=True))
 async def run_napalm_getter(
     getters: list[str],
     filters: DeviceFilters | None = None,
     getters_options: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Execute one or more NAPALM getters on network devices.
+
+    Common available getters:
+    - "facts": Basic device information (vendor, model, uptime).
+    - "interfaces": Interface status, speed, and error statistics.
+    - "interfaces_ip": IP address assignments per interface.
+    - "bgp_neighbors": BGP session states and neighbors.
+    - "config": Retrieve Running/Startup/Candidate configs.
 
     Args:
         getters: List of NAPALM getter names (e.g., ['facts', 'interfaces', 'arp_table'])

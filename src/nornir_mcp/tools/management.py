@@ -3,6 +3,7 @@
 import logging
 from typing import Any
 
+from mcp.types import ToolAnnotations
 from nornir.core.task import Result, Task
 from nornir_napalm.plugins.tasks import napalm_get
 from nornir_netmiko.tasks import netmiko_send_command, netmiko_send_config
@@ -64,7 +65,7 @@ def _validate_commands(commands: list[str]) -> dict[str, Any] | None:
     return None
 
 
-@mcp.tool()
+@mcp.tool(annotations=ToolAnnotations(readOnlyHint=False, destructiveHint=True, idempotentHint=False))
 async def send_config_commands(
     commands: list[str],
     filters: DeviceFilters | None = None,
@@ -89,7 +90,7 @@ async def send_config_commands(
     )
 
 
-@mcp.tool()
+@mcp.tool(annotations=ToolAnnotations(readOnlyHint=False, destructiveHint=False, idempotentHint=True))
 async def backup_device_configs(
     filters: DeviceFilters | None = None,
     path: str = "./backups",
@@ -151,7 +152,7 @@ async def backup_device_configs(
     return backup_results
 
 
-@mcp.tool()
+@mcp.tool(annotations=ToolAnnotations(readOnlyHint=True))
 async def run_show_commands(
     commands: list[str],
     filters: DeviceFilters | None = None,

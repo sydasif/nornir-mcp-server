@@ -2,6 +2,7 @@
 
 from typing import Any
 
+from mcp.types import ToolAnnotations
 from ..application import mcp
 from ..models import DeviceFilters
 from ..services.inventory import (
@@ -12,7 +13,7 @@ from ..services.inventory import (
 from ..utils.common import error_response
 
 
-@mcp.tool()
+@mcp.tool(annotations=ToolAnnotations(readOnlyHint=True))
 async def list_network_devices(
     query_type: str = "all",
     details: bool = False,

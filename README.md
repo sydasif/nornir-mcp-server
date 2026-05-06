@@ -121,16 +121,12 @@ inventory:
 
 ## 🧰 Available Tools
 
-The server exposes 10 tools categorized by operational intent. All tools support an optional `filters` object.
+The server exposes 6 tools categorized by operational intent. All tools support an optional `filters` object.
 
 | Category       | Tool                    | Description                                            |
 | :------------- | :---------------------- | :----------------------------------------------------- |
 | **Inventory**  | `list_network_devices`  | List hosts, groups, and metadata.                      |
 | **Monitoring** | `get_device_facts`      | Basic facts (vendor, model, uptime).                   |
-|                | `get_interfaces`        | Status, speed, and error statistics.                   |
-|                | `get_interfaces_ip`     | IP address assignments per interface.                  |
-|                | `get_bgp_neighbors`     | BGP session states and neighbors.                      |
-|                | `get_device_configs`    | Retrieve Running/Startup/Candidate configs.            |
 |                | `run_napalm_getter`     | Generic access to any NAPALM getter (ARP, VLAN, etc.). |
 | **Management** | `run_show_commands`     | Execute arbitrary show commands safely.                |
 |                | `send_config_commands`  | Deploy configuration changes with validation.          |
