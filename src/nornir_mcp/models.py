@@ -1,9 +1,6 @@
 """Nornir MCP Server data models."""
 
-import json
-from typing import Any
-
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field
 
 
 class DeviceFilters(BaseModel):
@@ -14,17 +11,6 @@ class DeviceFilters(BaseModel):
     platform: str | None = Field(
         None, description="Filter by platform (e.g., cisco_ios)"
     )
-
-    @model_validator(mode="before")
-    @classmethod
-    def validate_to_json(cls, value: Any) -> Any:
-        """Parse JSON string if provided."""
-        if isinstance(value, str):
-            try:
-                return json.loads(value)
-            except json.JSONDecodeError:
-                return value
-        return value
 
 
 __all__: list[str] = ["DeviceFilters"]

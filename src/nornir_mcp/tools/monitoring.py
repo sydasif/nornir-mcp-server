@@ -1,6 +1,5 @@
 """NAPALM Tools - Structured data retrieval from network devices."""
 
-import logging
 from collections.abc import Mapping
 from typing import Any
 
@@ -10,25 +9,6 @@ from nornir_napalm.plugins.tasks import napalm_get
 from ..application import mcp
 from ..models import DeviceFilters
 from ..services.runner import runner
-
-logger = logging.getLogger(__name__)
-
-
-async def _run_napalm_getters(
-    getters: list[str],
-    filters: DeviceFilters | None = None,
-    getters_options: Mapping[str, Any] | None = None,
-) -> dict[str, Any]:
-    """Execute one or more NAPALM getters via the shared runner."""
-    kwargs: dict[str, Any] = {"getters": getters}
-    if getters_options is not None:
-        kwargs["getters_options"] = getters_options
-
-    return await runner.execute(
-        task=napalm_get,
-        filters=filters,
-        **kwargs,
-    )
 
 
 @mcp.tool(annotations=ToolAnnotations(readOnlyHint=True))
@@ -43,7 +23,11 @@ async def get_device_facts(
     Returns:
         Raw NAPALM facts dictionary per host.
     """
-    return await _run_napalm_getters(["facts"], filters=filters)
+    return await runner.execute(
+        task=napalm_get,
+        filters=filters,
+        getters=["facts"],
+    )
 
 
 @mcp.tool(annotations=ToolAnnotations(readOnlyHint=True))
@@ -69,8 +53,12 @@ async def run_napalm_getter(
     Returns:
         Structured NAPALM data per host
     """
-    return await _run_napalm_getters(
-        getters,
+    task_kwargs: dict[str, Any] = {"getters": getters}
+    if getters_options is not None:
+        task_kwargs["getters_options"] = getters_options
+
+    return await runner.execute(
+        task=napalm_get,
         filters=filters,
-        getters_options=getters_options,
+        **task_kwargs,
     )

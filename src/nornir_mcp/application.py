@@ -1,13 +1,10 @@
 """Nornir MCP Application Context - Shared application components."""
 
-import logging
 from pathlib import Path
 
 from fastmcp import FastMCP
 from nornir import InitNornir
 from nornir.core import Nornir
-
-logger = logging.getLogger("nornir-mcp")
 
 # Initialize FastMCP with metadata
 mcp = FastMCP("Nornir Network Automation")
