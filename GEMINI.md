@@ -10,7 +10,7 @@ The Nornir MCP Server is an enterprise-ready **Model Context Protocol (MCP)** se
 - **Architecture**:
   - **Application Layer**: `application.py` initializes the `FastMCP` instance and Nornir (from a local `config.yaml`).
   - **Tool Layer**: Tools in `src/nornir_mcp/tools/` are grouped by intent (Inventory, Monitoring, Management).
-  - **Service Layer**: `services/runner.py` provides a centralized `NornirRunner` to execute tasks asynchronously with filtering and timeouts.
+  - **Service Layer**: `services/runner.py` provides a centralized `NornirRunner` to execute tasks asynchronously with filtering and timeouts. `services/napalm.py` wraps shared NAPALM getter execution.
   - **Security Layer**: `utils/security.py` enforces a built-in command denylist for CLI operations.
   - **Data Models**: `models.py` defines Pydantic models for filters and inputs.
 
@@ -78,6 +78,7 @@ uv run ruff format .
 ### Architectural Rules
 
 - **Task Execution**: Always use `runner.execute()` from `src/nornir_mcp/services/runner.py` for network operations.
+- **NAPALM Getters**: Use `run_napalm_get()` from `src/nornir_mcp/services/napalm.py` for NAPALM getter execution.
 - **Filtering**: Use `apply_filters()` from `src/nornir_mcp/utils/filters.py` to target specific devices.
 - **Error Handling**: Use `error_response()` from `src/nornir_mcp/utils/common.py` for standardized tool errors.
 - **Command Security**: All CLI-based tools MUST call `validate_command` (or use the internal `_validate_commands` helper in `management.py`) before execution.
@@ -92,6 +93,7 @@ uv run ruff format .
 - `src/nornir_mcp/server.py`: Server entry point.
 - `src/nornir_mcp/application.py`: FastMCP and Nornir initialization.
 - `src/nornir_mcp/services/runner.py`: The core execution engine.
+- `src/nornir_mcp/services/napalm.py`: Shared NAPALM getter execution helper.
 - `src/nornir_mcp/tools/`: Directory containing the MCP tools.
 - `src/nornir_mcp/utils/security.py`: Command validation logic.
 - `README.md`: High-level user documentation.

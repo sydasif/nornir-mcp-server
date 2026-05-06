@@ -236,13 +236,14 @@ If `uv run` is unstable in the local environment, use `.venv/bin/pytest` and `.v
 Relevant internal paths:
 - `src/nornir_mcp/services/runner.py`: shared task execution and timeout handling.
 - `src/nornir_mcp/services/inventory.py`: shared inventory loading and filtering helper. This helper still reloads inventory from disk on every call.
-- `src/nornir_mcp/tools/monitoring.py`: fixed monitoring tools now share one internal NAPALM execution helper.
+- `src/nornir_mcp/services/napalm.py`: shared NAPALM getter execution helper used by monitoring and backup tools.
+- `src/nornir_mcp/tools/monitoring.py`: monitoring tools for NAPALM facts and generic getters.
 
 ---
 
 ## ✅ Testing
 
-The repository includes a pytest suite under `tests/` covering filters, inventory loading, inventory tools, security validation, runner error handling, and backup behavior.
+The repository includes a pytest suite under `tests/` covering filters, inventory loading, inventory tools, monitoring tools, NAPALM helper behavior, security validation, runner error handling, and backup behavior.
 
 ```bash
 # Run the full test suite
