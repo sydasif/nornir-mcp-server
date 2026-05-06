@@ -9,6 +9,7 @@ from ..services.inventory import (
     InventoryConfigError,
     InventoryFilterError,
     get_filtered_nornir,
+    inventory_error_code,
 )
 from ..utils.common import error_response
 
@@ -40,10 +41,8 @@ async def list_network_devices(
 
     try:
         nr = get_filtered_nornir(filters)
-    except InventoryConfigError as e:
-        return error_response(str(e), code="config_error")
-    except InventoryFilterError as e:
-        return error_response(str(e), code="filter_error")
+    except (InventoryConfigError, InventoryFilterError) as exc:
+        return error_response(str(exc), code=inventory_error_code(exc))
 
     result: dict[str, Any] = {}
 

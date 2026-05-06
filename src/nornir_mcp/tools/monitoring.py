@@ -4,11 +4,9 @@ from collections.abc import Mapping
 from typing import Any
 
 from mcp.types import ToolAnnotations
-from nornir_napalm.plugins.tasks import napalm_get
-
 from ..application import mcp
 from ..models import DeviceFilters
-from ..services.runner import runner
+from ..services.napalm import run_napalm_get
 
 
 @mcp.tool(annotations=ToolAnnotations(readOnlyHint=True))
@@ -23,10 +21,9 @@ async def get_device_facts(
     Returns:
         Raw NAPALM facts dictionary per host.
     """
-    return await runner.execute(
-        task=napalm_get,
-        filters=filters,
+    return await run_napalm_get(
         getters=["facts"],
+        filters=filters,
     )
 
 
@@ -53,12 +50,8 @@ async def run_napalm_getter(
     Returns:
         Structured NAPALM data per host
     """
-    task_kwargs: dict[str, Any] = {"getters": getters}
-    if getters_options is not None:
-        task_kwargs["getters_options"] = getters_options
-
-    return await runner.execute(
-        task=napalm_get,
+    return await run_napalm_get(
+        getters=getters,
         filters=filters,
-        **task_kwargs,
+        getters_options=getters_options,
     )

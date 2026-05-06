@@ -5,11 +5,11 @@ from typing import Any
 
 from mcp.types import ToolAnnotations
 from nornir.core.task import Result, Task
-from nornir_napalm.plugins.tasks import napalm_get
 from nornir_netmiko.tasks import netmiko_send_command, netmiko_send_config
 
 from ..application import mcp
 from ..models import DeviceFilters
+from ..services.napalm import run_napalm_get
 from ..services.runner import runner
 from ..utils.common import ensure_backup_directory, error_response, write_config_to_file
 from ..utils.security import validate_command
@@ -105,10 +105,9 @@ async def backup_device_configs(
         Summary of saved file paths.
     """
     # Get configurations
-    result = await runner.execute(
-        task=napalm_get,
-        filters=filters,
+    result = await run_napalm_get(
         getters=["config"],
+        filters=filters,
         getters_options={"config": {"retrieve": "running"}},
     )
 

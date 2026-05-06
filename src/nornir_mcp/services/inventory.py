@@ -15,6 +15,15 @@ class InventoryFilterError(ValueError):
     """Raised when inventory filtering fails."""
 
 
+def inventory_error_code(
+    exc: InventoryConfigError | InventoryFilterError,
+) -> str:
+    """Map inventory exceptions to standardized error codes."""
+    if isinstance(exc, InventoryConfigError):
+        return "config_error"
+    return "filter_error"
+
+
 def get_filtered_nornir(filters: DeviceFilters | None = None) -> Nornir:
     """Load Nornir from disk and apply optional inventory filters.
 
@@ -35,5 +44,6 @@ def get_filtered_nornir(filters: DeviceFilters | None = None) -> Nornir:
 __all__ = [
     "InventoryConfigError",
     "InventoryFilterError",
+    "inventory_error_code",
     "get_filtered_nornir",
 ]

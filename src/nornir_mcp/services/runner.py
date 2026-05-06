@@ -9,7 +9,12 @@ from nornir.core.exceptions import NornirExecutionError
 from nornir.core.task import Result
 
 from ..models import DeviceFilters
-from .inventory import InventoryConfigError, InventoryFilterError, get_filtered_nornir
+from .inventory import (
+    InventoryConfigError,
+    InventoryFilterError,
+    get_filtered_nornir,
+    inventory_error_code,
+)
 from ..utils.common import error_response, format_results
 
 GLOBAL_ERROR_HOST = "__global__"
@@ -58,10 +63,11 @@ class NornirRunner:
         # 1. Setup & Filter
         try:
             nr = get_filtered_nornir(filters)
-        except InventoryConfigError as e:
-            return self._global_error(str(e), code="config_error")
-        except InventoryFilterError as e:
-            return self._global_error(str(e), code="filter_error")
+        except (InventoryConfigError, InventoryFilterError) as exc:
+            return self._global_error(
+                str(exc),
+                code=inventory_error_code(exc),
+            )
 
         # 2. Execute in Thread (Non-blocking) with timeout
         try:
