@@ -8,7 +8,9 @@ from nornir_mcp.utils.filters import apply_filters
 
 class FakeNornir:
     def __init__(self, host_count: int) -> None:
-        self.inventory = SimpleNamespace(hosts={f"host-{idx}": object() for idx in range(host_count)})
+        self.inventory = SimpleNamespace(
+            hosts={f"host-{idx}": object() for idx in range(host_count)}
+        )
         self.filter_calls: list[object] = []
 
     def filter(self, expression: object) -> "FakeNornir":
@@ -39,4 +41,3 @@ def test_apply_filters_raises_when_no_hosts_match() -> None:
 
     with pytest.raises(ValueError, match="No devices matched the provided filters"):
         apply_filters(nr, DeviceFilters(hostname="leaf-1"))
-

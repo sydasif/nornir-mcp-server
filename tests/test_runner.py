@@ -33,7 +33,9 @@ def test_execute_returns_config_error_when_config_is_missing(monkeypatch) -> Non
     def raise_config_error(filters=None) -> None:
         raise InventoryConfigError("missing config")
 
-    monkeypatch.setattr("nornir_mcp.services.runner.get_filtered_nornir", raise_config_error)
+    monkeypatch.setattr(
+        "nornir_mcp.services.runner.get_filtered_nornir", raise_config_error
+    )
 
     result = asyncio.run(runner.execute(task=lambda **_: None))
 
@@ -52,7 +54,9 @@ def test_execute_returns_filter_error(monkeypatch) -> None:
     def raise_filter_error(filters=None):
         raise InventoryFilterError("bad filters")
 
-    monkeypatch.setattr("nornir_mcp.services.runner.get_filtered_nornir", raise_filter_error)
+    monkeypatch.setattr(
+        "nornir_mcp.services.runner.get_filtered_nornir", raise_filter_error
+    )
 
     result = asyncio.run(runner.execute(task=lambda **_: None))
 
@@ -119,7 +123,9 @@ def test_execute_returns_execution_error(monkeypatch) -> None:
         await awaitable
         raise NornirExecutionError({"leaf-1": FakeMultiResult([FakeSubResult()])})
 
-    monkeypatch.setattr("nornir_mcp.services.runner.asyncio.wait_for", raise_execution_error)
+    monkeypatch.setattr(
+        "nornir_mcp.services.runner.asyncio.wait_for", raise_execution_error
+    )
 
     result = asyncio.run(runner.execute(task=lambda **_: None, timeout=5))
 

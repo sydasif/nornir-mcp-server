@@ -3,7 +3,9 @@ from pathlib import Path
 from nornir_mcp.tools.management import backup_device_configs
 
 
-def test_backup_device_configs_returns_security_error_for_path_escape(monkeypatch) -> None:
+def test_backup_device_configs_returns_security_error_for_path_escape(
+    monkeypatch,
+) -> None:
     import asyncio
 
     async def fake_execute(**kwargs):
@@ -17,7 +19,9 @@ def test_backup_device_configs_returns_security_error_for_path_escape(monkeypatc
     assert result["code"] == "security_error"
 
 
-def test_backup_device_configs_handles_runner_errors(monkeypatch, tmp_path: Path) -> None:
+def test_backup_device_configs_handles_runner_errors(
+    monkeypatch, tmp_path: Path
+) -> None:
     import asyncio
 
     async def fake_execute(**kwargs):

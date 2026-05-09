@@ -65,7 +65,11 @@ def _validate_commands(commands: list[str]) -> dict[str, Any] | None:
     return None
 
 
-@mcp.tool(annotations=ToolAnnotations(readOnlyHint=False, destructiveHint=True, idempotentHint=False))
+@mcp.tool(
+    annotations=ToolAnnotations(
+        readOnlyHint=False, destructiveHint=True, idempotentHint=False
+    )
+)
 async def send_config_commands(
     commands: list[str],
     filters: DeviceFilters | None = None,
@@ -90,7 +94,11 @@ async def send_config_commands(
     )
 
 
-@mcp.tool(annotations=ToolAnnotations(readOnlyHint=False, destructiveHint=False, idempotentHint=True))
+@mcp.tool(
+    annotations=ToolAnnotations(
+        readOnlyHint=False, destructiveHint=False, idempotentHint=True
+    )
+)
 async def backup_device_configs(
     filters: DeviceFilters | None = None,
     path: str = "./backups",

@@ -5,7 +5,9 @@ from nornir_mcp.services.inventory import InventoryConfigError, InventoryFilterE
 from nornir_mcp.tools.inventory import list_network_devices
 
 
-def _host(name: str, hostname: str, platform: str, groups: list[str], data: dict) -> SimpleNamespace:
+def _host(
+    name: str, hostname: str, platform: str, groups: list[str], data: dict
+) -> SimpleNamespace:
     return SimpleNamespace(
         name=name,
         hostname=hostname,
@@ -26,7 +28,9 @@ def test_list_network_devices_returns_config_error(monkeypatch) -> None:
     def raise_config_error(filters=None):
         raise InventoryConfigError("missing config")
 
-    monkeypatch.setattr("nornir_mcp.tools.inventory.get_filtered_nornir", raise_config_error)
+    monkeypatch.setattr(
+        "nornir_mcp.tools.inventory.get_filtered_nornir", raise_config_error
+    )
 
     result = asyncio.run(list_network_devices.fn())
 
@@ -41,7 +45,9 @@ def test_list_network_devices_returns_filter_error(monkeypatch) -> None:
     def raise_filter_error(filters=None):
         raise InventoryFilterError("bad filters")
 
-    monkeypatch.setattr("nornir_mcp.tools.inventory.get_filtered_nornir", raise_filter_error)
+    monkeypatch.setattr(
+        "nornir_mcp.tools.inventory.get_filtered_nornir", raise_filter_error
+    )
 
     result = asyncio.run(list_network_devices.fn())
 
@@ -75,7 +81,9 @@ def test_list_network_devices_returns_devices_and_groups(monkeypatch) -> None:
         )
     )
 
-    monkeypatch.setattr("nornir_mcp.tools.inventory.get_filtered_nornir", lambda filters=None: nr)
+    monkeypatch.setattr(
+        "nornir_mcp.tools.inventory.get_filtered_nornir", lambda filters=None: nr
+    )
 
     result = asyncio.run(list_network_devices.fn(details=True))
 
