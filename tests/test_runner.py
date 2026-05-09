@@ -4,8 +4,8 @@ from typing import Any
 
 from nornir.core.exceptions import NornirExecutionError
 
-from nornir_mcp.services.inventory import InventoryConfigError, InventoryFilterError
-from nornir_mcp.services.runner import GLOBAL_ERROR_HOST, NornirRunner
+from nornir_mcp.services.inventory import InventoryError
+from nornir_mcp.services.runner import GLOBAL_ERROR_HOST, execute
 
 
 class FakeNornir:
@@ -28,16 +28,14 @@ class FakeMultiResult(list):
 
 
 def test_execute_returns_config_error_when_config_is_missing(monkeypatch) -> None:
-    runner = NornirRunner()
-
     def raise_config_error(filters=None) -> None:
-        raise InventoryConfigError("missing config")
+        raise InventoryError("missing config", code="config_error")
 
     monkeypatch.setattr(
         "nornir_mcp.services.runner.get_filtered_nornir", raise_config_error
     )
 
-    result = asyncio.run(runner.execute(task=lambda **_: None))
+    result = asyncio.run(execute(task=lambda **_: None))
 
     assert result == {
         GLOBAL_ERROR_HOST: {
@@ -49,16 +47,14 @@ def test_execute_returns_config_error_when_config_is_missing(monkeypatch) -> Non
 
 
 def test_execute_returns_filter_error(monkeypatch) -> None:
-    runner = NornirRunner()
-
     def raise_filter_error(filters=None):
-        raise InventoryFilterError("bad filters")
+        raise InventoryError("bad filters", code="filter_error")
 
     monkeypatch.setattr(
         "nornir_mcp.services.runner.get_filtered_nornir", raise_filter_error
     )
 
-    result = asyncio.run(runner.execute(task=lambda **_: None))
+    result = asyncio.run(execute(task=lambda **_: None))
 
     assert result == {
         GLOBAL_ERROR_HOST: {
@@ -70,7 +66,6 @@ def test_execute_returns_filter_error(monkeypatch) -> None:
 
 
 def test_execute_returns_timeout_error(monkeypatch) -> None:
-    runner = NornirRunner()
     monkeypatch.setattr(
         "nornir_mcp.services.runner.get_filtered_nornir",
         lambda filters=None: FakeNornir(run_impl=lambda **_: {}),
@@ -82,7 +77,7 @@ def test_execute_returns_timeout_error(monkeypatch) -> None:
 
     monkeypatch.setattr("nornir_mcp.services.runner.asyncio.wait_for", raise_timeout)
 
-    result = asyncio.run(runner.execute(task=lambda **_: None, timeout=5))
+    result = asyncio.run(execute(task=lambda **_: None, timeout=5))
 
     assert result == {
         GLOBAL_ERROR_HOST: {
@@ -94,14 +89,13 @@ def test_execute_returns_timeout_error(monkeypatch) -> None:
 
 
 def test_execute_returns_timeout_config_error_for_invalid_env(monkeypatch) -> None:
-    runner = NornirRunner()
     monkeypatch.setattr(
         "nornir_mcp.services.runner.get_filtered_nornir",
         lambda filters=None: FakeNornir(run_impl=lambda **_: {}),
     )
     monkeypatch.setenv("NORNIR_MCP_TIMEOUT", "not-a-number")
 
-    result = asyncio.run(runner.execute(task=lambda **_: None))
+    result = asyncio.run(execute(task=lambda **_: None))
 
     assert result == {
         GLOBAL_ERROR_HOST: {
@@ -113,7 +107,6 @@ def test_execute_returns_timeout_config_error_for_invalid_env(monkeypatch) -> No
 
 
 def test_execute_returns_execution_error(monkeypatch) -> None:
-    runner = NornirRunner()
     monkeypatch.setattr(
         "nornir_mcp.services.runner.get_filtered_nornir",
         lambda filters=None: FakeNornir(run_impl=lambda **_: {}),
@@ -127,7 +120,7 @@ def test_execute_returns_execution_error(monkeypatch) -> None:
         "nornir_mcp.services.runner.asyncio.wait_for", raise_execution_error
     )
 
-    result = asyncio.run(runner.execute(task=lambda **_: None, timeout=5))
+    result = asyncio.run(execute(task=lambda **_: None, timeout=5))
 
     assert result[GLOBAL_ERROR_HOST]["error"] is True
     assert result[GLOBAL_ERROR_HOST]["code"] == "execution_error"

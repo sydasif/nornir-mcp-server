@@ -12,7 +12,7 @@ def test_run_napalm_get_calls_runner_with_required_arguments(monkeypatch) -> Non
         calls.append(kwargs)
         return {"leaf-1": {"facts": {"hostname": "leaf-1"}}}
 
-    monkeypatch.setattr("nornir_mcp.services.napalm.runner.execute", fake_execute)
+    monkeypatch.setattr("nornir_mcp.services.napalm.execute", fake_execute)
 
     result = asyncio.run(run_napalm_get(getters=["facts"], filters=filters))
 
@@ -34,7 +34,7 @@ def test_run_napalm_get_includes_getter_options(monkeypatch) -> None:
         calls.append(kwargs)
         return {"leaf-1": {"config": {"running": "hostname leaf-1"}}}
 
-    monkeypatch.setattr("nornir_mcp.services.napalm.runner.execute", fake_execute)
+    monkeypatch.setattr("nornir_mcp.services.napalm.execute", fake_execute)
 
     result = asyncio.run(
         run_napalm_get(

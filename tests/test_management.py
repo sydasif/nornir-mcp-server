@@ -11,7 +11,7 @@ def test_backup_device_configs_returns_security_error_for_path_escape(
     async def fake_execute(**kwargs):
         return {}
 
-    monkeypatch.setattr("nornir_mcp.tools.management.runner.execute", fake_execute)
+    monkeypatch.setattr("nornir_mcp.services.napalm.execute", fake_execute)
 
     result = asyncio.run(backup_device_configs.fn(path="../outside"))
 
@@ -33,7 +33,7 @@ def test_backup_device_configs_handles_runner_errors(
             }
         }
 
-    monkeypatch.setattr("nornir_mcp.tools.management.runner.execute", fake_execute)
+    monkeypatch.setattr("nornir_mcp.services.napalm.execute", fake_execute)
     monkeypatch.setattr(
         "nornir_mcp.tools.management.ensure_backup_directory",
         lambda path: tmp_path,
@@ -67,7 +67,7 @@ def test_backup_device_configs_writes_config(monkeypatch, tmp_path: Path) -> Non
             }
         }
 
-    monkeypatch.setattr("nornir_mcp.tools.management.runner.execute", fake_execute)
+    monkeypatch.setattr("nornir_mcp.services.napalm.execute", fake_execute)
     monkeypatch.setattr(
         "nornir_mcp.tools.management.ensure_backup_directory",
         lambda path: tmp_path,

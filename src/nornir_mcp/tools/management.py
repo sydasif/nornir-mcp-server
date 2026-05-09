@@ -9,8 +9,8 @@ from nornir_netmiko.tasks import netmiko_send_command, netmiko_send_config
 
 from ..application import mcp
 from ..models import DeviceFilters
+from ..services.runner import execute
 from ..services.napalm import run_napalm_get
-from ..services.runner import runner
 from ..utils.common import ensure_backup_directory, error_response, write_config_to_file
 from ..utils.security import validate_command
 
@@ -87,7 +87,7 @@ async def send_config_commands(
     if validation_error:
         return validation_error
 
-    return await runner.execute(
+    return await execute(
         task=netmiko_send_config,
         filters=filters,
         config_commands=commands,
@@ -177,7 +177,7 @@ async def run_show_commands(
     if validation_error:
         return validation_error
 
-    raw = await runner.execute(
+    raw = await execute(
         task=_netmiko_send_commands,
         filters=filters,
         commands=commands,

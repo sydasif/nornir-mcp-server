@@ -10,8 +10,7 @@ from nornir.core.task import Result
 
 from ..models import DeviceFilters
 from .inventory import (
-    InventoryConfigError,
-    InventoryFilterError,
+    InventoryError,
     get_filtered_nornir,
 )
 from ..utils.common import error_response, format_results
@@ -19,80 +18,75 @@ from ..utils.common import error_response, format_results
 GLOBAL_ERROR_HOST = "__global__"
 
 
-class NornirRunner:
-    """Orchestrates Nornir task execution."""
-
-    @staticmethod
-    def _global_error(message: str, code: str) -> dict[str, Any]:
-        """Return a host-indexed error payload for global failures."""
-        return {GLOBAL_ERROR_HOST: error_response(message, code=code)}
-
-    @staticmethod
-    def _resolve_timeout(timeout: int | None) -> int:
-        """Resolve timeout from explicit value or environment configuration."""
-        if timeout is not None:
-            return timeout
-
-        raw_timeout = os.environ.get("NORNIR_MCP_TIMEOUT", "300")
-        try:
-            return int(raw_timeout)
-        except ValueError as exc:
-            raise ValueError(
-                f"Invalid NORNIR_MCP_TIMEOUT value: {raw_timeout!r}",
-            ) from exc
-
-    async def execute(
-        self,
-        task: Callable[..., Result],
-        filters: DeviceFilters | None = None,
-        timeout: int | None = None,
-        **task_kwargs: Any,
-    ) -> dict[str, Any]:
-        """Execute a Nornir task and return formatted results.
-
-        Args:
-            task: Nornir task function to execute
-            filters: Optional filters to select specific devices
-            timeout: Optional timeout in seconds (default: NORNIR_MCP_TIMEOUT env var)
-            **task_kwargs: Additional arguments passed to the task
-
-        Returns:
-            Dictionary mapping hostname to task results or error responses
-        """
-        # 1. Setup & Filter
-        try:
-            nr = get_filtered_nornir(filters)
-        except (InventoryConfigError, InventoryFilterError) as exc:
-            return self._global_error(
-                str(exc),
-                code=exc.code,
-            )
-
-        # 2. Execute in Thread (Non-blocking) with timeout
-        try:
-            timeout_secs = self._resolve_timeout(timeout)
-        except ValueError as e:
-            return self._global_error(str(e), code="timeout_config_error")
-
-        try:
-            result = await asyncio.wait_for(
-                asyncio.to_thread(nr.run, task=task, **task_kwargs),
-                timeout=timeout_secs,
-            )
-        except asyncio.TimeoutError:
-            return self._global_error(
-                f"Task execution timed out after {timeout_secs} seconds",
-                code="timeout_error",
-            )
-        except NornirExecutionError as e:
-            return self._global_error(
-                f"Nornir execution failed: {e}",
-                code="execution_error",
-            )
-
-        # 3. Standardize Output (Simple extraction)
-        return format_results(result)
+def _global_error(message: str, code: str) -> dict[str, Any]:
+    """Return a host-indexed error payload for global failures."""
+    return {GLOBAL_ERROR_HOST: error_response(message, code=code)}
 
 
-# Singleton instance for easy import
-runner = NornirRunner()
+def _resolve_timeout(timeout: int | None) -> int:
+    """Resolve timeout from explicit value or environment configuration."""
+    if timeout is not None:
+        return timeout
+
+    raw_timeout = os.environ.get("NORNIR_MCP_TIMEOUT", "300")
+    try:
+        return int(raw_timeout)
+    except ValueError as exc:
+        raise ValueError(
+            f"Invalid NORNIR_MCP_TIMEOUT value: {raw_timeout!r}",
+        ) from exc
+
+
+async def execute(
+    task: Callable[..., Result],
+    filters: DeviceFilters | None = None,
+    timeout: int | None = None,
+    **task_kwargs: Any,
+) -> dict[str, Any]:
+    """Execute a Nornir task and return formatted results.
+
+    Args:
+        task: Nornir task function to execute
+        filters: Optional filters to select specific devices
+        timeout: Optional timeout in seconds (default: NORNIR_MCP_TIMEOUT env var)
+        **task_kwargs: Additional arguments passed to the task
+
+    Returns:
+        Dictionary mapping hostname to task results or error responses
+    """
+    # 1. Setup & Filter
+    try:
+        nr = get_filtered_nornir(filters)
+    except InventoryError as exc:
+        return _global_error(
+            str(exc),
+            code=exc.code,
+        )
+
+    # 2. Execute in Thread (Non-blocking) with timeout
+    try:
+        timeout_secs = _resolve_timeout(timeout)
+    except ValueError as e:
+        return _global_error(str(e), code="timeout_config_error")
+
+    try:
+        result = await asyncio.wait_for(
+            asyncio.to_thread(nr.run, task=task, **task_kwargs),
+            timeout=timeout_secs,
+        )
+    except asyncio.TimeoutError:
+        return _global_error(
+            f"Task execution timed out after {timeout_secs} seconds",
+            code="timeout_error",
+        )
+    except NornirExecutionError as e:
+        return _global_error(
+            f"Nornir execution failed: {e}",
+            code="execution_error",
+        )
+
+    # 3. Standardize Output (Simple extraction)
+    return format_results(result)
+
+
+__all__ = ["execute"]

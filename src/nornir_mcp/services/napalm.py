@@ -6,7 +6,7 @@ from typing import Any
 from nornir_napalm.plugins.tasks import napalm_get
 
 from ..models import DeviceFilters
-from .runner import runner
+from .runner import execute
 
 
 async def run_napalm_get(
@@ -19,7 +19,7 @@ async def run_napalm_get(
     if getters_options is not None:
         task_kwargs["getters_options"] = getters_options
 
-    return await runner.execute(
+    return await execute(
         task=napalm_get,
         filters=filters,
         **task_kwargs,

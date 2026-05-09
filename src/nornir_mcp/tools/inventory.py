@@ -6,8 +6,7 @@ from mcp.types import ToolAnnotations
 from ..application import mcp
 from ..models import DeviceFilters
 from ..services.inventory import (
-    InventoryConfigError,
-    InventoryFilterError,
+    InventoryError,
     get_filtered_nornir,
 )
 from ..utils.common import error_response
@@ -40,7 +39,7 @@ async def list_network_devices(
 
     try:
         nr = get_filtered_nornir(filters)
-    except (InventoryConfigError, InventoryFilterError) as exc:
+    except InventoryError as exc:
         return error_response(str(exc), code=exc.code)
 
     result: dict[str, Any] = {}

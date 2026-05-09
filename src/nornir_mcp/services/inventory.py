@@ -7,16 +7,12 @@ from ..models import DeviceFilters
 from ..utils.filters import apply_filters
 
 
-class InventoryConfigError(ValueError):
-    """Raised when inventory configuration cannot be loaded."""
+class InventoryError(ValueError):
+    """Raised when inventory operations fail."""
 
-    code = "config_error"
-
-
-class InventoryFilterError(ValueError):
-    """Raised when inventory filtering fails."""
-
-    code = "filter_error"
+    def __init__(self, message: str, code: str):
+        super().__init__(message)
+        self.code = code
 
 
 def get_filtered_nornir(filters: DeviceFilters | None = None) -> Nornir:
@@ -28,16 +24,15 @@ def get_filtered_nornir(filters: DeviceFilters | None = None) -> Nornir:
     try:
         nr = get_nornir()
     except ValueError as exc:
-        raise InventoryConfigError(str(exc)) from exc
+        raise InventoryError(str(exc), code="config_error") from exc
 
     try:
         return apply_filters(nr, filters)
     except ValueError as exc:
-        raise InventoryFilterError(str(exc)) from exc
+        raise InventoryError(str(exc), code="filter_error") from exc
 
 
 __all__ = [
-    "InventoryConfigError",
-    "InventoryFilterError",
+    "InventoryError",
     "get_filtered_nornir",
 ]
