@@ -4,14 +4,7 @@ import re
 
 # Simple hardcoded denylist for dangerous commands
 DENYLIST = {
-    "exact": {
-        "reload",
-        "erase startup-config",
-        "write erase",
-        "delete flash:",
-        "format flash:",
-    },
-    "keywords": {"erase", "format", "delete"},
+    "keywords": {"erase", "format", "delete", "reload"},
     "patterns": [">", "<", ";", "&&", "||"],
 }
 
@@ -31,10 +24,6 @@ def validate_command(command: str) -> str | None:
     for pattern in DENYLIST["patterns"]:
         if pattern in command_lower:
             return f"Command contains disallowed pattern: '{pattern}'"
-
-    # Check exact commands
-    if command_lower in DENYLIST["exact"]:
-        return "Command is explicitly blacklisted"
 
     # Check keywords
     for keyword in DENYLIST["keywords"]:

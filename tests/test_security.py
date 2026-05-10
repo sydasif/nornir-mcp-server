@@ -14,6 +14,10 @@ def test_validate_command_rejects_blacklisted_keyword() -> None:
         == "Command contains blacklisted keyword: 'delete'"
     )
 
+    assert (
+        validate_command("reload") == "Command contains blacklisted keyword: 'reload'"
+    )
+
 
 def test_validate_command_allows_read_only_show_command() -> None:
     assert validate_command("show interfaces status") is None
