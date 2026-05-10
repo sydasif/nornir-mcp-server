@@ -1,3 +1,4 @@
+import pytest
 from nornir_mcp.services.inventory import (
     InventoryError,
     get_filtered_nornir,
@@ -30,12 +31,8 @@ def test_get_filtered_nornir_wraps_config_errors(monkeypatch) -> None:
 
     monkeypatch.setattr("nornir_mcp.services.inventory.get_nornir", raise_config_error)
 
-    try:
+    with pytest.raises(InventoryError, match="Nornir initialization failed: missing config"):
         get_filtered_nornir()
-    except InventoryError as exc:
-        assert str(exc) == "missing config"
-    else:
-        raise AssertionError("Expected InventoryError")
 
 
 def test_get_filtered_nornir_wraps_filter_errors(monkeypatch) -> None:
@@ -48,9 +45,5 @@ def test_get_filtered_nornir_wraps_filter_errors(monkeypatch) -> None:
         "nornir_mcp.services.inventory.apply_filters", raise_filter_error
     )
 
-    try:
+    with pytest.raises(InventoryError, match="bad filters"):
         get_filtered_nornir()
-    except InventoryError as exc:
-        assert str(exc) == "bad filters"
-    else:
-        raise AssertionError("Expected InventoryError")

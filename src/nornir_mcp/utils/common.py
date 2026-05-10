@@ -45,7 +45,7 @@ def format_results(result: AggregatedResult) -> dict[str, Any]:
                 code="empty_result",
             )
         elif multi_result.failed:
-            exc = multi_result[0].exception
+            exc = next((r.exception for r in multi_result if r.exception), None)
             formatted[host] = error_response(
                 "Task failed",
                 code="task_failed",
@@ -68,14 +68,13 @@ def ensure_backup_directory(backup_dir: str | Path) -> Path:
         Path object pointing to the backup directory
 
     Raises:
-        ValueError: If the path attempts directory traversal outside CWD
+        ValueError: If the path attempts directory traversal using '..'
     """
-    root_path = Path.cwd().resolve()
+    path_str = str(backup_dir)
+    if ".." in path_str:
+        raise ValueError("Security Error: Directory traversal using '..' is not allowed.")
+
     path = Path(backup_dir).expanduser().resolve()
-
-    if not path.is_relative_to(root_path):
-        raise ValueError(f"Security Error: Backup directory must be within {root_path}")
-
     path.mkdir(parents=True, exist_ok=True)
     return path
 

@@ -1,5 +1,6 @@
 import asyncio
 from collections.abc import Callable
+from types import SimpleNamespace
 from typing import Any
 
 from nornir.core.exceptions import NornirExecutionError
@@ -11,6 +12,7 @@ from nornir_mcp.services.runner import GLOBAL_ERROR_HOST, execute
 class FakeNornir:
     def __init__(self, run_impl: Callable[..., Any]) -> None:
         self.run_impl = run_impl
+        self.inventory = SimpleNamespace(hosts={})
 
     def run(self, **kwargs: Any) -> Any:
         return self.run_impl(**kwargs)

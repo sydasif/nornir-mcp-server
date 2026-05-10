@@ -1,6 +1,9 @@
 """Nornir Execution Service."""
 
 import asyncio
+import logging
+import os
+import time
 from collections.abc import Callable
 from typing import Any
 
@@ -14,7 +17,9 @@ from .inventory import (
 )
 from ..utils.common import error_response, format_results
 
+logger = logging.getLogger(__name__)
 GLOBAL_ERROR_HOST = "__global__"
+TIMEOUT = int(os.environ.get("NORNIR_MCP_TIMEOUT", "300"))
 
 
 def _global_error(message: str, code: str) -> dict[str, Any]:
@@ -40,16 +45,42 @@ async def execute(
     # 1. Setup & Filter
     try:
         nr = get_filtered_nornir(filters)
+        host_count = len(nr.inventory.hosts)
+        logger.info(
+            "Executing task %s.%s on %d hosts",
+            task.__module__,
+            task.__name__,
+            host_count,
+        )
     except InventoryError as exc:
+        logger.error("Inventory setup failed: %s (code=%s)", exc, exc.code)
         return _global_error(
             str(exc),
             code=exc.code,
         )
 
-    # 2. Execute in Thread (Non-blocking)
+    # 2. Execute in Thread (Non-blocking) with Timeout
+    start_time = time.perf_counter()
     try:
-        result = await asyncio.to_thread(nr.run, task=task, **task_kwargs)
+        result = await asyncio.wait_for(
+            asyncio.to_thread(nr.run, task=task, **task_kwargs),
+            timeout=TIMEOUT,
+        )
+        duration = time.perf_counter() - start_time
+        logger.info(
+            "Task %s completed in %.2fs. Failed: %s",
+            task.__name__,
+            duration,
+            result.failed,
+        )
+    except asyncio.TimeoutError:
+        logger.error("Task %s timed out after %ds", task.__name__, TIMEOUT)
+        return _global_error(
+            f"Execution timed out after {TIMEOUT}s",
+            code="timeout",
+        )
     except NornirExecutionError as e:
+        logger.error("Nornir execution failed: %s", e)
         return _global_error(
             f"Nornir execution failed: {e}",
             code="execution_error",

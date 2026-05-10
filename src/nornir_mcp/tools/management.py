@@ -8,7 +8,7 @@ from nornir_netmiko.tasks import netmiko_send_config
 
 from ..application import mcp
 from ..models import DeviceFilters
-from ..services.runner import execute
+from ..services.runner import execute, GLOBAL_ERROR_HOST
 from ..services.napalm import run_napalm_get
 from ..services.netmiko import run_netmiko_commands
 from ..utils.common import (
@@ -16,28 +16,27 @@ from ..utils.common import (
     error_response,
     write_config_to_file,
 )
+from ..utils.filters import build_filters
 from ..utils.security import validate_command
 
 logger = logging.getLogger(__name__)
 
 
-def _validate_commands(commands: list[str]) -> dict[str, Any] | None:
-    """Validate a list of commands against the security denylist.
+def _validate_commands(commands: list[str], read_only: bool = False) -> dict[str, Any] | None:
+    """Validate a list of commands against security rules.
 
     Args:
         commands: List of commands to validate
+        read_only: Whether to enforce read-only prefixes
 
     Returns:
         Error response if validation fails, None if all commands are valid
-
-    Raises:
-        ValueError: If commands list is empty
     """
     if not commands:
-        raise ValueError("Command list cannot be empty")
+        return error_response("Command list cannot be empty", code="empty_commands")
 
     for cmd in commands:
-        validation_error = validate_command(cmd)
+        validation_error = validate_command(cmd, read_only=read_only)
         if validation_error:
             logger.warning(
                 "Command validation failed for %r: %s", cmd, validation_error
@@ -76,20 +75,11 @@ async def send_config_commands(
     Returns:
         Raw output from the configuration execution per host.
     """
-    validation_error = _validate_commands(commands)
+    validation_error = _validate_commands(commands, read_only=False)
     if validation_error:
         return validation_error
 
-    filters = (
-        DeviceFilters(
-            name=filter_name,
-            hostname=filter_hostname,
-            group=filter_group,
-            platform=filter_platform,
-        )
-        if any([filter_name, filter_hostname, filter_group, filter_platform])
-        else None
-    )
+    filters = build_filters(filter_name, filter_hostname, filter_group, filter_platform)
 
     return await execute(
         task=netmiko_send_config,
@@ -122,31 +112,26 @@ async def backup_device_configs(
     Returns:
         Summary of saved file paths.
     """
-    filters = (
-        DeviceFilters(
-            name=filter_name,
-            hostname=filter_hostname,
-            group=filter_group,
-            platform=filter_platform,
-        )
-        if any([filter_name, filter_hostname, filter_group, filter_platform])
-        else None
-    )
+    # 1. Setup backup directory FIRST to avoid wasted network I/O
+    try:
+        backup_path = ensure_backup_directory(path)
+    except ValueError as e:
+        return error_response(str(e), code="security_error")
 
-    # Get configurations
+    filters = build_filters(filter_name, filter_hostname, filter_group, filter_platform)
+
+    # 2. Get configurations
     result = await run_napalm_get(
         getters=["config"],
         filters=filters,
         getters_options={"config": {"retrieve": "running"}},
     )
 
-    # Setup backup directory
-    try:
-        backup_path = ensure_backup_directory(path)
-    except ValueError as e:
-        return error_response(str(e), code="security_error")
+    # 3. Guard against global errors (e.g., inventory not found)
+    if GLOBAL_ERROR_HOST in result:
+        return result
 
-    # Process results - flat structure with guard clauses
+    # 4. Process results - flat structure with guard clauses
     backup_results = {}
     for hostname, data in result.items():
         # Guard 1: Check for task execution errors
@@ -198,22 +183,13 @@ async def run_show_commands(
         filter_platform: Filter by platform (e.g., cisco_ios)
 
     Returns:
-        Dictionary mapping command -> host -> raw output
+        Dictionary mapping host -> command -> raw output
     """
-    validation_error = _validate_commands(commands)
+    validation_error = _validate_commands(commands, read_only=True)
     if validation_error:
         return validation_error
 
-    filters = (
-        DeviceFilters(
-            name=filter_name,
-            hostname=filter_hostname,
-            group=filter_group,
-            platform=filter_platform,
-        )
-        if any([filter_name, filter_hostname, filter_group, filter_platform])
-        else None
-    )
+    filters = build_filters(filter_name, filter_hostname, filter_group, filter_platform)
 
     raw = await run_netmiko_commands(
         commands=commands,

@@ -7,6 +7,7 @@ from mcp.types import ToolAnnotations
 from ..application import mcp
 from ..models import DeviceFilters
 from ..services.napalm import run_napalm_get
+from ..utils.filters import build_filters
 
 
 @mcp.tool(annotations=ToolAnnotations(readOnlyHint=True))
@@ -38,16 +39,7 @@ async def run_napalm_getter(
     Returns:
         Structured NAPALM data per host
     """
-    filters = (
-        DeviceFilters(
-            name=filter_name,
-            hostname=filter_hostname,
-            group=filter_group,
-            platform=filter_platform,
-        )
-        if any([filter_name, filter_hostname, filter_group, filter_platform])
-        else None
-    )
+    filters = build_filters(filter_name, filter_hostname, filter_group, filter_platform)
 
     return await run_napalm_get(
         getters=getters,

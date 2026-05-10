@@ -9,6 +9,28 @@ from nornir.core.filter import F
 from ..models import DeviceFilters
 
 
+def build_filters(
+    name: str | None = None,
+    hostname: str | None = None,
+    group: str | None = None,
+    platform: str | None = None,
+) -> DeviceFilters | None:
+    """Build a DeviceFilters object if any criteria are provided.
+
+    Args:
+        name: Filter by device name
+        hostname: Filter by hostname
+        group: Filter by group
+        platform: Filter by platform
+
+    Returns:
+        DeviceFilters object or None if no criteria provided
+    """
+    if not any((name, hostname, group, platform)):
+        return None
+    return DeviceFilters(name=name, hostname=hostname, group=group, platform=platform)
+
+
 def apply_filters(nr: Nornir, filters: DeviceFilters | None) -> Nornir:
     """Apply filters to Nornir inventory using the F object.
 
@@ -31,7 +53,7 @@ def apply_filters(nr: Nornir, filters: DeviceFilters | None) -> Nornir:
         return nr
 
     # If no filters provided, return unfiltered (all hosts)
-    if not any([filters.name, filters.hostname, filters.group, filters.platform]):
+    if not any((filters.name, filters.hostname, filters.group, filters.platform)):
         return nr
 
     # Apply filters based on the DeviceFilters object
@@ -57,4 +79,4 @@ def apply_filters(nr: Nornir, filters: DeviceFilters | None) -> Nornir:
     return nr
 
 
-__all__: list[str] = ["apply_filters"]
+__all__: list[str] = ["apply_filters", "build_filters"]

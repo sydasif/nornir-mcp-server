@@ -1,6 +1,6 @@
 """Nornir MCP Server inventory tools."""
 
-from typing import Any
+from typing import Any, Literal
 
 from mcp.types import ToolAnnotations
 from ..application import mcp
@@ -11,11 +11,12 @@ from ..services.inventory import (
     get_inventory_summary,
 )
 from ..utils.common import error_response
+from ..utils.filters import build_filters
 
 
 @mcp.tool(annotations=ToolAnnotations(readOnlyHint=True))
 async def list_network_devices(
-    query_type: str = "all",
+    query_type: Literal["devices", "groups", "all"] = "all",
     details: bool = False,
     filter_name: str | None = None,
     filter_hostname: str | None = None,
@@ -44,30 +45,11 @@ async def list_network_devices(
             code="invalid_query_type",
         )
 
-    filters = (
-        DeviceFilters(
-            name=filter_name,
-            hostname=filter_hostname,
-            group=filter_group,
-            platform=filter_platform,
-        )
-        if any([filter_name, filter_hostname, filter_group, filter_platform])
-        else None
-    )
+    filters = build_filters(filter_name, filter_hostname, filter_group, filter_platform)
 
     try:
         nr = get_filtered_nornir(filters)
     except InventoryError as exc:
         return error_response(str(exc), code=exc.code)
 
-    summary = get_inventory_summary(nr, details=details)
-
-    result: dict[str, Any] = {}
-
-    if query_type in ("devices", "all"):
-        result["devices"] = summary["devices"]
-
-    if query_type in ("groups", "all"):
-        result["groups"] = summary["groups"]
-
-    return result
+    return get_inventory_summary(nr, details=details, query_type=query_type)

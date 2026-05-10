@@ -167,13 +167,14 @@ logging:
 
 ### Command Security
 
-The server includes a built-in security engine that validates all CLI commands against a multi-stage denylist before execution. This prevents accidental or malicious use of destructive commands.
+The server includes a built-in security engine that validates all CLI commands against a multi-stage validation system before execution. This prevents accidental or malicious use of destructive commands while minimizing false positives for read-only operations.
 
-**Default Protections:**
+**Security Features:**
 
-- **Blocked Commands**: `reload`, `write erase`, `erase startup-config`, etc.
-- **Restricted Keywords**: `erase`, `format`, `delete`, `reload`.
-- **Chaining & Redirection**: Prevents use of `;`, `&&`, `>`, and `<` to ensure single-command integrity.
+- **Read-Only Enforcement**: Tools like `run_show_commands` enforce an **allowlist prefix** (e.g., `show`, `display`, `get`, `ping`, `traceroute`).
+- **Smart Denylist**: Destructive keywords (`erase`, `format`, `delete`, `reload`) are blocked only when they appear as the **first token** of a command. This allows legitimate commands like `show reload history` while blocking a bare `reload`.
+- **Chaining & Redirection Protection**: Prevents the use of `;`, `&&`, `>`, and `<` to ensure single-command integrity.
+- **Path Sandboxing**: Configuration backups are protected against directory traversal attacks (`..`).
 
 ---
 

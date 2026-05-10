@@ -24,8 +24,8 @@ def get_filtered_nornir(filters: DeviceFilters | None = None) -> Nornir:
     """
     try:
         nr = get_nornir()
-    except ValueError as exc:
-        raise InventoryError(str(exc), code="config_error") from exc
+    except Exception as exc:
+        raise InventoryError(f"Nornir initialization failed: {exc}", code="config_error") from exc
 
     try:
         return apply_filters(nr, filters)
@@ -33,43 +33,52 @@ def get_filtered_nornir(filters: DeviceFilters | None = None) -> Nornir:
         raise InventoryError(str(exc), code="filter_error") from exc
 
 
-def get_inventory_summary(nr: Nornir, details: bool = False) -> dict[str, Any]:
+def get_inventory_summary(
+    nr: Nornir, details: bool = False, query_type: str = "all"
+) -> dict[str, Any]:
     """Aggregate device and group information from the Nornir inventory.
 
     Args:
         nr: Nornir instance
         details: Whether to include full device data
+        query_type: Type of summary to generate ("devices", "groups", "all")
 
     Returns:
         Dictionary containing 'devices' and 'groups' summaries
     """
-    # Aggregate Devices - Use nr.inventory.hosts which is the filtered set
-    devices = []
-    for host_name, host in nr.inventory.hosts.items():
-        device_info = {
-            "name": host_name,
-            "hostname": host.hostname,
-            "platform": host.platform,
-            "groups": [g.name for g in host.groups],
-        }
+    result: dict[str, Any] = {}
 
-        if details:
-            device_info["data"] = host.data
+    # 1. Aggregate Devices - Use nr.inventory.hosts which is the filtered set
+    if query_type in ("devices", "all"):
+        devices = []
+        for host_name, host in nr.inventory.hosts.items():
+            device_info = {
+                "name": host_name,
+                "hostname": host.hostname,
+                "platform": host.platform,
+                "groups": [g.name for g in host.groups],
+            }
 
-        devices.append(device_info)
+            if details:
+                device_info["data"] = host.data
 
-    # Aggregate Groups - ONLY for devices in the current filtered set
-    groups = {name: {"count": 0, "members": []} for name in nr.inventory.groups}
-    for host_name, host in nr.inventory.hosts.items():
-        for group in host.groups:
-            if group.name in groups:
-                groups[group.name]["count"] += 1
-                groups[group.name]["members"].append(host_name)
+            devices.append(device_info)
+        result["devices"] = {"total_devices": len(devices), "devices": devices}
 
-    return {
-        "devices": {"total_devices": len(devices), "devices": devices},
-        "groups": {"groups": groups},
-    }
+    # 2. Aggregate Groups - ONLY for devices in the current filtered set
+    if query_type in ("groups", "all"):
+        groups = {name: {"count": 0, "members": []} for name in nr.inventory.groups}
+        for host_name, host in nr.inventory.hosts.items():
+            for group in host.groups:
+                if group.name in groups:
+                    groups[group.name]["count"] += 1
+                    groups[group.name]["members"].append(host_name)
+
+        # Filter out empty groups for a cleaner summary
+        filtered_groups = {name: info for name, info in groups.items() if info["count"] > 0}
+        result["groups"] = {"groups": filtered_groups}
+
+    return result
 
 
 __all__ = [
