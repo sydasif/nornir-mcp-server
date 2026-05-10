@@ -10,24 +10,6 @@ from ..services.napalm import run_napalm_get
 
 
 @mcp.tool(annotations=ToolAnnotations(readOnlyHint=True))
-async def get_device_facts(
-    filters: DeviceFilters | None = None,
-) -> dict[str, Any]:
-    """Retrieve basic device information (Vendor, OS, Uptime).
-
-    Args:
-        filters: DeviceFilters object containing filter criteria
-
-    Returns:
-        Raw NAPALM facts dictionary per host.
-    """
-    return await run_napalm_get(
-        getters=["facts"],
-        filters=filters,
-    )
-
-
-@mcp.tool(annotations=ToolAnnotations(readOnlyHint=True))
 async def run_napalm_getter(
     getters: list[str],
     filters: DeviceFilters | None = None,

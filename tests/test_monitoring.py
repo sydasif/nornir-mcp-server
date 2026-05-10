@@ -1,31 +1,7 @@
 import asyncio
 
 from nornir_mcp.models import DeviceFilters
-from nornir_mcp.tools.monitoring import get_device_facts, run_napalm_getter
-
-
-def test_get_device_facts_runs_facts_getter(monkeypatch) -> None:
-    calls = []
-    filters = DeviceFilters(platform="ios")
-
-    async def fake_run_napalm_get(**kwargs):
-        calls.append(kwargs)
-        return {"leaf-1": {"facts": {"vendor": "Cisco"}}}
-
-    monkeypatch.setattr(
-        "nornir_mcp.tools.monitoring.run_napalm_get",
-        fake_run_napalm_get,
-    )
-
-    result = asyncio.run(get_device_facts.fn(filters=filters))
-
-    assert result == {"leaf-1": {"facts": {"vendor": "Cisco"}}}
-    assert calls == [
-        {
-            "getters": ["facts"],
-            "filters": filters,
-        }
-    ]
+from nornir_mcp.tools.monitoring import run_napalm_getter
 
 
 def test_run_napalm_getter_forwards_getters_and_options(monkeypatch) -> None:
