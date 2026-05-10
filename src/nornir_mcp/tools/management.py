@@ -14,7 +14,6 @@ from ..services.netmiko import run_netmiko_commands
 from ..utils.common import (
     ensure_backup_directory,
     error_response,
-    pivot_results,
     write_config_to_file,
 )
 from ..utils.security import validate_command
@@ -170,4 +169,4 @@ async def run_show_commands(
         filters=filters,
     )
 
-    return pivot_results(raw, commands)
+    return raw
