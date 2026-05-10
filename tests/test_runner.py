@@ -65,62 +65,16 @@ def test_execute_returns_filter_error(monkeypatch) -> None:
     }
 
 
-def test_execute_returns_timeout_error(monkeypatch) -> None:
-    monkeypatch.setattr(
-        "nornir_mcp.services.runner.get_filtered_nornir",
-        lambda filters=None: FakeNornir(run_impl=lambda **_: {}),
-    )
-
-    async def raise_timeout(awaitable: Any, timeout: int) -> Any:
-        await awaitable
-        raise asyncio.TimeoutError
-
-    monkeypatch.setattr("nornir_mcp.services.runner.asyncio.wait_for", raise_timeout)
-
-    result = asyncio.run(execute(task=lambda **_: None, timeout=5))
-
-    assert result == {
-        GLOBAL_ERROR_HOST: {
-            "error": True,
-            "code": "timeout_error",
-            "message": "Task execution timed out after 5 seconds",
-        }
-    }
-
-
-def test_execute_returns_timeout_config_error_for_invalid_env(monkeypatch) -> None:
-    monkeypatch.setattr(
-        "nornir_mcp.services.runner.get_filtered_nornir",
-        lambda filters=None: FakeNornir(run_impl=lambda **_: {}),
-    )
-    monkeypatch.setenv("NORNIR_MCP_TIMEOUT", "not-a-number")
-
-    result = asyncio.run(execute(task=lambda **_: None))
-
-    assert result == {
-        GLOBAL_ERROR_HOST: {
-            "error": True,
-            "code": "timeout_config_error",
-            "message": "Invalid NORNIR_MCP_TIMEOUT value: 'not-a-number'",
-        }
-    }
-
-
 def test_execute_returns_execution_error(monkeypatch) -> None:
-    monkeypatch.setattr(
-        "nornir_mcp.services.runner.get_filtered_nornir",
-        lambda filters=None: FakeNornir(run_impl=lambda **_: {}),
-    )
-
-    async def raise_execution_error(awaitable: Any, timeout: int) -> Any:
-        await awaitable
+    def raise_execution_error(**kwargs: Any) -> Any:
         raise NornirExecutionError({"leaf-1": FakeMultiResult([FakeSubResult()])})
 
     monkeypatch.setattr(
-        "nornir_mcp.services.runner.asyncio.wait_for", raise_execution_error
+        "nornir_mcp.services.runner.get_filtered_nornir",
+        lambda filters=None: FakeNornir(run_impl=raise_execution_error),
     )
 
-    result = asyncio.run(execute(task=lambda **_: None, timeout=5))
+    result = asyncio.run(execute(task=lambda **_: None))
 
     assert result[GLOBAL_ERROR_HOST]["error"] is True
     assert result[GLOBAL_ERROR_HOST]["code"] == "execution_error"

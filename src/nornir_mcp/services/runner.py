@@ -1,7 +1,6 @@
 """Nornir Execution Service."""
 
 import asyncio
-import os
 from collections.abc import Callable
 from typing import Any
 
@@ -23,24 +22,9 @@ def _global_error(message: str, code: str) -> dict[str, Any]:
     return {GLOBAL_ERROR_HOST: error_response(message, code=code)}
 
 
-def _resolve_timeout(timeout: int | None) -> int:
-    """Resolve timeout from explicit value or environment configuration."""
-    if timeout is not None:
-        return timeout
-
-    raw_timeout = os.environ.get("NORNIR_MCP_TIMEOUT", "300")
-    try:
-        return int(raw_timeout)
-    except ValueError as exc:
-        raise ValueError(
-            f"Invalid NORNIR_MCP_TIMEOUT value: {raw_timeout!r}",
-        ) from exc
-
-
 async def execute(
     task: Callable[..., Result],
     filters: DeviceFilters | None = None,
-    timeout: int | None = None,
     **task_kwargs: Any,
 ) -> dict[str, Any]:
     """Execute a Nornir task and return formatted results.
@@ -48,7 +32,6 @@ async def execute(
     Args:
         task: Nornir task function to execute
         filters: Optional filters to select specific devices
-        timeout: Optional timeout in seconds (default: NORNIR_MCP_TIMEOUT env var)
         **task_kwargs: Additional arguments passed to the task
 
     Returns:
@@ -63,22 +46,9 @@ async def execute(
             code=exc.code,
         )
 
-    # 2. Execute in Thread (Non-blocking) with timeout
+    # 2. Execute in Thread (Non-blocking)
     try:
-        timeout_secs = _resolve_timeout(timeout)
-    except ValueError as e:
-        return _global_error(str(e), code="timeout_config_error")
-
-    try:
-        result = await asyncio.wait_for(
-            asyncio.to_thread(nr.run, task=task, **task_kwargs),
-            timeout=timeout_secs,
-        )
-    except asyncio.TimeoutError:
-        return _global_error(
-            f"Task execution timed out after {timeout_secs} seconds",
-            code="timeout_error",
-        )
+        result = await asyncio.to_thread(nr.run, task=task, **task_kwargs)
     except NornirExecutionError as e:
         return _global_error(
             f"Nornir execution failed: {e}",
