@@ -43,7 +43,7 @@ def get_inventory_summary(nr: Nornir, details: bool = False) -> dict[str, Any]:
     Returns:
         Dictionary containing 'devices' and 'groups' summaries
     """
-    # Aggregate Devices
+    # Aggregate Devices - Use nr.inventory.hosts which is the filtered set
     devices = []
     for host_name, host in nr.inventory.hosts.items():
         device_info = {
@@ -58,7 +58,7 @@ def get_inventory_summary(nr: Nornir, details: bool = False) -> dict[str, Any]:
 
         devices.append(device_info)
 
-    # Aggregate Groups
+    # Aggregate Groups - ONLY for devices in the current filtered set
     groups = {name: {"count": 0, "members": []} for name in nr.inventory.groups}
     for host_name, host in nr.inventory.hosts.items():
         for group in host.groups:
