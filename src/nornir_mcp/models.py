@@ -6,6 +6,7 @@ from pydantic import BaseModel, Field
 class DeviceFilters(BaseModel):
     """Filter parameters for device selection."""
 
+    name: str | None = Field(None, description="Filter by device name in inventory")
     hostname: str | None = Field(None, description="Filter by specific hostname or IP")
     group: str | None = Field(None, description="Filter by group membership")
     platform: str | None = Field(

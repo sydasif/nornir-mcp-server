@@ -31,12 +31,13 @@ def apply_filters(nr: Nornir, filters: DeviceFilters | None) -> Nornir:
         return nr
 
     # If no filters provided, return unfiltered (all hosts)
-    if not any([filters.hostname, filters.group, filters.platform]):
+    if not any([filters.name, filters.hostname, filters.group, filters.platform]):
         return nr
 
-    original_hosts = set(nr.inventory.hosts.keys())
-
     # Apply filters based on the DeviceFilters object
+    if filters.name:
+        nr = nr.filter(F(name=filters.name))
+
     if filters.hostname:
         nr = nr.filter(F(name=filters.hostname) | F(hostname=filters.hostname))
 
