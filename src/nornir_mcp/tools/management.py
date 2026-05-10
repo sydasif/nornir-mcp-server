@@ -59,13 +59,19 @@ def _validate_commands(commands: list[str]) -> dict[str, Any] | None:
 )
 async def send_config_commands(
     commands: list[str],
-    filters: DeviceFilters | None = None,
+    filter_name: str | None = None,
+    filter_hostname: str | None = None,
+    filter_group: str | None = None,
+    filter_platform: str | None = None,
 ) -> dict[str, Any]:
     """Send configuration commands to network devices.
 
     Args:
         commands: List of configuration commands
-        filters: DeviceFilters object containing filter criteria
+        filter_name: Filter by device name in inventory
+        filter_hostname: Filter by specific hostname or IP
+        filter_group: Filter by group membership
+        filter_platform: Filter by platform (e.g., cisco_ios)
 
     Returns:
         Raw output from the configuration execution per host.
@@ -73,6 +79,17 @@ async def send_config_commands(
     validation_error = _validate_commands(commands)
     if validation_error:
         return validation_error
+
+    filters = (
+        DeviceFilters(
+            name=filter_name,
+            hostname=filter_hostname,
+            group=filter_group,
+            platform=filter_platform,
+        )
+        if any([filter_name, filter_hostname, filter_group, filter_platform])
+        else None
+    )
 
     return await execute(
         task=netmiko_send_config,
@@ -87,18 +104,35 @@ async def send_config_commands(
     )
 )
 async def backup_device_configs(
-    filters: DeviceFilters | None = None,
     path: str = "./backups",
+    filter_name: str | None = None,
+    filter_hostname: str | None = None,
+    filter_group: str | None = None,
+    filter_platform: str | None = None,
 ) -> dict[str, Any]:
     """Save device configuration to the local disk.
 
     Args:
-        filters: DeviceFilters object containing filter criteria
         path: Directory path to save backup files
+        filter_name: Filter by device name in inventory
+        filter_hostname: Filter by specific hostname or IP
+        filter_group: Filter by group membership
+        filter_platform: Filter by platform (e.g., cisco_ios)
 
     Returns:
         Summary of saved file paths.
     """
+    filters = (
+        DeviceFilters(
+            name=filter_name,
+            hostname=filter_hostname,
+            group=filter_group,
+            platform=filter_platform,
+        )
+        if any([filter_name, filter_hostname, filter_group, filter_platform])
+        else None
+    )
+
     # Get configurations
     result = await run_napalm_get(
         getters=["config"],
@@ -149,13 +183,19 @@ async def backup_device_configs(
 @mcp.tool(annotations=ToolAnnotations(readOnlyHint=True))
 async def run_show_commands(
     commands: list[str],
-    filters: DeviceFilters | None = None,
+    filter_name: str | None = None,
+    filter_hostname: str | None = None,
+    filter_group: str | None = None,
+    filter_platform: str | None = None,
 ) -> dict[str, Any]:
     """Execute raw CLI show commands via SSH.
 
     Args:
         commands: List of show commands to execute
-        filters: DeviceFilters object containing filter criteria
+        filter_name: Filter by device name in inventory
+        filter_hostname: Filter by specific hostname or IP
+        filter_group: Filter by group membership
+        filter_platform: Filter by platform (e.g., cisco_ios)
 
     Returns:
         Dictionary mapping command -> host -> raw output
@@ -163,6 +203,17 @@ async def run_show_commands(
     validation_error = _validate_commands(commands)
     if validation_error:
         return validation_error
+
+    filters = (
+        DeviceFilters(
+            name=filter_name,
+            hostname=filter_hostname,
+            group=filter_group,
+            platform=filter_platform,
+        )
+        if any([filter_name, filter_hostname, filter_group, filter_platform])
+        else None
+    )
 
     raw = await run_netmiko_commands(
         commands=commands,

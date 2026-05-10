@@ -12,8 +12,11 @@ from ..services.napalm import run_napalm_get
 @mcp.tool(annotations=ToolAnnotations(readOnlyHint=True))
 async def run_napalm_getter(
     getters: list[str],
-    filters: DeviceFilters | None = None,
     getters_options: Mapping[str, Any] | None = None,
+    filter_name: str | None = None,
+    filter_hostname: str | None = None,
+    filter_group: str | None = None,
+    filter_platform: str | None = None,
 ) -> dict[str, Any]:
     """Execute one or more NAPALM getters on network devices.
 
@@ -26,12 +29,26 @@ async def run_napalm_getter(
 
     Args:
         getters: List of NAPALM getter names (e.g., ['facts', 'interfaces', 'arp_table'])
-        filters: DeviceFilters for multi-device operations
         getters_options: Optional getter-specific options
+        filter_name: Filter by device name in inventory
+        filter_hostname: Filter by specific hostname or IP
+        filter_group: Filter by group membership
+        filter_platform: Filter by platform (e.g., cisco_ios)
 
     Returns:
         Structured NAPALM data per host
     """
+    filters = (
+        DeviceFilters(
+            name=filter_name,
+            hostname=filter_hostname,
+            group=filter_group,
+            platform=filter_platform,
+        )
+        if any([filter_name, filter_hostname, filter_group, filter_platform])
+        else None
+    )
+
     return await run_napalm_get(
         getters=getters,
         filters=filters,

@@ -21,8 +21,8 @@ def test_run_napalm_getter_forwards_getters_and_options(monkeypatch) -> None:
     result = asyncio.run(
         run_napalm_getter.fn(
             getters=["interfaces"],
-            filters=filters,
             getters_options=getters_options,
+            filter_group="core",
         )
     )
 

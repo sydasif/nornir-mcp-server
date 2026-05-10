@@ -17,7 +17,10 @@ from ..utils.common import error_response
 async def list_network_devices(
     query_type: str = "all",
     details: bool = False,
-    filters: DeviceFilters | None = None,
+    filter_name: str | None = None,
+    filter_hostname: str | None = None,
+    filter_group: str | None = None,
+    filter_platform: str | None = None,
 ) -> dict[str, Any]:
     """List network devices and inventory information.
 
@@ -27,7 +30,10 @@ async def list_network_devices(
     Args:
         query_type: Type of inventory data to return ("devices", "groups", "all")
         details: Whether to return full inventory attributes (for devices query)
-        filters: DeviceFilters object containing filter criteria (applies to devices and all queries)
+        filter_name: Filter by device name in inventory
+        filter_hostname: Filter by specific hostname or IP
+        filter_group: Filter by group membership
+        filter_platform: Filter by platform (e.g., cisco_ios)
 
     Returns:
         Dictionary containing inventory data based on query_type
@@ -37,6 +43,17 @@ async def list_network_devices(
             f"Invalid query_type '{query_type}'. Must be 'devices', 'groups', or 'all'",
             code="invalid_query_type",
         )
+
+    filters = (
+        DeviceFilters(
+            name=filter_name,
+            hostname=filter_hostname,
+            group=filter_group,
+            platform=filter_platform,
+        )
+        if any([filter_name, filter_hostname, filter_group, filter_platform])
+        else None
+    )
 
     try:
         nr = get_filtered_nornir(filters)
