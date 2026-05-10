@@ -121,7 +121,15 @@ inventory:
 
 ## 🧰 Available Tools
 
-The server exposes 5 tools categorized by operational intent. All tools support an optional `filters` object.
+The server exposes 5 tools categorized by operational intent. All tools support individual filter parameters for device selection.
+
+**Filter Parameters:**
+- `filter_name`: Filter by device name in inventory
+- `filter_hostname`: Filter by specific hostname or IP address
+- `filter_group`: Filter by group membership (e.g., "cisco", "arista")
+- `filter_platform`: Filter by platform (e.g., "eos", "ios", "junos")
+
+All filter parameters are optional. When multiple filters are provided, they are combined with AND logic.
 
 | Category       | Tool                    | Description                                            |
 | :------------- | :---------------------- | :----------------------------------------------------- |

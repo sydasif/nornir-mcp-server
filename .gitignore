@@ -33,3 +33,8 @@ hosts.yaml
 groups.yaml
 defaults.yaml
 backups/
+
+# Debug/Session files
+session-*.md
+*test_report*.md
+bugs/
