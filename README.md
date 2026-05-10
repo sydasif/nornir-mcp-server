@@ -121,13 +121,12 @@ inventory:
 
 ## 🧰 Available Tools
 
-The server exposes 6 tools categorized by operational intent. All tools support an optional `filters` object.
+The server exposes 5 tools categorized by operational intent. All tools support an optional `filters` object.
 
 | Category       | Tool                    | Description                                            |
 | :------------- | :---------------------- | :----------------------------------------------------- |
 | **Inventory**  | `list_network_devices`  | List hosts, groups, and metadata.                      |
-| **Monitoring** | `get_device_facts`      | Basic facts (vendor, model, uptime).                   |
-|                | `run_napalm_getter`     | Generic access to any NAPALM getter (ARP, VLAN, etc.). |
+| **Monitoring** | `run_napalm_getter`     | Generic access to any NAPALM getter (ARP, VLAN, etc.). |
 | **Management** | `run_show_commands`     | Execute arbitrary show commands safely.                |
 |                | `send_config_commands`  | Deploy configuration changes with validation.          |
 |                | `backup_device_configs` | Securely save configurations to local disk.            |
@@ -165,7 +164,7 @@ The server includes a built-in security engine that validates all CLI commands a
 **Default Protections:**
 
 - **Blocked Commands**: `reload`, `write erase`, `erase startup-config`, etc.
-- **Restricted Keywords**: `erase`, `format`, `delete`.
+- **Restricted Keywords**: `erase`, `format`, `delete`, `reload`.
 - **Chaining & Redirection**: Prevents use of `;`, `&&`, `>`, and `<` to ensure single-command integrity.
 
 ---
@@ -209,7 +208,7 @@ Add the following to your opencode config:
 
 ## 🔒 Security
 
-- **Command Validation**: All CLI inputs pass through a multi-stage built-in denylist filter (Exact commands, Keywords, and Patterns).
+- **Command Validation**: All CLI inputs pass through a multi-stage built-in denylist filter (Keywords and Patterns).
 - **Credential Management**: Supports environment variables and Nornir's native secure handling.
 - **Path Sandboxing**: Configuration backups are restricted to the defined root directory to prevent traversal.
 
@@ -235,10 +234,10 @@ If `uv run` is unstable in the local environment, use `.venv/bin/pytest` and `.v
 
 Relevant internal paths:
 
-- `src/nornir_mcp/services/runner.py`: shared task execution and timeout handling.
+- `src/nornir_mcp/services/runner.py`: shared task execution.
 - `src/nornir_mcp/services/inventory.py`: shared inventory loading and filtering helper. This helper still reloads inventory from disk on every call.
 - `src/nornir_mcp/services/napalm.py`: shared NAPALM getter execution helper used by monitoring and backup tools.
-- `src/nornir_mcp/tools/monitoring.py`: monitoring tools for NAPALM facts and generic getters.
+- `src/nornir_mcp/tools/monitoring.py`: monitoring tools for generic getters.
 
 ---
 
