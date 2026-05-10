@@ -11,7 +11,12 @@ from ..models import DeviceFilters
 from ..services.runner import execute
 from ..services.napalm import run_napalm_get
 from ..services.netmiko import run_netmiko_commands
-from ..utils.common import ensure_backup_directory, error_response, write_config_to_file
+from ..utils.common import (
+    ensure_backup_directory,
+    error_response,
+    pivot_results,
+    write_config_to_file,
+)
 from ..utils.security import validate_command
 
 logger = logging.getLogger(__name__)
@@ -165,13 +170,4 @@ async def run_show_commands(
         filters=filters,
     )
 
-    results: dict[str, Any] = {cmd: {} for cmd in commands}
-    for host, host_data in raw.items():
-        if isinstance(host_data, dict) and "error" in host_data:
-            for cmd in commands:
-                results[cmd][host] = host_data
-        else:
-            for cmd in commands:
-                results[cmd][host] = host_data.get(cmd)
-
-    return results
+    return pivot_results(raw, commands)

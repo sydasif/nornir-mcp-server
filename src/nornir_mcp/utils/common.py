@@ -98,9 +98,36 @@ def write_config_to_file(hostname: str, content: str, folder: Path) -> str:
     return str(filepath)
 
 
+def pivot_results(
+    raw_results: dict[str, Any], keys: list[str]
+) -> dict[str, dict[str, Any]]:
+    """Pivot results from {host: {key: value}} to {key: {host: value}}.
+
+    Args:
+        raw_results: The raw Nornir result dictionary mapping host to results
+        keys: The list of keys (e.g., commands) to pivot on
+
+    Returns:
+        Pivoted dictionary {key: {host: value}}
+    """
+    pivoted: dict[str, dict[str, Any]] = {key: {} for key in keys}
+    for host, host_data in raw_results.items():
+        if isinstance(host_data, dict) and "error" in host_data:
+            for key in keys:
+                pivoted[key][host] = host_data
+        else:
+            for key in keys:
+                pivoted[key][host] = (
+                    host_data.get(key) if isinstance(host_data, dict) else None
+                )
+
+    return pivoted
+
+
 __all__ = [
     "error_response",
     "format_results",
     "ensure_backup_directory",
     "write_config_to_file",
+    "pivot_results",
 ]
