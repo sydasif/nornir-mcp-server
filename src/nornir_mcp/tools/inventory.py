@@ -8,6 +8,7 @@ from ..models import DeviceFilters
 from ..services.inventory import (
     InventoryError,
     get_filtered_nornir,
+    get_inventory_summary,
 )
 from ..utils.common import error_response
 
@@ -42,34 +43,14 @@ async def list_network_devices(
     except InventoryError as exc:
         return error_response(str(exc), code=exc.code)
 
+    summary = get_inventory_summary(nr, details=details)
+
     result: dict[str, Any] = {}
 
     if query_type in ("devices", "all"):
-        devices = []
-        for host_name, host in nr.inventory.hosts.items():
-            device_info = {
-                "name": host_name,
-                "hostname": host.hostname,
-                "platform": host.platform,
-                "groups": [g.name for g in host.groups],
-            }
-
-            if details:
-                device_info["data"] = host.data
-
-            devices.append(device_info)
-
-        result["devices"] = {"total_devices": len(devices), "devices": devices}
+        result["devices"] = summary["devices"]
 
     if query_type in ("groups", "all"):
-        groups = {name: {"count": 0, "members": []} for name in nr.inventory.groups}
-
-        for host_name, host in nr.inventory.hosts.items():
-            for group in host.groups:
-                if group.name in groups:
-                    groups[group.name]["count"] += 1
-                    groups[group.name]["members"].append(host_name)
-
-        result["groups"] = {"groups": groups}
+        result["groups"] = summary["groups"]
 
     return result

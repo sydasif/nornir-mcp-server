@@ -1,6 +1,7 @@
 """Shared inventory loading and filtering helpers."""
 
 from nornir.core import Nornir
+from typing import Any
 
 from ..application import get_nornir
 from ..models import DeviceFilters
@@ -32,7 +33,47 @@ def get_filtered_nornir(filters: DeviceFilters | None = None) -> Nornir:
         raise InventoryError(str(exc), code="filter_error") from exc
 
 
+def get_inventory_summary(nr: Nornir, details: bool = False) -> dict[str, Any]:
+    """Aggregate device and group information from the Nornir inventory.
+
+    Args:
+        nr: Nornir instance
+        details: Whether to include full device data
+
+    Returns:
+        Dictionary containing 'devices' and 'groups' summaries
+    """
+    # Aggregate Devices
+    devices = []
+    for host_name, host in nr.inventory.hosts.items():
+        device_info = {
+            "name": host_name,
+            "hostname": host.hostname,
+            "platform": host.platform,
+            "groups": [g.name for g in host.groups],
+        }
+
+        if details:
+            device_info["data"] = host.data
+
+        devices.append(device_info)
+
+    # Aggregate Groups
+    groups = {name: {"count": 0, "members": []} for name in nr.inventory.groups}
+    for host_name, host in nr.inventory.hosts.items():
+        for group in host.groups:
+            if group.name in groups:
+                groups[group.name]["count"] += 1
+                groups[group.name]["members"].append(host_name)
+
+    return {
+        "devices": {"total_devices": len(devices), "devices": devices},
+        "groups": {"groups": groups},
+    }
+
+
 __all__ = [
     "InventoryError",
     "get_filtered_nornir",
+    "get_inventory_summary",
 ]

@@ -4,34 +4,17 @@ import logging
 from typing import Any
 
 from mcp.types import ToolAnnotations
-from nornir.core.task import Result, Task
-from nornir_netmiko.tasks import netmiko_send_command, netmiko_send_config
+from nornir_netmiko.tasks import netmiko_send_config
 
 from ..application import mcp
 from ..models import DeviceFilters
 from ..services.runner import execute
 from ..services.napalm import run_napalm_get
+from ..services.netmiko import run_netmiko_commands
 from ..utils.common import ensure_backup_directory, error_response, write_config_to_file
 from ..utils.security import validate_command
 
 logger = logging.getLogger(__name__)
-
-
-def _netmiko_send_commands(task: Task, commands: list[str]) -> Result:
-    """Send multiple show commands over a single SSH connection.
-
-    Args:
-        task: Nornir Task object
-        commands: List of show commands to execute
-
-    Returns:
-        Result with dict mapping command to output
-    """
-    output: dict[str, Any] = {}
-    for cmd in commands:
-        result = task.run(task=netmiko_send_command, command_string=cmd)
-        output[cmd] = result[0].result
-    return Result(host=task.host, result=output)
 
 
 def _validate_commands(commands: list[str]) -> dict[str, Any] | None:
@@ -177,10 +160,9 @@ async def run_show_commands(
     if validation_error:
         return validation_error
 
-    raw = await execute(
-        task=_netmiko_send_commands,
-        filters=filters,
+    raw = await run_netmiko_commands(
         commands=commands,
+        filters=filters,
     )
 
     results: dict[str, Any] = {cmd: {} for cmd in commands}
