@@ -22,8 +22,10 @@ GLOBAL_ERROR_HOST = "__global__"
 TIMEOUT = int(os.environ.get("NORNIR_MCP_TIMEOUT", "300"))
 
 
-def _global_error(message: str, code: str) -> dict[str, Any]:
-    """Return a host-indexed error payload for global failures."""
+def _global_error(message: str, code: str) -> dict[str, dict[str, Any]]:
+    """Return a host-indexed error payload for global failures.
+    # Returns {GLOBAL_ERROR_HOST: error_response_dict}
+    """
     return {GLOBAL_ERROR_HOST: error_response(message, code=code)}
 
 
@@ -31,8 +33,9 @@ async def execute(
     task: Callable[..., Result],
     filters: DeviceFilters | None = None,
     **task_kwargs: Any,
-) -> dict[str, Any]:
+) -> dict[str, dict[str, Any]]:
     """Execute a Nornir task and return formatted results.
+    Note: All per-host dicts in the returned value conform to either `HostTaskResult` or `ErrorResponse` shape (see models.py).
 
     Args:
         task: Nornir task function to execute
@@ -60,9 +63,9 @@ async def execute(
         )
 
     # 2. Execute in Thread (Non-blocking) with Timeout
-    # NOTE: asyncio.wait_for cancels the task on timeout, but since Nornir tasks 
-    # run in a separate thread via to_thread, the underlying SSH connection 
-    # remains open until it naturally errors or completes. 
+    # NOTE: asyncio.wait_for cancels the task on timeout, but since Nornir tasks
+    # run in a separate thread via to_thread, the underlying SSH connection
+    # remains open until it naturally errors or completes.
     # This prevents the MCP server from blocking but does not kill the hung thread.
     start_time = time.perf_counter()
     try:

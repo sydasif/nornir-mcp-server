@@ -4,7 +4,6 @@ from typing import Any, Literal
 
 from mcp.types import ToolAnnotations
 from ..application import mcp
-from ..models import DeviceFilters
 from ..services.inventory import (
     InventoryError,
     get_filtered_nornir,
@@ -52,4 +51,5 @@ async def list_network_devices(
     except InventoryError as exc:
         return error_response(str(exc), code=exc.code)
 
-    return get_inventory_summary(nr, details=details, query_type=query_type)
+    summary = get_inventory_summary(nr, details=details, query_type=query_type)
+    return summary.model_dump(exclude_none=True)

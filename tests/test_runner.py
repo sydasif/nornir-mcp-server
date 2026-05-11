@@ -5,6 +5,7 @@ from typing import Any
 
 from nornir.core.exceptions import NornirExecutionError
 
+from nornir_mcp.models import ErrorResponse
 from nornir_mcp.services.inventory import InventoryError
 from nornir_mcp.services.runner import GLOBAL_ERROR_HOST, execute
 
@@ -82,3 +83,19 @@ def test_execute_returns_execution_error(monkeypatch) -> None:
     assert result[GLOBAL_ERROR_HOST]["code"] == "execution_error"
     assert "Nornir execution failed:" in result[GLOBAL_ERROR_HOST]["message"]
     assert "leaf-1" in result[GLOBAL_ERROR_HOST]["message"]
+
+
+def test_execute_global_error_conforms_to_error_response_shape(monkeypatch) -> None:
+    """Verify that global errors conform to the ErrorResponse shape."""
+
+    def raise_inventory_error(filters=None) -> None:
+        raise InventoryError("missing config", code="config_error")
+
+    monkeypatch.setattr(
+        "nornir_mcp.services.runner.get_filtered_nornir", raise_inventory_error
+    )
+
+    result = asyncio.run(execute(task=lambda **_: None))
+
+    assert GLOBAL_ERROR_HOST in result
+    ErrorResponse.model_validate(result[GLOBAL_ERROR_HOST])

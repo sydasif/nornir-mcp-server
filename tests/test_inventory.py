@@ -31,7 +31,9 @@ def test_get_filtered_nornir_wraps_config_errors(monkeypatch) -> None:
 
     monkeypatch.setattr("nornir_mcp.services.inventory.get_nornir", raise_config_error)
 
-    with pytest.raises(InventoryError, match="Nornir initialization failed: missing config"):
+    with pytest.raises(
+        InventoryError, match="Nornir initialization failed: missing config"
+    ):
         get_filtered_nornir()
 
 

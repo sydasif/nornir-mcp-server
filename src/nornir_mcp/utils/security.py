@@ -1,7 +1,5 @@
 """Command validation and security utilities."""
 
-import re
-
 # Simple hardcoded denylist for dangerous commands
 DENYLIST = {
     "keywords": {"erase", "format", "delete", "reload"},
@@ -9,7 +7,14 @@ DENYLIST = {
 }
 
 # Allowed prefixes for read-only commands
-ALLOWED_SHOW_PREFIXES = ("show ", "display ", "get ", "ping ", "traceroute ", "terminal ")
+ALLOWED_SHOW_PREFIXES = (
+    "show ",
+    "display ",
+    "get ",
+    "ping ",
+    "traceroute ",
+    "terminal ",
+)
 
 
 def validate_command(command: str, read_only: bool = False) -> str | None:

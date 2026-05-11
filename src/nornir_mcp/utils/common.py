@@ -5,23 +5,32 @@ from pathlib import Path
 from typing import Any
 
 from nornir.core.task import AggregatedResult
+from ..models import ErrorResponse, HostTaskResult
 
 
-def error_response(message: str, code: str = "error", **details: Any) -> dict[str, Any]:
+def error_response(
+    message: str,
+    code: str = "error",
+    exception: str | None = None,
+    details: dict[str, Any] | None = None,
+) -> dict[str, Any]:
     """Create a standardized error response dictionary.
 
     Args:
         message: Human-readable error description
         code: Error code for programmatic handling
-        **details: Additional error context information
+        exception: Stringified exception
+        details: Additional error context information
 
     Returns:
         Standardized error response dictionary
     """
-    payload: dict[str, Any] = {"error": True, "code": code, "message": message}
-    if details:
-        payload["details"] = details
-    return payload
+    return ErrorResponse(
+        message=message,
+        code=code,
+        exception=exception,
+        details=details,
+    ).model_dump(exclude_none=True)
 
 
 def format_results(result: AggregatedResult) -> dict[str, Any]:
@@ -40,20 +49,28 @@ def format_results(result: AggregatedResult) -> dict[str, Any]:
 
     for host, multi_result in result.items():
         if not multi_result:
-            formatted[host] = error_response(
-                "No results returned",
-                code="empty_result",
+            res = HostTaskResult(
+                success=False,
+                error=ErrorResponse(code="empty_result", message="No results returned"),
             )
+            formatted[host] = res.model_dump(exclude_none=True)
         elif multi_result.failed:
             exc = next((r.exception for r in multi_result if r.exception), None)
-            formatted[host] = error_response(
-                "Task failed",
-                code="task_failed",
-                exception=str(exc) if exc else "Unknown error",
-                traceback=getattr(exc, "traceback", None),
+            res = HostTaskResult(
+                success=False,
+                error=ErrorResponse(
+                    code="task_failed",
+                    message="Task failed",
+                    exception=str(exc) if exc else "Unknown error",
+                    details={"traceback": getattr(exc, "__traceback__", None)}
+                    if exc
+                    else None,
+                ),
             )
+            formatted[host] = res.model_dump(exclude_none=True)
         else:
-            formatted[host] = multi_result[0].result
+            res = HostTaskResult(success=True, output=multi_result[0].result)
+            formatted[host] = res.model_dump(exclude_none=True)
 
     return formatted
 
@@ -72,7 +89,9 @@ def ensure_backup_directory(backup_dir: str | Path) -> Path:
     """
     path_str = str(backup_dir)
     if ".." in path_str:
-        raise ValueError("Security Error: Directory traversal using '..' is not allowed.")
+        raise ValueError(
+            "Security Error: Directory traversal using '..' is not allowed."
+        )
 
     path = Path(backup_dir).expanduser().resolve()
     path.mkdir(parents=True, exist_ok=True)

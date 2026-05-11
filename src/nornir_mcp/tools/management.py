@@ -1,13 +1,21 @@
 """Netmiko Tools - CLI commands and file operations for network devices."""
 
 import logging
+from datetime import datetime, UTC
+from pathlib import Path
 from typing import Any
 
 from mcp.types import ToolAnnotations
 from nornir_netmiko.tasks import netmiko_send_config
 
 from ..application import mcp
-from ..models import DeviceFilters
+from ..models import (
+    TaskResult,
+    HostTaskResult,
+    BackupFileInfo,
+    BackupResult,
+    ErrorResponse,
+)
 from ..services.runner import execute, GLOBAL_ERROR_HOST
 from ..services.napalm import run_napalm_get
 from ..services.netmiko import run_netmiko_commands
@@ -22,7 +30,9 @@ from ..utils.security import validate_command
 logger = logging.getLogger(__name__)
 
 
-def _validate_commands(commands: list[str], read_only: bool = False) -> dict[str, Any] | None:
+def _validate_commands(
+    commands: list[str], read_only: bool = False
+) -> dict[str, Any] | None:
     """Validate a list of commands against security rules.
 
     Args:
@@ -44,8 +54,7 @@ def _validate_commands(commands: list[str], read_only: bool = False) -> dict[str
             return error_response(
                 "Command validation failed",
                 code="command_validation_failed",
-                validation_error=validation_error,
-                failed_command=cmd,
+                details={"validation_error": validation_error, "failed_command": cmd},
             )
 
     return None
@@ -73,7 +82,7 @@ async def send_config_commands(
         filter_platform: Filter by platform (e.g., cisco_ios)
 
     Returns:
-        Raw output from the configuration execution per host.
+        Dictionary with 'hosts' key mapping hostname -> task result (success or error).
     """
     validation_error = _validate_commands(commands, read_only=False)
     if validation_error:
@@ -81,11 +90,23 @@ async def send_config_commands(
 
     filters = build_filters(filter_name, filter_hostname, filter_group, filter_platform)
 
-    return await execute(
+    raw = await execute(
         task=netmiko_send_config,
         filters=filters,
         config_commands=commands,
     )
+
+    if GLOBAL_ERROR_HOST in raw:
+        return raw
+
+    task_result = TaskResult(
+        hosts={
+            host: HostTaskResult.model_validate(data)
+            for host, data in raw.items()
+            if host != GLOBAL_ERROR_HOST
+        }
+    )
+    return task_result.model_dump(exclude_none=True)
 
 
 @mcp.tool(
@@ -132,16 +153,15 @@ async def backup_device_configs(
         return result
 
     # 4. Process results - flat structure with guard clauses
-    backup_results = {}
+    hosts: dict[str, BackupFileInfo | ErrorResponse] = {}
     for hostname, data in result.items():
         # Guard 1: Check for task execution errors
         if isinstance(data, dict) and data.get("error"):
-            backup_error = error_response(
-                "Backup task failed",
+            hosts[hostname] = ErrorResponse(
                 code="backup_failed",
+                message="Backup task failed",
+                details=data,
             )
-            backup_error["details"] = data
-            backup_results[hostname] = backup_error
             continue
 
         # Guard 2: Extract config safely using chained .get()
@@ -149,20 +169,22 @@ async def backup_device_configs(
             data.get("config", {}).get("running", "") if isinstance(data, dict) else ""
         )
         if not config:
-            backup_results[hostname] = error_response(
-                "Empty or missing configuration",
-                code="empty_config",
+            hosts[hostname] = ErrorResponse(
+                code="no_config",
+                message="No config data returned",
             )
             continue
 
         # Success case
-        file_path = write_config_to_file(hostname, config, backup_path)
-        backup_results[hostname] = {
-            "status": "success",
-            "path": file_path,
-        }
+        file_path_str = write_config_to_file(hostname, config, backup_path)
+        file_path = Path(file_path_str)
+        hosts[hostname] = BackupFileInfo(
+            path=str(file_path),
+            size_bytes=file_path.stat().st_size,
+            written_at=datetime.now(UTC).isoformat(),
+        )
 
-    return backup_results
+    return BackupResult(hosts=hosts).model_dump(exclude_none=True)
 
 
 @mcp.tool(annotations=ToolAnnotations(readOnlyHint=True))
@@ -183,7 +205,7 @@ async def run_show_commands(
         filter_platform: Filter by platform (e.g., cisco_ios)
 
     Returns:
-        Dictionary mapping host -> command -> raw output
+        Dictionary with 'hosts' key mapping hostname -> task result (success or error).
     """
     validation_error = _validate_commands(commands, read_only=True)
     if validation_error:
@@ -196,4 +218,14 @@ async def run_show_commands(
         filters=filters,
     )
 
-    return raw
+    if GLOBAL_ERROR_HOST in raw:
+        return raw
+
+    task_result = TaskResult(
+        hosts={
+            host: HostTaskResult.model_validate(data)
+            for host, data in raw.items()
+            if host != GLOBAL_ERROR_HOST
+        }
+    )
+    return task_result.model_dump(exclude_none=True)
