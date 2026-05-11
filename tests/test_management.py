@@ -33,9 +33,11 @@ def test_backup_device_configs_handles_runner_errors(
     async def fake_execute(**kwargs):
         return {
             "leaf-1": {
-                "error": True,
-                "code": "task_failed",
-                "message": "device failure",
+                "success": False,
+                "error": {
+                    "code": "task_failed",
+                    "message": "device failure",
+                }
             }
         }
 
@@ -48,7 +50,7 @@ def test_backup_device_configs_handles_runner_errors(
     result = asyncio.run(backup_device_configs.fn(path=str(tmp_path)))
 
     assert result["hosts"]["leaf-1"]["error"] is True
-    assert result["hosts"]["leaf-1"]["code"] == "backup_failed"
+    assert result["hosts"]["leaf-1"]["code"] == "task_failed"
 
 
 def test_backup_device_configs_writes_config(monkeypatch, tmp_path: Path) -> None:
@@ -57,8 +59,11 @@ def test_backup_device_configs_writes_config(monkeypatch, tmp_path: Path) -> Non
     async def fake_execute(**kwargs):
         return {
             "leaf-1": {
-                "config": {
-                    "running": "hostname leaf-1",
+                "success": True,
+                "output": {
+                    "config": {
+                        "running": "hostname leaf-1",
+                    }
                 }
             }
         }
@@ -88,9 +93,11 @@ def test_backup_device_configs_failure_validates_as_backup_result(
     async def fake_execute(**kwargs):
         return {
             "leaf-1": {
-                "error": True,
-                "code": "task_failed",
-                "message": "device failure",
+                "success": False,
+                "error": {
+                    "code": "task_failed",
+                    "message": "device failure",
+                }
             }
         }
 

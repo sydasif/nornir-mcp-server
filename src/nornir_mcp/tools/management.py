@@ -153,21 +153,24 @@ async def backup_device_configs(
         return result
 
     # 4. Process results - flat structure with guard clauses
+    # New format: {"hostname": {"success": bool, "output": {...}, "error": {...}}}
     hosts: dict[str, BackupFileInfo | ErrorResponse] = {}
     for hostname, data in result.items():
         # Guard 1: Check for task execution errors
-        if isinstance(data, dict) and data.get("error"):
+        if isinstance(data, dict) and not data.get("success", True):
+            error_info = data.get("error", {})
             hosts[hostname] = ErrorResponse(
-                code="backup_failed",
-                message="Backup task failed",
-                details=data,
+                code=error_info.get("code", "backup_failed"),
+                message=error_info.get("message", "Backup task failed"),
+                details=error_info.get("details"),
             )
             continue
 
-        # Guard 2: Extract config safely using chained .get()
-        config = (
-            data.get("config", {}).get("running", "") if isinstance(data, dict) else ""
-        )
+        # Guard 2: Extract config from output
+        output = data.get("output", {}) if isinstance(data, dict) else {}
+        config_data = output.get("config", {})
+        config = config_data.get("running", "") if isinstance(config_data, dict) else ""
+
         if not config:
             hosts[hostname] = ErrorResponse(
                 code="no_config",
