@@ -53,13 +53,17 @@ async def execute(
             host_count,
         )
     except InventoryError as exc:
-        logger.error("Inventory setup failed: %s (code=%s)", exc, exc.code)
+        logger.exception("Inventory setup failed: %s (code=%s)", exc, exc.code)
         return _global_error(
             str(exc),
             code=exc.code,
         )
 
     # 2. Execute in Thread (Non-blocking) with Timeout
+    # NOTE: asyncio.wait_for cancels the task on timeout, but since Nornir tasks 
+    # run in a separate thread via to_thread, the underlying SSH connection 
+    # remains open until it naturally errors or completes. 
+    # This prevents the MCP server from blocking but does not kill the hung thread.
     start_time = time.perf_counter()
     try:
         result = await asyncio.wait_for(
@@ -80,7 +84,7 @@ async def execute(
             code="timeout",
         )
     except NornirExecutionError as e:
-        logger.error("Nornir execution failed: %s", e)
+        logger.exception("Nornir execution failed: %s", e)
         return _global_error(
             f"Nornir execution failed: {e}",
             code="execution_error",
