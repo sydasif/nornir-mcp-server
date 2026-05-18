@@ -1,5 +1,6 @@
 """Common utilities - error handling, result formatting, and config operations."""
 
+import traceback
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -62,7 +63,9 @@ def format_results(result: AggregatedResult) -> dict[str, Any]:
                     code="task_failed",
                     message="Task failed",
                     exception=str(exc) if exc else "Unknown error",
-                    details={"traceback": getattr(exc, "__traceback__", None)}
+                    details={
+                        "traceback": "".join(traceback.format_tb(exc.__traceback__))
+                    }
                     if exc
                     else None,
                 ),
