@@ -5,9 +5,10 @@ from typing import Any
 
 from mcp.types import ToolAnnotations
 from ..application import mcp
-from ..models import TaskResult, HostTaskResult
+
 from ..services.napalm import run_napalm_get
 from ..services.runner import GLOBAL_ERROR_HOST
+from ..utils.common import wrap_task_result
 from ..utils.filters import build_filters
 
 
@@ -51,11 +52,4 @@ async def run_napalm_getter(
     if GLOBAL_ERROR_HOST in result:
         return result
 
-    task_result = TaskResult(
-        hosts={
-            host: HostTaskResult.model_validate(data)
-            for host, data in result.items()
-            if host != GLOBAL_ERROR_HOST
-        }
-    )
-    return task_result.model_dump(exclude_none=True)
+    return wrap_task_result(result)

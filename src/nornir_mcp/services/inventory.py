@@ -1,5 +1,6 @@
 """Shared inventory loading and filtering helpers."""
 
+from collections import defaultdict
 from nornir.core import Nornir
 
 from ..application import get_nornir
@@ -59,29 +60,27 @@ def get_inventory_summary(
 
     # 1. Aggregate Devices - Use nr.inventory.hosts which is the filtered set
     if query_type in ("devices", "all"):
-        devices = []
-        for host_name, host in nr.inventory.hosts.items():
-            devices.append(
-                DeviceSummary(
-                    name=host_name,
-                    hostname=host.hostname,
-                    platform=host.platform,
-                    groups=[g.name for g in host.groups],
-                    data=host.data if details else None,
-                )
+        devices = [
+            DeviceSummary(
+                name=host_name,
+                hostname=host.hostname,
+                platform=host.platform,
+                groups=[g.name for g in host.groups],
+                data=host.data if details else None,
             )
+            for host_name, host in nr.inventory.hosts.items()
+        ]
         devices_summary = DevicesSummary(total_devices=len(devices), devices=devices)
 
     # 2. Aggregate Groups - ONLY for devices in the current filtered set
     if query_type in ("groups", "all"):
-        groups = {}
+        groups: dict[str, GroupSummary] = defaultdict(
+            lambda: GroupSummary(count=0, members=[])
+        )
         for host_name, host in nr.inventory.hosts.items():
             for group in host.groups:
-                group_name = group.name
-                if group_name not in groups:
-                    groups[group_name] = GroupSummary(count=0, members=[])
-                groups[group_name].count += 1
-                groups[group_name].members.append(host_name)
+                groups[group.name].count += 1
+                groups[group.name].members.append(host_name)
 
         groups_summary = GroupsSummary(groups=groups)
 

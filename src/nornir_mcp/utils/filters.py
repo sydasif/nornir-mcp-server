@@ -52,7 +52,6 @@ def apply_filters(nr: Nornir, filters: DeviceFilters | None) -> Nornir:
     if filters is None:
         return nr
 
-    # If no filters provided, return unfiltered (all hosts)
     if not any((filters.name, filters.hostname, filters.group, filters.platform)):
         return nr
 

@@ -15,9 +15,9 @@ async def run_napalm_get(
     getters_options: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Execute one or more NAPALM getters via the shared runner."""
-    task_kwargs: dict[str, Any] = {"getters": getters}
-    if getters_options is not None:
-        task_kwargs["getters_options"] = getters_options
+    task_kwargs: dict[str, Any] = {"getters": getters} | (
+        {"getters_options": getters_options} if getters_options is not None else {}
+    )
 
     return await execute(
         task=napalm_get,

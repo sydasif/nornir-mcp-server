@@ -37,7 +37,7 @@ def test_backup_device_configs_handles_runner_errors(
                 "error": {
                     "code": "task_failed",
                     "message": "device failure",
-                }
+                },
             }
         }
 
@@ -64,7 +64,7 @@ def test_backup_device_configs_writes_config(monkeypatch, tmp_path: Path) -> Non
                     "config": {
                         "running": "hostname leaf-1",
                     }
-                }
+                },
             }
         }
 
@@ -97,7 +97,7 @@ def test_backup_device_configs_failure_validates_as_backup_result(
                 "error": {
                     "code": "task_failed",
                     "message": "device failure",
-                }
+                },
             }
         }
 

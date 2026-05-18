@@ -23,9 +23,7 @@ TIMEOUT = int(os.environ.get("NORNIR_MCP_TIMEOUT", "300"))
 
 
 def _global_error(message: str, code: str) -> dict[str, dict[str, Any]]:
-    """Return a host-indexed error payload for global failures.
-    # Returns {GLOBAL_ERROR_HOST: error_response_dict}
-    """
+    """Return a host-indexed error payload for global failures."""
     return {GLOBAL_ERROR_HOST: error_response(message, code=code)}
 
 

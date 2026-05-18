@@ -10,8 +10,6 @@ from nornir_netmiko.tasks import netmiko_send_config
 
 from ..application import mcp
 from ..models import (
-    TaskResult,
-    HostTaskResult,
     BackupFileInfo,
     BackupResult,
     ErrorResponse,
@@ -23,6 +21,7 @@ from ..utils.common import (
     ensure_backup_directory,
     error_response,
     write_config_to_file,
+    wrap_task_result,
 )
 from ..utils.filters import build_filters
 from ..utils.security import validate_command
@@ -99,14 +98,7 @@ async def send_config_commands(
     if GLOBAL_ERROR_HOST in raw:
         return raw
 
-    task_result = TaskResult(
-        hosts={
-            host: HostTaskResult.model_validate(data)
-            for host, data in raw.items()
-            if host != GLOBAL_ERROR_HOST
-        }
-    )
-    return task_result.model_dump(exclude_none=True)
+    return wrap_task_result(raw)
 
 
 @mcp.tool(
@@ -152,8 +144,7 @@ async def backup_device_configs(
     if GLOBAL_ERROR_HOST in result:
         return result
 
-    # 4. Process results - flat structure with guard clauses
-    # New format: {"hostname": {"success": bool, "output": {...}, "error": {...}}}
+    # Process results with guard clauses
     hosts: dict[str, BackupFileInfo | ErrorResponse] = {}
     for hostname, data in result.items():
         # Guard 1: Check for task execution errors
@@ -224,11 +215,4 @@ async def run_show_commands(
     if GLOBAL_ERROR_HOST in raw:
         return raw
 
-    task_result = TaskResult(
-        hosts={
-            host: HostTaskResult.model_validate(data)
-            for host, data in raw.items()
-            if host != GLOBAL_ERROR_HOST
-        }
-    )
-    return task_result.model_dump(exclude_none=True)
+    return wrap_task_result(raw)

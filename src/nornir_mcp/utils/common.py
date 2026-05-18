@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Any
 
 from nornir.core.task import AggregatedResult
-from ..models import ErrorResponse, HostTaskResult
+from ..models import ErrorResponse, HostTaskResult, TaskResult
 
 
 def error_response(
@@ -116,9 +116,27 @@ def write_config_to_file(hostname: str, content: str, folder: Path) -> str:
     return str(filepath)
 
 
+def wrap_task_result(raw: dict[str, Any]) -> dict[str, Any]:
+    """Wrap raw Nornir results into a standardized TaskResult dictionary.
+
+    Validates each entry against the HostTaskResult schema. The caller must
+    guard against GLOBAL_ERROR_HOST entries before calling this function.
+
+    Args:
+        raw: Dictionary mapping hostname to raw task results or error responses
+
+    Returns:
+        Dictionary with 'hosts' key conforming to TaskResult shape
+    """
+    return TaskResult(
+        hosts={host: HostTaskResult.model_validate(data) for host, data in raw.items()}
+    ).model_dump(exclude_none=True)
+
+
 __all__ = [
     "error_response",
     "format_results",
+    "wrap_task_result",
     "ensure_backup_directory",
     "write_config_to_file",
 ]
