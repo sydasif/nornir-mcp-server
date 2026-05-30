@@ -69,7 +69,8 @@ def apply_filters(nr: Nornir, filters: DeviceFilters | None) -> Nornir:
     if len(nr.inventory.hosts) == 0:
         raise ValueError(
             f"No devices matched the provided filters. "
-            f"Original inventory had {original_count} devices."
+            f"Original inventory had {original_count} devices. "
+            f"Try calling 'list_network_devices' with query_type='devices' to verify available names and platforms."
         )
 
     return nr

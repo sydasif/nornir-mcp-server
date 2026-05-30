@@ -32,7 +32,10 @@ def validate_command(command: str, read_only: bool = False) -> str | None:
     # 1. For read-only tools, enforce an allowlist prefix
     if read_only:
         if not any(command_lower.startswith(p) for p in ALLOWED_SHOW_PREFIXES):
-            return "Only read-only commands (show/display/get/ping/traceroute) are permitted."
+            return (
+                f"Only read-only commands are permitted. "
+                f"Allowed prefixes: {', '.join(p.strip() for p in ALLOWED_SHOW_PREFIXES)}"
+            )
 
     # 2. Check disallowed patterns (redirection, command chaining)
     for pattern in DENYLIST["patterns"]:

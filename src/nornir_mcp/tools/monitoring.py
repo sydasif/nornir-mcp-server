@@ -13,7 +13,7 @@ from ..utils.filters import build_filters
 
 
 @mcp.tool(annotations=ToolAnnotations(readOnlyHint=True))
-async def run_napalm_getter(
+async def get_device_structured_data(
     getters: list[str],
     getters_options: Mapping[str, Any] | None = None,
     filter_name: str | None = None,
@@ -21,7 +21,7 @@ async def run_napalm_getter(
     filter_group: str | None = None,
     filter_platform: str | None = None,
 ) -> dict[str, Any]:
-    """Execute one or more NAPALM getters on network devices.
+    """Execute one or more NAPALM getters to retrieve structured data from network devices.
 
     Common available getters:
     - "facts": Basic device information (vendor, model, uptime).
@@ -31,15 +31,15 @@ async def run_napalm_getter(
     - "config": Retrieve Running/Startup/Candidate configs.
 
     Args:
-        getters: List of NAPALM getter names (e.g., ['facts', 'interfaces', 'arp_table'])
+        getters: List of NAPALM getter names (e.g., ['facts', 'interfaces'])
         getters_options: Optional getter-specific options
         filter_name: Filter by device name in inventory
         filter_hostname: Filter by specific hostname or IP
         filter_group: Filter by group membership
-        filter_platform: Filter by platform (e.g., cisco_ios)
+        filter_platform: Filter by platform (e.g., 'cisco_ios', 'arista_eos')
 
     Returns:
-        Structured NAPALM data per host
+        Structured data per host mapping hostname -> result
     """
     filters = build_filters(filter_name, filter_hostname, filter_group, filter_platform)
 

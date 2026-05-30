@@ -27,5 +27,5 @@ def test_validate_command_allows_read_only_show_command() -> None:
     # enforcing read_only mode
     assert (
         validate_command("config t", read_only=True)
-        == "Only read-only commands (show/display/get/ping/traceroute) are permitted."
+        == "Only read-only commands are permitted. Allowed prefixes: show, display, get, ping, traceroute, terminal"
     )

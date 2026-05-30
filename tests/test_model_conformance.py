@@ -10,7 +10,7 @@ from nornir_mcp.models import (
     TaskResult,
 )
 from nornir_mcp.tools.inventory import list_network_devices
-from nornir_mcp.tools.monitoring import run_napalm_getter
+from nornir_mcp.tools.monitoring import get_device_structured_data
 from nornir_mcp.tools.management import (
     backup_device_configs,
     run_show_commands,
@@ -31,8 +31,8 @@ def test_list_network_devices_conforms_to_inventory_summary(monkeypatch):
     InventorySummary.model_validate(result)
 
 
-def test_run_napalm_getter_conforms_to_task_result(monkeypatch):
-    """Verify run_napalm_getter output conforms to TaskResult."""
+def test_get_device_structured_data_conforms_to_task_result(monkeypatch):
+    """Verify get_device_structured_data output conforms to TaskResult."""
 
     async def fake_run_napalm_get(**kwargs):
         return {"leaf-1": {"success": True, "output": {"facts": {}}}}
@@ -41,7 +41,7 @@ def test_run_napalm_getter_conforms_to_task_result(monkeypatch):
         "nornir_mcp.tools.monitoring.run_napalm_get", fake_run_napalm_get
     )
 
-    result = asyncio.run(run_napalm_getter.fn(getters=["facts"]))
+    result = asyncio.run(get_device_structured_data.fn(getters=["facts"]))
     TaskResult.model_validate(result)
 
 

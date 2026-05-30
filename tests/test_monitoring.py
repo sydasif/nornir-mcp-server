@@ -2,10 +2,10 @@ import asyncio
 
 from nornir_mcp.models import DeviceFilters, TaskResult
 from nornir_mcp.services.runner import GLOBAL_ERROR_HOST
-from nornir_mcp.tools.monitoring import run_napalm_getter
+from nornir_mcp.tools.monitoring import get_device_structured_data
 
 
-def test_run_napalm_getter_forwards_getters_and_options(monkeypatch) -> None:
+def test_get_device_structured_data_forwards_getters_and_options(monkeypatch) -> None:
     calls = []
     filters = DeviceFilters(group="core")
     getters_options = {"interfaces": {"interface": "Ethernet1"}}
@@ -20,7 +20,7 @@ def test_run_napalm_getter_forwards_getters_and_options(monkeypatch) -> None:
     )
 
     result = asyncio.run(
-        run_napalm_getter.fn(
+        get_device_structured_data.fn(
             getters=["interfaces"],
             getters_options=getters_options,
             filter_group="core",
@@ -39,7 +39,7 @@ def test_run_napalm_getter_forwards_getters_and_options(monkeypatch) -> None:
     ]
 
 
-def test_run_napalm_getter_passes_through_global_error(monkeypatch) -> None:
+def test_get_device_structured_data_passes_through_global_error(monkeypatch) -> None:
     """Verify that global errors are passed through unchanged."""
 
     async def fake_run_napalm_get(**kwargs):
@@ -56,7 +56,7 @@ def test_run_napalm_getter_passes_through_global_error(monkeypatch) -> None:
         fake_run_napalm_get,
     )
 
-    result = asyncio.run(run_napalm_getter.fn(getters=["facts"]))
+    result = asyncio.run(get_device_structured_data.fn(getters=["facts"]))
 
     assert result[GLOBAL_ERROR_HOST]["error"] is True
     assert result[GLOBAL_ERROR_HOST]["code"] == "config_error"

@@ -33,7 +33,7 @@ async def list_network_devices(
         filter_name: Filter by device name in inventory
         filter_hostname: Filter by specific hostname or IP
         filter_group: Filter by group membership
-        filter_platform: Filter by platform (e.g., cisco_ios)
+        filter_platform: Filter by platform (e.g., 'cisco_ios', 'arista_eos')
 
     Returns:
         Dictionary containing inventory data based on query_type

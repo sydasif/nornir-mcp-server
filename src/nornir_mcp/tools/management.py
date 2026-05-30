@@ -78,7 +78,7 @@ async def send_config_commands(
         filter_name: Filter by device name in inventory
         filter_hostname: Filter by specific hostname or IP
         filter_group: Filter by group membership
-        filter_platform: Filter by platform (e.g., cisco_ios)
+        filter_platform: Filter by platform (e.g., 'cisco_ios', 'arista_eos')
 
     Returns:
         Dictionary with 'hosts' key mapping hostname -> task result (success or error).
@@ -120,7 +120,7 @@ async def backup_device_configs(
         filter_name: Filter by device name in inventory
         filter_hostname: Filter by specific hostname or IP
         filter_group: Filter by group membership
-        filter_platform: Filter by platform (e.g., cisco_ios)
+        filter_platform: Filter by platform (e.g., 'cisco_ios', 'arista_eos')
 
     Returns:
         Summary of saved file paths.
@@ -196,7 +196,7 @@ async def run_show_commands(
         filter_name: Filter by device name in inventory
         filter_hostname: Filter by specific hostname or IP
         filter_group: Filter by group membership
-        filter_platform: Filter by platform (e.g., cisco_ios)
+        filter_platform: Filter by platform (e.g., 'cisco_ios', 'arista_eos')
 
     Returns:
         Dictionary with 'hosts' key mapping hostname -> task result (success or error).
