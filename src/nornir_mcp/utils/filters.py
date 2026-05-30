@@ -52,9 +52,6 @@ def apply_filters(nr: Nornir, filters: DeviceFilters | None) -> Nornir:
     if filters is None:
         return nr
 
-    if not any((filters.name, filters.hostname, filters.group, filters.platform)):
-        return nr
-
     # Apply filters based on the DeviceFilters object
     if filters.name:
         nr = nr.filter(F(name=filters.name))
