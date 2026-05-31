@@ -13,7 +13,7 @@ from ..utils.filters import build_filters
 
 
 @mcp.tool(annotations=ToolAnnotations(readOnlyHint=True))
-async def get_device_structured_data(
+async def get_structured_data(
     getters: list[str],
     getters_options: Mapping[str, Any] | None = None,
     filter_name: str | None = None,
