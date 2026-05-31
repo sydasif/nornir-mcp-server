@@ -1,7 +1,8 @@
 """Nornir MCP Server inventory tools."""
 
-from typing import Any, Literal
+from typing import Any, Annotated, Literal
 
+from pydantic import Field
 from mcp.types import ToolAnnotations
 from ..application import mcp
 from ..services.inventory import (
@@ -13,14 +14,40 @@ from ..utils.common import error_response
 from ..utils.filters import build_filters
 
 
-@mcp.tool(annotations=ToolAnnotations(readOnlyHint=True))
+@mcp.tool(
+    name="list_devices",
+    annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=False),
+    tags={"inventory"},
+)
 async def list_network_devices(
-    query_type: Literal["devices", "groups", "all"] = "all",
-    details: bool = False,
-    filter_name: str | None = None,
-    filter_hostname: str | None = None,
-    filter_group: str | None = None,
-    filter_platform: str | None = None,
+    query_type: Annotated[
+        Literal["devices", "groups", "all"],
+        Field(
+            description="Type of inventory data to return ('devices', 'groups', 'all')"
+        ),
+    ] = "all",
+    details: Annotated[
+        bool,
+        Field(
+            description="Whether to return full inventory attributes (for devices query)"
+        ),
+    ] = False,
+    filter_name: Annotated[
+        str | None,
+        Field(description="Filter by device name in inventory"),
+    ] = None,
+    filter_hostname: Annotated[
+        str | None,
+        Field(description="Filter by specific hostname or IP"),
+    ] = None,
+    filter_group: Annotated[
+        str | None,
+        Field(description="Filter by group membership"),
+    ] = None,
+    filter_platform: Annotated[
+        str | None,
+        Field(description="Filter by platform (e.g., 'cisco_ios', 'arista_eos')"),
+    ] = None,
 ) -> dict[str, Any]:
     """List network devices and inventory information.
 

@@ -7,7 +7,10 @@ from nornir import InitNornir
 from nornir.core import Nornir
 
 # Initialize FastMCP with metadata
-mcp = FastMCP("Nornir Network Automation")
+mcp = FastMCP(
+    "Nornir Network Automation",
+    on_duplicate_tools="error",
+)
 
 
 # Initialize Nornir from config

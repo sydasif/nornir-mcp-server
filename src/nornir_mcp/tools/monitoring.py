@@ -1,9 +1,11 @@
 """NAPALM Tools - Structured data retrieval from network devices."""
 
 from collections.abc import Mapping
-from typing import Any
+from typing import Annotated, Any
 
 from mcp.types import ToolAnnotations
+from pydantic import Field
+
 from ..application import mcp
 
 from ..services.napalm import run_napalm_get
@@ -12,9 +14,18 @@ from ..utils.common import wrap_task_result
 from ..utils.filters import build_filters
 
 
-@mcp.tool(annotations=ToolAnnotations(readOnlyHint=True))
+@mcp.tool(
+    name="fetch_data",
+    annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True),
+    tags={"monitoring"},
+)
 async def get_structured_data(
-    getters: list[str],
+    getters: Annotated[
+        list[str],
+        Field(
+            description="NAPALM getter names (e.g., ['facts', 'interfaces', 'bgp_neighbors'])"
+        ),
+    ],
     getters_options: Mapping[str, Any] | None = None,
     filter_name: str | None = None,
     filter_hostname: str | None = None,

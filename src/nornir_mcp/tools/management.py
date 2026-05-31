@@ -3,10 +3,11 @@
 import logging
 from datetime import datetime, UTC
 from pathlib import Path
-from typing import Any
+from typing import Annotated, Any
 
 from mcp.types import ToolAnnotations
 from nornir_netmiko.tasks import netmiko_send_config
+from pydantic import Field
 
 from ..application import mcp
 from ..models import (
@@ -60,12 +61,22 @@ def _validate_commands(
 
 
 @mcp.tool(
+    name="apply_config",
     annotations=ToolAnnotations(
-        readOnlyHint=False, destructiveHint=True, idempotentHint=False
-    )
+        readOnlyHint=False,
+        destructiveHint=True,
+        idempotentHint=False,
+        openWorldHint=True,
+    ),
+    tags={"management"},
 )
 async def send_config_commands(
-    commands: list[str],
+    commands: Annotated[
+        list[str],
+        Field(
+            description="Configuration commands to apply (e.g., ['int lo0', 'ip addr 10.0.0.1/24'])"
+        ),
+    ],
     filter_name: str | None = None,
     filter_hostname: str | None = None,
     filter_group: str | None = None,
@@ -102,12 +113,19 @@ async def send_config_commands(
 
 
 @mcp.tool(
+    name="backup_configs",
     annotations=ToolAnnotations(
-        readOnlyHint=False, destructiveHint=False, idempotentHint=True
-    )
+        readOnlyHint=False,
+        destructiveHint=False,
+        idempotentHint=True,
+        openWorldHint=True,
+    ),
+    tags={"management"},
 )
 async def backup_device_configs(
-    path: str = "./backups",
+    path: Annotated[
+        str, Field(description="Directory path to save backup files")
+    ] = "./backups",
     filter_name: str | None = None,
     filter_hostname: str | None = None,
     filter_group: str | None = None,
@@ -181,9 +199,18 @@ async def backup_device_configs(
     return BackupResult(hosts=hosts).model_dump(exclude_none=True)
 
 
-@mcp.tool(annotations=ToolAnnotations(readOnlyHint=True))
+@mcp.tool(
+    name="show_commands",
+    annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True),
+    tags={"management"},
+)
 async def run_show_commands(
-    commands: list[str],
+    commands: Annotated[
+        list[str],
+        Field(
+            description="Show commands to execute (e.g., ['show version', 'show ip interface brief'])"
+        ),
+    ],
     filter_name: str | None = None,
     filter_hostname: str | None = None,
     filter_group: str | None = None,
