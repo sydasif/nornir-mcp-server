@@ -132,13 +132,13 @@ The server exposes 5 tools categorized by operational intent. All tools support 
 
 All filter parameters are optional. When multiple filters are provided, they are combined with AND logic.
 
-| Category       | Tool                         | Description                                            |
-| :------------- | :--------------------------- | :----------------------------------------------------- |
-| **Inventory**  | `list_network_devices`       | List hosts, groups, and metadata.                      |
-| **Monitoring** | `get_device_structured_data` | Generic access to any NAPALM getter (ARP, VLAN, etc.). |
-| **Management** | `run_show_commands`          | Execute arbitrary show commands safely.                |
-|                | `send_config_commands`       | Deploy configuration changes with validation.          |
-|                | `backup_device_configs`      | Securely save configurations to local disk.            |
+| Category       | Tool                    | Description                                            |
+| :------------- | :---------------------- | :----------------------------------------------------- |
+| **Inventory**  | `list_network_devices`  | List hosts, groups, and metadata.                      |
+| **Monitoring** | `get_structured_data`   | Generic access to any NAPALM getter (ARP, VLAN, etc.). |
+| **Management** | `run_show_commands`     | Execute arbitrary show commands safely.                |
+|                | `send_config_commands`  | Deploy configuration changes with validation.          |
+|                | `backup_device_configs` | Securely save configurations to local disk.            |
 
 ---
 
