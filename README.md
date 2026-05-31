@@ -132,13 +132,13 @@ The server exposes 5 tools categorized by operational intent. All tools support 
 
 All filter parameters are optional. When multiple filters are provided, they are combined with AND logic.
 
-| Category       | Tool                    | Description                                            |
-| :------------- | :---------------------- | :----------------------------------------------------- |
-| **Inventory**  | `list_network_devices`  | List hosts, groups, and metadata.                      |
-| **Monitoring** | `get_structured_data`   | Generic access to any NAPALM getter (ARP, VLAN, etc.). |
-| **Management** | `run_show_commands`     | Execute arbitrary show commands safely.                |
-|                | `send_config_commands`  | Deploy configuration changes with validation.          |
-|                | `backup_device_configs` | Securely save configurations to local disk.            |
+| Category       | Tool             | Description                                            |
+| :------------- | :--------------- | :----------------------------------------------------- |
+| **Inventory**  | `list_devices`   | List hosts, groups, and metadata.                      |
+| **Monitoring** | `fetch_data`     | Generic access to any NAPALM getter (ARP, VLAN, etc.). |
+| **Management** | `show_commands`  | Execute arbitrary show commands safely.                |
+|                | `apply_config`   | Deploy configuration changes with validation.          |
+|                | `backup_configs` | Securely save configurations to local disk.            |
 
 ---
 
@@ -172,7 +172,7 @@ The server includes a built-in security engine that validates all CLI commands a
 
 **Security Features:**
 
-- **Read-Only Enforcement**: Tools like `run_show_commands` enforce an **allowlist prefix** (e.g., `show`, `display`, `get`, `ping`, `traceroute`).
+- **Read-Only Enforcement**: Tools like `show_commands` enforce an **allowlist prefix** (e.g., `show`, `display`, `get`, `ping`, `traceroute`).
 - **Smart Denylist**: Destructive keywords (`erase`, `format`, `delete`, `reload`) are blocked only when they appear as the **first token** of a command. This allows legitimate commands like `show reload history` while blocking a bare `reload`.
 - **Chaining & Redirection Protection**: Prevents the use of `;`, `&&`, `>`, and `<` to ensure single-command integrity.
 - **Path Sandboxing**: Configuration backups are protected against directory traversal attacks (`..`).
