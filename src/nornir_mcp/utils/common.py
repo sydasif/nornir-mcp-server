@@ -64,7 +64,9 @@ def format_results(result: AggregatedResult) -> dict[str, Any]:
                     code="task_failed",
                     message="Task failed",
                     exception=str(exc) if exc else "Unknown error",
-                    details={"traceback": "".join(traceback.format_tb(exc.__traceback__))}
+                    details={
+                        "traceback": "".join(traceback.format_tb(exc.__traceback__))
+                    }
                     if exc
                     else None,
                 ),
@@ -91,14 +93,16 @@ def ensure_backup_directory(backup_dir: str | Path) -> Path:
     """
     path_str = str(backup_dir)
     if ".." in path_str:
-        raise ValueError("Security Error: Directory traversal using '..' is not allowed.")
+        raise ValueError(
+            "Security Error: Directory traversal using '..' is not allowed."
+        )
 
     path = Path(backup_dir).expanduser().resolve()
     path.mkdir(parents=True, exist_ok=True)
     return path
 
 
-def write_config_to_file(hostname: str, content: str, folder: Path) -> str:
+def write_config_to_file(hostname: str, content: str, folder: Path) -> Path:
     """Write configuration content to a file.
 
     Args:
@@ -113,7 +117,7 @@ def write_config_to_file(hostname: str, content: str, folder: Path) -> str:
     filename = f"{hostname}_{timestamp}.cfg"
     filepath = folder / filename
     filepath.write_text(content, encoding="utf-8")
-    return str(filepath)
+    return filepath
 
 
 def wrap_task_result(raw: dict[str, Any]) -> dict[str, Any]:

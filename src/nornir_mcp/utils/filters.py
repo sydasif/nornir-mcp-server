@@ -47,10 +47,10 @@ def apply_filters(nr: Nornir, filters: DeviceFilters | None) -> Nornir:
     Raises:
         ValueError: If filters result in zero matching hosts
     """
-    original_count = len(nr.inventory.hosts)
-
     if filters is None:
         return nr
+
+    original_count = len(nr.inventory.hosts)
 
     # Apply filters based on the DeviceFilters object
     if filters.name:

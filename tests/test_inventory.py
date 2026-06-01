@@ -14,7 +14,9 @@ def test_get_filtered_nornir_reloads_inventory_on_every_call(monkeypatch) -> Non
         return f"nr-{calls['count']}"
 
     monkeypatch.setattr("nornir_mcp.services.inventory.get_nornir", fake_get_nornir)
-    monkeypatch.setattr("nornir_mcp.services.inventory.apply_filters", lambda nr, filters: nr)
+    monkeypatch.setattr(
+        "nornir_mcp.services.inventory.apply_filters", lambda nr, filters: nr
+    )
 
     first = get_filtered_nornir()
     second = get_filtered_nornir()
@@ -30,7 +32,9 @@ def test_get_filtered_nornir_wraps_config_errors(monkeypatch) -> None:
 
     monkeypatch.setattr("nornir_mcp.services.inventory.get_nornir", raise_config_error)
 
-    with pytest.raises(InventoryError, match="Nornir initialization failed: missing config"):
+    with pytest.raises(
+        InventoryError, match="Nornir initialization failed: missing config"
+    ):
         get_filtered_nornir()
 
 
@@ -40,7 +44,9 @@ def test_get_filtered_nornir_wraps_filter_errors(monkeypatch) -> None:
     def raise_filter_error(nr, filters):
         raise ValueError("bad filters")
 
-    monkeypatch.setattr("nornir_mcp.services.inventory.apply_filters", raise_filter_error)
+    monkeypatch.setattr(
+        "nornir_mcp.services.inventory.apply_filters", raise_filter_error
+    )
 
     with pytest.raises(InventoryError, match="bad filters"):
         get_filtered_nornir()

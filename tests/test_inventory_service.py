@@ -29,7 +29,9 @@ def test_list_network_devices_returns_config_error(monkeypatch) -> None:
     def raise_config_error(filters=None):
         raise InventoryError("missing config", code="config_error")
 
-    monkeypatch.setattr("nornir_mcp.tools.inventory.get_filtered_nornir", raise_config_error)
+    monkeypatch.setattr(
+        "nornir_mcp.tools.inventory.get_filtered_nornir", raise_config_error
+    )
 
     result = asyncio.run(list_network_devices.fn())
 
@@ -44,7 +46,9 @@ def test_list_network_devices_returns_filter_error(monkeypatch) -> None:
     def raise_filter_error(filters=None):
         raise InventoryError("bad filters", code="filter_error")
 
-    monkeypatch.setattr("nornir_mcp.tools.inventory.get_filtered_nornir", raise_filter_error)
+    monkeypatch.setattr(
+        "nornir_mcp.tools.inventory.get_filtered_nornir", raise_filter_error
+    )
 
     result = asyncio.run(list_network_devices.fn())
 
@@ -78,7 +82,9 @@ def test_list_network_devices_returns_devices_and_groups(monkeypatch) -> None:
         )
     )
 
-    monkeypatch.setattr("nornir_mcp.tools.inventory.get_filtered_nornir", lambda filters=None: nr)
+    monkeypatch.setattr(
+        "nornir_mcp.tools.inventory.get_filtered_nornir", lambda filters=None: nr
+    )
 
     result = asyncio.run(list_network_devices.fn(details=True))
 
@@ -107,7 +113,9 @@ def test_list_network_devices_result_always_validates_as_inventory_summary(
             groups={"core": object()},
         )
     )
-    monkeypatch.setattr("nornir_mcp.tools.inventory.get_filtered_nornir", lambda filters=None: nr)
+    monkeypatch.setattr(
+        "nornir_mcp.tools.inventory.get_filtered_nornir", lambda filters=None: nr
+    )
 
     result = asyncio.run(list_network_devices.fn())
     InventorySummary.model_validate(result)

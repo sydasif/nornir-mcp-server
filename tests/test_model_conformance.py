@@ -24,7 +24,9 @@ def test_list_network_devices_conforms_to_inventory_summary(monkeypatch):
     nr = MagicMock()
     nr.inventory.hosts = {}
     nr.inventory.groups = {}
-    monkeypatch.setattr("nornir_mcp.tools.inventory.get_filtered_nornir", lambda filters=None: nr)
+    monkeypatch.setattr(
+        "nornir_mcp.tools.inventory.get_filtered_nornir", lambda filters=None: nr
+    )
 
     result = asyncio.run(list_network_devices.fn())
     InventorySummary.model_validate(result)
@@ -36,7 +38,9 @@ def test_get_structured_data_conforms_to_task_result(monkeypatch):
     async def fake_run_napalm_get(**kwargs):
         return {"leaf-1": {"success": True, "output": {"facts": {}}}}
 
-    monkeypatch.setattr("nornir_mcp.tools.monitoring.run_napalm_get", fake_run_napalm_get)
+    monkeypatch.setattr(
+        "nornir_mcp.tools.monitoring.run_napalm_get", fake_run_napalm_get
+    )
 
     result = asyncio.run(get_structured_data.fn(getters=["facts"]))
     TaskResult.model_validate(result)
@@ -74,7 +78,9 @@ def test_backup_device_configs_conforms_to_backup_result(monkeypatch):
     async def fake_run_napalm_get(**kwargs):
         return {"leaf-1": {"config": {"running": "hostname leaf-1"}}}
 
-    monkeypatch.setattr("nornir_mcp.tools.management.run_napalm_get", fake_run_napalm_get)
+    monkeypatch.setattr(
+        "nornir_mcp.tools.management.run_napalm_get", fake_run_napalm_get
+    )
     monkeypatch.setattr(
         "nornir_mcp.tools.management.ensure_backup_directory", lambda path: MagicMock()
     )
@@ -84,7 +90,9 @@ def test_backup_device_configs_conforms_to_backup_result(monkeypatch):
         m.stat.return_value = MagicMock(st_size=100)
         return m
 
-    monkeypatch.setattr("nornir_mcp.tools.management.write_config_to_file", fake_write_config)
+    monkeypatch.setattr(
+        "nornir_mcp.tools.management.write_config_to_file", fake_write_config
+    )
 
     result = asyncio.run(backup_device_configs.fn())
     BackupResult.model_validate(result)

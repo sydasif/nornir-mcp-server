@@ -1,4 +1,5 @@
 from pathlib import Path
+import asyncio
 
 from nornir_mcp.models import ErrorResponse, TaskResult
 from nornir_mcp.services.runner import GLOBAL_ERROR_HOST
@@ -12,8 +13,6 @@ from nornir_mcp.tools.management import (
 def test_backup_device_configs_returns_security_error_for_path_escape(
     monkeypatch,
 ) -> None:
-    import asyncio
-
     async def fake_execute(**kwargs):
         return {}
 
@@ -25,9 +24,9 @@ def test_backup_device_configs_returns_security_error_for_path_escape(
     assert result["code"] == "security_error"
 
 
-def test_backup_device_configs_handles_runner_errors(monkeypatch, tmp_path: Path) -> None:
-    import asyncio
-
+def test_backup_device_configs_handles_runner_errors(
+    monkeypatch, tmp_path: Path
+) -> None:
     async def fake_execute(**kwargs):
         return {
             "leaf-1": {
@@ -52,8 +51,6 @@ def test_backup_device_configs_handles_runner_errors(monkeypatch, tmp_path: Path
 
 
 def test_backup_device_configs_writes_config(monkeypatch, tmp_path: Path) -> None:
-    import asyncio
-
     async def fake_execute(**kwargs):
         return {
             "leaf-1": {
@@ -86,8 +83,6 @@ def test_backup_device_configs_writes_config(monkeypatch, tmp_path: Path) -> Non
 def test_backup_device_configs_failure_validates_as_backup_result(
     monkeypatch, tmp_path: Path
 ) -> None:
-    import asyncio
-
     async def fake_execute(**kwargs):
         return {
             "leaf-1": {
@@ -112,10 +107,10 @@ def test_backup_device_configs_failure_validates_as_backup_result(
 
 
 def test_run_show_commands_returns_task_result_shape(monkeypatch) -> None:
-    import asyncio
-
     async def fake_run_netmiko_commands(**kwargs):
-        return {"router-01": {"success": True, "output": {"show version": "Cisco IOS..."}}}
+        return {
+            "router-01": {"success": True, "output": {"show version": "Cisco IOS..."}}
+        }
 
     monkeypatch.setattr(
         "nornir_mcp.tools.management.run_netmiko_commands", fake_run_netmiko_commands
@@ -126,8 +121,6 @@ def test_run_show_commands_returns_task_result_shape(monkeypatch) -> None:
 
 
 def test_run_show_commands_passes_through_global_error(monkeypatch) -> None:
-    import asyncio
-
     async def fake_run_netmiko_commands(**kwargs):
         return {
             GLOBAL_ERROR_HOST: {
@@ -146,16 +139,12 @@ def test_run_show_commands_passes_through_global_error(monkeypatch) -> None:
 
 
 def test_run_show_commands_returns_error_for_empty_commands() -> None:
-    import asyncio
-
     result = asyncio.run(run_show_commands.fn(commands=[]))
     assert result["error"] is True
     assert result["code"] == "empty_commands"
 
 
 def test_send_config_commands_returns_task_result_shape(monkeypatch) -> None:
-    import asyncio
-
     async def fake_execute(**kwargs):
         return {"router-01": {"success": True, "output": "Config applied"}}
 
@@ -166,8 +155,6 @@ def test_send_config_commands_returns_task_result_shape(monkeypatch) -> None:
 
 
 def test_send_config_commands_passes_through_global_error(monkeypatch) -> None:
-    import asyncio
-
     async def fake_execute(**kwargs):
         return {
             GLOBAL_ERROR_HOST: {
@@ -184,8 +171,6 @@ def test_send_config_commands_passes_through_global_error(monkeypatch) -> None:
 
 
 def test_send_config_commands_returns_error_for_empty_commands() -> None:
-    import asyncio
-
     result = asyncio.run(send_config_commands.fn(commands=[]))
     assert result["error"] is True
     assert result["code"] == "empty_commands"

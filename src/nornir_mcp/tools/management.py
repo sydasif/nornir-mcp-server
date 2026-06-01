@@ -2,7 +2,6 @@
 
 import logging
 from datetime import UTC, datetime
-from pathlib import Path
 from typing import Annotated, Any
 
 from mcp.types import ToolAnnotations
@@ -30,7 +29,9 @@ from ..utils.security import validate_command
 logger = logging.getLogger(__name__)
 
 
-def _validate_commands(commands: list[str], read_only: bool = False) -> dict[str, Any] | None:
+def _validate_commands(
+    commands: list[str], read_only: bool = False
+) -> dict[str, Any] | None:
     """Validate a list of commands against security rules.
 
     Args:
@@ -46,7 +47,9 @@ def _validate_commands(commands: list[str], read_only: bool = False) -> dict[str
     for cmd in commands:
         validation_error = validate_command(cmd, read_only=read_only)
         if validation_error:
-            logger.warning("Command validation failed for %r: %s", cmd, validation_error)
+            logger.warning(
+                "Command validation failed for %r: %s", cmd, validation_error
+            )
             return error_response(
                 "Command validation failed",
                 code="command_validation_failed",
@@ -119,7 +122,9 @@ async def send_config_commands(
     tags={"management"},
 )
 async def backup_device_configs(
-    path: Annotated[str, Field(description="Directory path to save backup files")] = "./backups",
+    path: Annotated[
+        str, Field(description="Directory path to save backup files")
+    ] = "./backups",
     filter_name: str | None = None,
     filter_hostname: str | None = None,
     filter_group: str | None = None,
@@ -182,8 +187,7 @@ async def backup_device_configs(
             continue
 
         # Success case
-        file_path_str = write_config_to_file(hostname, config, backup_path)
-        file_path = Path(file_path_str)
+        file_path = write_config_to_file(hostname, config, backup_path)
         hosts[hostname] = BackupFileInfo(
             path=str(file_path),
             size_bytes=file_path.stat().st_size,
