@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any
 
 from nornir.core.task import AggregatedResult
+
 from ..models import ErrorResponse, HostTaskResult, TaskResult
 
 
@@ -63,9 +64,7 @@ def format_results(result: AggregatedResult) -> dict[str, Any]:
                     code="task_failed",
                     message="Task failed",
                     exception=str(exc) if exc else "Unknown error",
-                    details={
-                        "traceback": "".join(traceback.format_tb(exc.__traceback__))
-                    }
+                    details={"traceback": "".join(traceback.format_tb(exc.__traceback__))}
                     if exc
                     else None,
                 ),
@@ -92,9 +91,7 @@ def ensure_backup_directory(backup_dir: str | Path) -> Path:
     """
     path_str = str(backup_dir)
     if ".." in path_str:
-        raise ValueError(
-            "Security Error: Directory traversal using '..' is not allowed."
-        )
+        raise ValueError("Security Error: Directory traversal using '..' is not allowed.")
 
     path = Path(backup_dir).expanduser().resolve()
     path.mkdir(parents=True, exist_ok=True)

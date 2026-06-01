@@ -1,6 +1,7 @@
 """Netmiko Service - CLI execution logic for network devices."""
 
 from typing import Any
+
 from nornir.core.task import Result, Task
 from nornir_netmiko.tasks import netmiko_send_command
 

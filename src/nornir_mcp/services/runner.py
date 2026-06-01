@@ -11,11 +11,11 @@ from nornir.core.exceptions import NornirExecutionError
 from nornir.core.task import Result
 
 from ..models import DeviceFilters
+from ..utils.common import error_response, format_results
 from .inventory import (
     InventoryError,
     get_filtered_nornir,
 )
-from ..utils.common import error_response, format_results
 
 logger = logging.getLogger(__name__)
 GLOBAL_ERROR_HOST = "__global__"

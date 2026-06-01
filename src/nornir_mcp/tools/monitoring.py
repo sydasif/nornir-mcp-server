@@ -7,7 +7,6 @@ from mcp.types import ToolAnnotations
 from pydantic import Field
 
 from ..application import mcp
-
 from ..services.napalm import run_napalm_get
 from ..services.runner import GLOBAL_ERROR_HOST
 from ..utils.common import wrap_task_result
@@ -22,9 +21,7 @@ from ..utils.filters import build_filters
 async def get_structured_data(
     getters: Annotated[
         list[str],
-        Field(
-            description="NAPALM getter names (e.g., ['facts', 'interfaces', 'bgp_neighbors'])"
-        ),
+        Field(description="NAPALM getter names (e.g., ['facts', 'interfaces', 'bgp_neighbors'])"),
     ],
     getters_options: Mapping[str, Any] | None = None,
     filter_name: str | None = None,

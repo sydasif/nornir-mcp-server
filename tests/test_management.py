@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from nornir_mcp.models import TaskResult, ErrorResponse
+from nornir_mcp.models import ErrorResponse, TaskResult
 from nornir_mcp.services.runner import GLOBAL_ERROR_HOST
 from nornir_mcp.tools.management import (
     backup_device_configs,
@@ -25,9 +25,7 @@ def test_backup_device_configs_returns_security_error_for_path_escape(
     assert result["code"] == "security_error"
 
 
-def test_backup_device_configs_handles_runner_errors(
-    monkeypatch, tmp_path: Path
-) -> None:
+def test_backup_device_configs_handles_runner_errors(monkeypatch, tmp_path: Path) -> None:
     import asyncio
 
     async def fake_execute(**kwargs):
@@ -117,9 +115,7 @@ def test_run_show_commands_returns_task_result_shape(monkeypatch) -> None:
     import asyncio
 
     async def fake_run_netmiko_commands(**kwargs):
-        return {
-            "router-01": {"success": True, "output": {"show version": "Cisco IOS..."}}
-        }
+        return {"router-01": {"success": True, "output": {"show version": "Cisco IOS..."}}}
 
     monkeypatch.setattr(
         "nornir_mcp.tools.management.run_netmiko_commands", fake_run_netmiko_commands

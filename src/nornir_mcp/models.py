@@ -1,7 +1,8 @@
 """Nornir MCP Server data models."""
 
 from typing import Any
-from pydantic import BaseModel, Field, ConfigDict
+
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class DeviceFilters(BaseModel):
@@ -10,9 +11,7 @@ class DeviceFilters(BaseModel):
     name: str | None = Field(None, description="Filter by device name in inventory")
     hostname: str | None = Field(None, description="Filter by specific hostname or IP")
     group: str | None = Field(None, description="Filter by group membership")
-    platform: str | None = Field(
-        None, description="Filter by platform (e.g., cisco_ios)"
-    )
+    platform: str | None = Field(None, description="Filter by platform (e.g., cisco_ios)")
 
 
 class ErrorResponse(BaseModel):

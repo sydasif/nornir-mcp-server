@@ -1,9 +1,10 @@
 from unittest.mock import MagicMock
+
 import pytest
 from pydantic import ValidationError
 
-from nornir_mcp.utils.common import format_results, wrap_task_result
 from nornir_mcp.models import HostTaskResult
+from nornir_mcp.utils.common import format_results, wrap_task_result
 
 
 def create_mock_result(success: bool, result_data=None, exception=None):

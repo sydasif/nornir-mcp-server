@@ -1,11 +1,12 @@
 import pytest
 from pydantic import ValidationError
+
 from nornir_mcp.models import (
+    BackupFileInfo,
+    BackupResult,
     ErrorResponse,
     HostTaskResult,
     TaskResult,
-    BackupFileInfo,
-    BackupResult,
 )
 
 
@@ -37,9 +38,7 @@ def test_error_response_defaults():
 def test_error_response_forbids_extra():
     """ErrorResponse.model_validate() raises ValidationError when an unknown key is present."""
     with pytest.raises(ValidationError):
-        ErrorResponse.model_validate(
-            {"code": "error", "message": "msg", "unknown_key": "bad"}
-        )
+        ErrorResponse.model_validate({"code": "error", "message": "msg", "unknown_key": "bad"})
 
 
 def test_error_response_requires_code():

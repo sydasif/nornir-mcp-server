@@ -1,16 +1,17 @@
 """Shared inventory loading and filtering helpers."""
 
 from collections import defaultdict
+
 from nornir.core import Nornir
 
 from ..application import get_nornir
 from ..models import (
     DeviceFilters,
-    InventorySummary,
     DevicesSummary,
     DeviceSummary,
     GroupsSummary,
     GroupSummary,
+    InventorySummary,
 )
 from ..utils.filters import apply_filters
 
@@ -32,9 +33,7 @@ def get_filtered_nornir(filters: DeviceFilters | None = None) -> Nornir:
     try:
         nr = get_nornir()
     except Exception as exc:
-        raise InventoryError(
-            f"Nornir initialization failed: {exc}", code="config_error"
-        ) from exc
+        raise InventoryError(f"Nornir initialization failed: {exc}", code="config_error") from exc
 
     try:
         return apply_filters(nr, filters)
@@ -74,9 +73,7 @@ def get_inventory_summary(
 
     # 2. Aggregate Groups - ONLY for devices in the current filtered set
     if query_type in ("groups", "all"):
-        groups: dict[str, GroupSummary] = defaultdict(
-            lambda: GroupSummary(count=0, members=[])
-        )
+        groups: dict[str, GroupSummary] = defaultdict(lambda: GroupSummary(count=0, members=[]))
         for host_name, host in nr.inventory.hosts.items():
             for group in host.groups:
                 groups[group.name].count += 1

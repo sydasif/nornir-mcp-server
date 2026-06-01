@@ -1,9 +1,10 @@
 """Nornir MCP Server inventory tools."""
 
-from typing import Any, Annotated, Literal
+from typing import Annotated, Any, Literal
 
-from pydantic import Field
 from mcp.types import ToolAnnotations
+from pydantic import Field
+
 from ..application import mcp
 from ..services.inventory import (
     InventoryError,
@@ -22,15 +23,11 @@ from ..utils.filters import build_filters
 async def list_network_devices(
     query_type: Annotated[
         Literal["devices", "groups", "all"],
-        Field(
-            description="Type of inventory data to return ('devices', 'groups', 'all')"
-        ),
+        Field(description="Type of inventory data to return ('devices', 'groups', 'all')"),
     ] = "all",
     details: Annotated[
         bool,
-        Field(
-            description="Whether to return full inventory attributes (for devices query)"
-        ),
+        Field(description="Whether to return full inventory attributes (for devices query)"),
     ] = False,
     filter_name: Annotated[
         str | None,
