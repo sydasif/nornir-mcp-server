@@ -3,7 +3,7 @@ name = "nornir-mcp-server"
 version = "0.1.0"
 description = "Nornir MCP Server for Network Engineering"
 readme = "README.md"
-requires-python = "==3.11.*"
+requires-python = ">=3.12"
 dependencies = [
     "fastmcp>=2.0.0,<2.14.0",
     "nornir>=3.4.0",
