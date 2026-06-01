@@ -3,7 +3,7 @@
 from typing import Any
 
 from nornir.core.task import Result, Task
-from nornir_netmiko.tasks import netmiko_send_command
+from nornir_netmiko.tasks import netmiko_send_command, netmiko_send_config
 
 from ..models import DeviceFilters
 from .runner import execute
@@ -46,4 +46,24 @@ async def run_netmiko_commands(
     )
 
 
-__all__ = ["run_netmiko_commands"]
+async def run_netmiko_config(
+    commands: list[str],
+    filters: DeviceFilters | None = None,
+) -> dict[str, Any]:
+    """Execute configuration commands via the shared runner.
+
+    Args:
+        commands: List of configuration commands to apply
+        filters: DeviceFilters object containing filter criteria
+
+    Returns:
+        Standardized dictionary mapping host to results
+    """
+    return await execute(
+        task=netmiko_send_config,
+        filters=filters,
+        config_commands=commands,
+    )
+
+
+__all__ = ["run_netmiko_commands", "run_netmiko_config"]

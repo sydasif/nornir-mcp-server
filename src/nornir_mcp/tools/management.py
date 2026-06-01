@@ -5,7 +5,6 @@ from datetime import UTC, datetime
 from typing import Annotated, Any
 
 from mcp.types import ToolAnnotations
-from nornir_netmiko.tasks import netmiko_send_config
 from pydantic import Field
 
 from ..application import mcp
@@ -15,8 +14,8 @@ from ..models import (
     ErrorResponse,
 )
 from ..services.napalm import run_napalm_get
-from ..services.netmiko import run_netmiko_commands
-from ..services.runner import GLOBAL_ERROR_HOST, execute
+from ..services.netmiko import run_netmiko_commands, run_netmiko_config
+from ..services.runner import GLOBAL_ERROR_HOST
 from ..utils.common import (
     ensure_backup_directory,
     error_response,
@@ -24,39 +23,9 @@ from ..utils.common import (
     write_config_to_file,
 )
 from ..utils.filters import build_filters
-from ..utils.security import validate_command
+from ..utils.security import validate_commands
 
 logger = logging.getLogger(__name__)
-
-
-def _validate_commands(
-    commands: list[str], read_only: bool = False
-) -> dict[str, Any] | None:
-    """Validate a list of commands against security rules.
-
-    Args:
-        commands: List of commands to validate
-        read_only: Whether to enforce read-only prefixes
-
-    Returns:
-        Error response if validation fails, None if all commands are valid
-    """
-    if not commands:
-        return error_response("Command list cannot be empty", code="empty_commands")
-
-    for cmd in commands:
-        validation_error = validate_command(cmd, read_only=read_only)
-        if validation_error:
-            logger.warning(
-                "Command validation failed for %r: %s", cmd, validation_error
-            )
-            return error_response(
-                "Command validation failed",
-                code="command_validation_failed",
-                details={"validation_error": validation_error, "failed_command": cmd},
-            )
-
-    return None
 
 
 @mcp.tool(
@@ -93,16 +62,24 @@ async def send_config_commands(
     Returns:
         Dictionary with 'hosts' key mapping hostname -> task result (success or error).
     """
-    validation_error = _validate_commands(commands, read_only=False)
+    # 1. Guard against empty commands
+    if not commands:
+        return error_response("Command list cannot be empty", code="empty_commands")
+
+    # 2. Validate commands against security rules
+    validation_error = validate_commands(commands, read_only=False)
     if validation_error:
-        return validation_error
+        return error_response(
+            "Command validation failed",
+            code="command_validation_failed",
+            details={"validation_error": validation_error},
+        )
 
     filters = build_filters(filter_name, filter_hostname, filter_group, filter_platform)
 
-    raw = await execute(
-        task=netmiko_send_config,
+    raw = await run_netmiko_config(
+        commands=commands,
         filters=filters,
-        config_commands=commands,
     )
 
     if GLOBAL_ERROR_HOST in raw:
@@ -226,9 +203,18 @@ async def run_show_commands(
     Returns:
         Dictionary with 'hosts' key mapping hostname -> task result (success or error).
     """
-    validation_error = _validate_commands(commands, read_only=True)
+    # 1. Guard against empty commands
+    if not commands:
+        return error_response("Command list cannot be empty", code="empty_commands")
+
+    # 2. Validate commands against security rules
+    validation_error = validate_commands(commands, read_only=True)
     if validation_error:
-        return validation_error
+        return error_response(
+            "Command validation failed",
+            code="command_validation_failed",
+            details={"validation_error": validation_error},
+        )
 
     filters = build_filters(filter_name, filter_hostname, filter_group, filter_platform)
 

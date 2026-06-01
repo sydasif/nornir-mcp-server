@@ -75,15 +75,17 @@ def get_inventory_summary(
 
     # 2. Aggregate Groups - ONLY for devices in the current filtered set
     if query_type in ("groups", "all"):
-        groups: dict[str, GroupSummary] = defaultdict(
-            lambda: GroupSummary(count=0, members=[])
-        )
+        groups: dict[str, list[str]] = defaultdict(list)
         for host_name, host in nr.inventory.hosts.items():
             for group in host.groups:
-                groups[group.name].count += 1
-                groups[group.name].members.append(host_name)
+                groups[group.name].append(host_name)
 
-        groups_summary = GroupsSummary(groups=groups)
+        groups_summary = GroupsSummary(
+            groups={
+                name: GroupSummary(count=len(members), members=members)
+                for name, members in groups.items()
+            }
+        )
 
     return InventorySummary(devices=devices_summary, groups=groups_summary)
 

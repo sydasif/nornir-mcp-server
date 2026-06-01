@@ -8,6 +8,8 @@ from nornir_mcp.tools.management import (
     run_show_commands,
     send_config_commands,
 )
+from nornir_mcp.utils.common import error_response
+from nornir_mcp.utils.security import validate_commands
 
 
 def test_backup_device_configs_returns_security_error_for_path_escape(
@@ -145,17 +147,19 @@ def test_run_show_commands_returns_error_for_empty_commands() -> None:
 
 
 def test_send_config_commands_returns_task_result_shape(monkeypatch) -> None:
-    async def fake_execute(**kwargs):
+    async def fake_run_netmiko_config(**kwargs):
         return {"router-01": {"success": True, "output": "Config applied"}}
 
-    monkeypatch.setattr("nornir_mcp.tools.management.execute", fake_execute)
+    monkeypatch.setattr(
+        "nornir_mcp.tools.management.run_netmiko_config", fake_run_netmiko_config
+    )
 
     result = asyncio.run(send_config_commands.fn(commands=["interface loopback0"]))
     TaskResult.model_validate(result)
 
 
 def test_send_config_commands_passes_through_global_error(monkeypatch) -> None:
-    async def fake_execute(**kwargs):
+    async def fake_run_netmiko_config(**kwargs):
         return {
             GLOBAL_ERROR_HOST: {
                 "error": True,
@@ -164,7 +168,9 @@ def test_send_config_commands_passes_through_global_error(monkeypatch) -> None:
             }
         }
 
-    monkeypatch.setattr("nornir_mcp.tools.management.execute", fake_execute)
+    monkeypatch.setattr(
+        "nornir_mcp.tools.management.run_netmiko_config", fake_run_netmiko_config
+    )
 
     result = asyncio.run(send_config_commands.fn(commands=["interface loopback0"]))
     assert result[GLOBAL_ERROR_HOST]["error"] is True
@@ -178,8 +184,13 @@ def test_send_config_commands_returns_error_for_empty_commands() -> None:
 
 
 def test_validate_commands_error_conforms_to_error_response() -> None:
-    from nornir_mcp.tools.management import _validate_commands
-
-    result = _validate_commands([])
-    assert result is not None
+    # Since validate_commands returns a string, we wrap it in error_response
+    # to verify the resulting response conforms to ErrorResponse model.
+    msg = validate_commands([])
+    # The empty check is now in the tool, but we can test a known invalid command
+    msg = validate_commands(["erase startup-config"])
+    assert msg is not None
+    result = error_response(
+        "Command validation failed", details={"validation_error": msg}
+    )
     ErrorResponse.model_validate(result)

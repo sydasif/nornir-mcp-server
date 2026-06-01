@@ -55,7 +55,6 @@ def format_results(result: AggregatedResult) -> dict[str, Any]:
                 success=False,
                 error=ErrorResponse(code="empty_result", message="No results returned"),
             )
-            formatted[host] = res.model_dump(exclude_none=True)
         elif multi_result.failed:
             exc = next((r.exception for r in multi_result if r.exception), None)
             res = HostTaskResult(
@@ -71,10 +70,10 @@ def format_results(result: AggregatedResult) -> dict[str, Any]:
                     else None,
                 ),
             )
-            formatted[host] = res.model_dump(exclude_none=True)
         else:
             res = HostTaskResult(success=True, output=multi_result[0].result)
-            formatted[host] = res.model_dump(exclude_none=True)
+
+        formatted[host] = res.model_dump(exclude_none=True)
 
     return formatted
 

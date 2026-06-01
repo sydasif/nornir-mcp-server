@@ -51,4 +51,22 @@ def validate_command(command: str, read_only: bool = False) -> str | None:
     return None
 
 
-__all__ = ["validate_command"]
+def validate_commands(commands: list[str], read_only: bool = False) -> str | None:
+    """Validate a list of commands against security rules.
+
+    Args:
+        commands: List of commands to validate
+        read_only: Whether to enforce read-only prefixes
+
+    Returns:
+        Error message if any command is invalid, None if all are valid
+    """
+    for cmd in commands:
+        validation_error = validate_command(cmd, read_only=read_only)
+        if validation_error:
+            return validation_error
+
+    return None
+
+
+__all__ = ["validate_command", "validate_commands"]

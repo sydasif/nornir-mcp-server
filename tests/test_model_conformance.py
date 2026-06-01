@@ -63,10 +63,12 @@ def test_run_show_commands_conforms_to_task_result(monkeypatch):
 def test_send_config_commands_conforms_to_task_result(monkeypatch):
     """Verify send_config_commands output conforms to TaskResult."""
 
-    async def fake_execute(**kwargs):
+    async def fake_run_netmiko_config(**kwargs):
         return {"router-01": {"success": True, "output": "Config applied"}}
 
-    monkeypatch.setattr("nornir_mcp.tools.management.execute", fake_execute)
+    monkeypatch.setattr(
+        "nornir_mcp.tools.management.run_netmiko_config", fake_run_netmiko_config
+    )
 
     result = asyncio.run(send_config_commands.fn(commands=["int lo0"]))
     TaskResult.model_validate(result)
