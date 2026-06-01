@@ -166,6 +166,25 @@ logging:
   level: INFO
 ```
 
+### Credential Management
+
+To avoid storing plain-text passwords in inventory files, you can provide credentials via environment variables or a `.env` file in the current working directory.
+
+**Supported Variables:**
+
+- `NORNIR_USERNAME`: Default username for all hosts.
+- `NORNIR_PASSWORD`: Default password for all hosts.
+
+These variables will only be applied to hosts that do not have a username or password explicitly defined in the inventory.
+
+**Using a `.env` file:**
+Create a `.env` file in your project root:
+
+```env
+NORNIR_USERNAME=admin
+NORNIR_PASSWORD=your_secure_password
+```
+
 ### Command Security
 
 The server includes a built-in security engine that validates all CLI commands against a multi-stage validation system before execution. This prevents accidental or malicious use of destructive commands while minimizing false positives for read-only operations.
