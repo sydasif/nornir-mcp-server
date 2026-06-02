@@ -6,32 +6,14 @@ Contains functions to apply filters to Nornir inventory using the F object.
 from nornir.core import Nornir
 from nornir.core.filter import F
 
-from ..models import DeviceFilters
 
-
-def build_filters(
+def apply_filters(
+    nr: Nornir,
     name: str | None = None,
     hostname: str | None = None,
     group: str | None = None,
     platform: str | None = None,
-) -> DeviceFilters | None:
-    """Build a DeviceFilters object if any criteria are provided.
-
-    Args:
-        name: Filter by device name
-        hostname: Filter by hostname
-        group: Filter by group
-        platform: Filter by platform
-
-    Returns:
-        DeviceFilters object or None if no criteria provided
-    """
-    if not any((name, hostname, group, platform)):
-        return None
-    return DeviceFilters(name=name, hostname=hostname, group=group, platform=platform)
-
-
-def apply_filters(nr: Nornir, filters: DeviceFilters | None) -> Nornir:
+) -> Nornir:
     """Apply filters to Nornir inventory using the F object.
 
     If no filters are provided, returns the unfiltered Nornir instance,
@@ -39,7 +21,10 @@ def apply_filters(nr: Nornir, filters: DeviceFilters | None) -> Nornir:
 
     Args:
         nr: Nornir instance to filter
-        filters: DeviceFilters object containing filter criteria
+        name: Filter by device name
+        hostname: Filter by hostname
+        group: Filter by group
+        platform: Filter by platform
 
     Returns:
         Filtered Nornir instance (or unfiltered if no filters provided)
@@ -47,25 +32,23 @@ def apply_filters(nr: Nornir, filters: DeviceFilters | None) -> Nornir:
     Raises:
         ValueError: If filters result in zero matching hosts
     """
-    if filters is None:
+    if not any((name, hostname, group, platform)):
         return nr
 
     original_count = len(nr.inventory.hosts)
 
-    # Apply filters based on the DeviceFilters object
-    if filters.name:
-        nr = nr.filter(F(name=filters.name))
+    if name:
+        nr = nr.filter(F(name=name))
 
-    if filters.hostname:
-        nr = nr.filter(F(name=filters.hostname) | F(hostname=filters.hostname))
+    if hostname:
+        nr = nr.filter(F(name=hostname) | F(hostname=hostname))
 
-    if filters.group:
-        nr = nr.filter(F(groups__contains=filters.group))
+    if group:
+        nr = nr.filter(F(groups__contains=group))
 
-    if filters.platform:
-        nr = nr.filter(F(platform=filters.platform))
+    if platform:
+        nr = nr.filter(F(platform=platform))
 
-    # Validate that filters matched at least one host
     if len(nr.inventory.hosts) == 0:
         raise ValueError(
             f"No devices matched the provided filters. "
@@ -76,4 +59,4 @@ def apply_filters(nr: Nornir, filters: DeviceFilters | None) -> Nornir:
     return nr
 
 
-__all__: list[str] = ["apply_filters", "build_filters"]
+__all__: list[str] = ["apply_filters"]
