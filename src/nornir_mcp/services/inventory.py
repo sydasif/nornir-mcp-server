@@ -6,10 +6,11 @@ Pydantic wrappers.
 """
 
 from collections import defaultdict
+from pathlib import Path
 
+from nornir import InitNornir
 from nornir.core import Nornir
 
-from ..application import get_nornir
 from ..utils.filters import apply_filters
 
 
@@ -19,6 +20,22 @@ class InventoryError(ValueError):
     def __init__(self, message: str, code: str):
         super().__init__(message)
         self.code = code
+
+
+def _get_nornir() -> Nornir:
+    """Initialize and return a Nornir instance from configuration file.
+
+    Looks for ``config.yaml`` in the current working directory.
+
+    Raises:
+        ValueError: If no configuration file is found.
+    """
+    config_file = Path.cwd() / "config.yaml"
+    if not config_file.exists():
+        raise ValueError(
+            "No Nornir config found. Create config.yaml in current directory",
+        )
+    return InitNornir(config_file=str(config_file))
 
 
 def get_filtered_nornir(
@@ -33,7 +50,7 @@ def get_filtered_nornir(
     call to preserve per-invocation behavior across all MCP tools.
     """
     try:
-        nr = get_nornir()
+        nr = _get_nornir()
     except Exception as exc:
         raise InventoryError(
             f"Nornir initialization failed: {exc}", code="config_error"

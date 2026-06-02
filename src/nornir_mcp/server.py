@@ -1,9 +1,15 @@
 """Nornir MCP Server - Network Automation Server."""
 
-from .application import mcp
+from fastmcp import FastMCP
+
+# mcp must be defined before importing tools (tools import mcp back)
+mcp = FastMCP(
+    "Nornir Network Automation",
+    on_duplicate_tools="error",
+)
 
 # Import the new intent-based modules
-from .tools import (  # noqa: F401
+from .tools import (  # noqa: E402,F401 — tools imports mcp; must come after mcp definition
     inventory,
     management,
     monitoring,

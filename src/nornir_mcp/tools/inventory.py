@@ -5,7 +5,7 @@ from typing import Annotated, Any, Literal
 from mcp.types import ToolAnnotations
 from pydantic import Field
 
-from ..application import mcp
+from ..server import mcp
 from ..services.inventory import (
     InventoryError,
     get_filtered_nornir,

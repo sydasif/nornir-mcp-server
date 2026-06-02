@@ -9,7 +9,7 @@ from nornir.core.task import Result, Task
 from nornir_netmiko.tasks import netmiko_send_command, netmiko_send_config
 from pydantic import Field
 
-from ..application import mcp
+from ..server import mcp
 from ..services.napalm import run_napalm_get
 from ..services.runner import GLOBAL_ERROR_HOST, execute
 from ..utils.common import (
