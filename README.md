@@ -26,6 +26,7 @@ The Nornir MCP Server provides a specialized set of tools for network engineers 
 
 - [Installation](#-installation)
 - [Quick Start](#-quick-start)
+- [Lab Environment](#-lab-environment)
 - [Available Tools](#-available-tools)
 - [Configuration](#-configuration)
 - [Claude Integration](#-claude-integration)
@@ -116,6 +117,14 @@ inventory:
     group_file: "groups.yaml"
     defaults_file: "defaults.yaml"
 ```
+
+---
+
+## 🧪 Lab Environment
+
+For a ready-to-use Containerlab lab with Cisco CSR1000v and Arista cEOS devices, see the companion repository: [nornir-mcp-lab](https://github.com/sydasif/nornir-mcp-lab)
+
+**Prerequisites**: Containerlab, Docker, Python 3.11+
 
 ---
 
