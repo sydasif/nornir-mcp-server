@@ -13,9 +13,9 @@ from nornir_mcp.models import (
 from nornir_mcp.tools.inventory import list_network_devices
 from nornir_mcp.tools.management import (
     backup_device_configs,
-    run_show_commands,
     send_config_commands,
 )
+from nornir_mcp.tools.monitoring import run_show_commands
 from nornir_mcp.tools.monitoring import get_structured_data
 
 
@@ -53,7 +53,7 @@ def test_run_show_commands_conforms_to_task_result(monkeypatch):
         return {"router-01": {"success": True, "output": {"show version": "Cisco"}}}
 
     monkeypatch.setattr(
-        "nornir_mcp.tools.management.run_netmiko_commands", fake_run_netmiko_commands
+        "nornir_mcp.tools.monitoring.run_netmiko_commands", fake_run_netmiko_commands
     )
 
     result = asyncio.run(run_show_commands.fn(commands=["show version"]))

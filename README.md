@@ -136,8 +136,8 @@ All filter parameters are optional. When multiple filters are provided, they are
 | :------------- | :--------------- | :----------------------------------------------------- |
 | **Inventory**  | `list_devices`   | List hosts, groups, and metadata.                      |
 | **Monitoring** | `fetch_data`     | Generic access to any NAPALM getter (ARP, VLAN, etc.). |
-| **Management** | `show_commands`  | Execute arbitrary show commands safely.                |
-|                | `apply_config`   | Deploy configuration changes with validation.          |
+|                | `show_commands`  | Execute arbitrary show commands safely.                |
+| **Management** | `apply_config`   | Deploy configuration changes with validation.          |
 |                | `backup_configs` | Securely save configurations to local disk.            |
 
 ---

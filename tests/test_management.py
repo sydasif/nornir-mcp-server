@@ -5,9 +5,9 @@ from nornir_mcp.models import ErrorResponse, TaskResult
 from nornir_mcp.services.runner import GLOBAL_ERROR_HOST
 from nornir_mcp.tools.management import (
     backup_device_configs,
-    run_show_commands,
     send_config_commands,
 )
+from nornir_mcp.tools.monitoring import run_show_commands
 from nornir_mcp.utils.common import error_response
 from nornir_mcp.utils.security import validate_commands
 
@@ -115,7 +115,7 @@ def test_run_show_commands_returns_task_result_shape(monkeypatch) -> None:
         }
 
     monkeypatch.setattr(
-        "nornir_mcp.tools.management.run_netmiko_commands", fake_run_netmiko_commands
+        "nornir_mcp.tools.monitoring.run_netmiko_commands", fake_run_netmiko_commands
     )
 
     result = asyncio.run(run_show_commands.fn(commands=["show version"]))
@@ -133,7 +133,7 @@ def test_run_show_commands_passes_through_global_error(monkeypatch) -> None:
         }
 
     monkeypatch.setattr(
-        "nornir_mcp.tools.management.run_netmiko_commands", fake_run_netmiko_commands
+        "nornir_mcp.tools.monitoring.run_netmiko_commands", fake_run_netmiko_commands
     )
 
     result = asyncio.run(run_show_commands.fn(commands=["show version"]))

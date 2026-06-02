@@ -14,7 +14,7 @@ from ..models import (
     ErrorResponse,
 )
 from ..services.napalm import run_napalm_get
-from ..services.netmiko import run_netmiko_commands, run_netmiko_config
+from ..services.netmiko import run_netmiko_config
 from ..services.runner import GLOBAL_ERROR_HOST
 from ..utils.common import (
     ensure_backup_directory,
@@ -172,58 +172,3 @@ async def backup_device_configs(
         )
 
     return BackupResult(hosts=hosts).model_dump(exclude_none=True)
-
-
-@mcp.tool(
-    name="show_commands",
-    annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=True),
-    tags={"management"},
-)
-async def run_show_commands(
-    commands: Annotated[
-        list[str],
-        Field(
-            description="Show commands to execute (e.g., ['show version', 'show ip interface brief'])"
-        ),
-    ],
-    filter_name: str | None = None,
-    filter_hostname: str | None = None,
-    filter_group: str | None = None,
-    filter_platform: str | None = None,
-) -> dict[str, Any]:
-    """Execute raw CLI show commands via SSH.
-
-    Args:
-        commands: List of show commands to execute
-        filter_name: Filter by device name in inventory
-        filter_hostname: Filter by specific hostname or IP
-        filter_group: Filter by group membership
-        filter_platform: Filter by platform (e.g., 'cisco_ios', 'arista_eos')
-
-    Returns:
-        Dictionary with 'hosts' key mapping hostname -> task result (success or error).
-    """
-    # 1. Guard against empty commands
-    if not commands:
-        return error_response("Command list cannot be empty", code="empty_commands")
-
-    # 2. Validate commands against security rules
-    validation_error = validate_commands(commands, read_only=True)
-    if validation_error:
-        return error_response(
-            "Command validation failed",
-            code="command_validation_failed",
-            details={"validation_error": validation_error},
-        )
-
-    filters = build_filters(filter_name, filter_hostname, filter_group, filter_platform)
-
-    raw = await run_netmiko_commands(
-        commands=commands,
-        filters=filters,
-    )
-
-    if GLOBAL_ERROR_HOST in raw:
-        return raw
-
-    return wrap_task_result(raw)
