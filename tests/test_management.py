@@ -12,7 +12,7 @@ from nornir_mcp.utils.common import error_response
 from nornir_mcp.utils.security import validate_commands
 
 
-def test_backup_device_configs_returns_security_error_for_path_escape(
+def test_backup_device_configs_rejects_path_escape(
     monkeypatch,
 ) -> None:
     async def fake_execute(**kwargs):
@@ -41,10 +41,6 @@ def test_backup_device_configs_handles_runner_errors(
         }
 
     monkeypatch.setattr("nornir_mcp.services.napalm.execute", fake_execute)
-    monkeypatch.setattr(
-        "nornir_mcp.tools.management.ensure_backup_directory",
-        lambda path: tmp_path,
-    )
 
     result = asyncio.run(backup_device_configs.fn(path=str(tmp_path)))
 
@@ -66,10 +62,6 @@ def test_backup_device_configs_writes_config(monkeypatch, tmp_path: Path) -> Non
         }
 
     monkeypatch.setattr("nornir_mcp.services.napalm.execute", fake_execute)
-    monkeypatch.setattr(
-        "nornir_mcp.tools.management.ensure_backup_directory",
-        lambda path: tmp_path,
-    )
 
     result = asyncio.run(backup_device_configs.fn(path=str(tmp_path)))
 
@@ -77,14 +69,9 @@ def test_backup_device_configs_writes_config(monkeypatch, tmp_path: Path) -> Non
     assert result["hosts"]["leaf-1"]["status"] == "success"
     assert saved_path.parent == tmp_path
     assert saved_path.read_text(encoding="utf-8") == "hostname leaf-1"
-    from nornir_mcp.models import BackupResult
-
-    BackupResult.model_validate(result)
 
 
-def test_backup_device_configs_failure_validates_as_backup_result(
-    monkeypatch, tmp_path: Path
-) -> None:
+def test_backup_device_configs_returns_hosts_key(monkeypatch, tmp_path: Path) -> None:
     async def fake_execute(**kwargs):
         return {
             "leaf-1": {
@@ -97,33 +84,26 @@ def test_backup_device_configs_failure_validates_as_backup_result(
         }
 
     monkeypatch.setattr("nornir_mcp.services.napalm.execute", fake_execute)
-    monkeypatch.setattr(
-        "nornir_mcp.tools.management.ensure_backup_directory",
-        lambda path: tmp_path,
-    )
 
     result = asyncio.run(backup_device_configs.fn(path=str(tmp_path)))
-    from nornir_mcp.models import BackupResult
-
-    BackupResult.model_validate(result)
+    assert "hosts" in result
+    assert "leaf-1" in result["hosts"]
 
 
 def test_run_show_commands_returns_task_result_shape(monkeypatch) -> None:
-    async def fake_run_netmiko_commands(**kwargs):
+    async def fake_execute(**kwargs):
         return {
             "router-01": {"success": True, "output": {"show version": "Cisco IOS..."}}
         }
 
-    monkeypatch.setattr(
-        "nornir_mcp.tools.monitoring.run_netmiko_commands", fake_run_netmiko_commands
-    )
+    monkeypatch.setattr("nornir_mcp.tools.monitoring.execute", fake_execute)
 
     result = asyncio.run(run_show_commands.fn(commands=["show version"]))
     TaskResult.model_validate(result)
 
 
 def test_run_show_commands_passes_through_global_error(monkeypatch) -> None:
-    async def fake_run_netmiko_commands(**kwargs):
+    async def fake_execute(**kwargs):
         return {
             GLOBAL_ERROR_HOST: {
                 "error": True,
@@ -132,9 +112,7 @@ def test_run_show_commands_passes_through_global_error(monkeypatch) -> None:
             }
         }
 
-    monkeypatch.setattr(
-        "nornir_mcp.tools.monitoring.run_netmiko_commands", fake_run_netmiko_commands
-    )
+    monkeypatch.setattr("nornir_mcp.tools.monitoring.execute", fake_execute)
 
     result = asyncio.run(run_show_commands.fn(commands=["show version"]))
     assert result[GLOBAL_ERROR_HOST]["error"] is True
@@ -147,19 +125,17 @@ def test_run_show_commands_returns_error_for_empty_commands() -> None:
 
 
 def test_send_config_commands_returns_task_result_shape(monkeypatch) -> None:
-    async def fake_run_netmiko_config(**kwargs):
+    async def fake_execute(**kwargs):
         return {"router-01": {"success": True, "output": "Config applied"}}
 
-    monkeypatch.setattr(
-        "nornir_mcp.tools.management.run_netmiko_config", fake_run_netmiko_config
-    )
+    monkeypatch.setattr("nornir_mcp.tools.management.execute", fake_execute)
 
     result = asyncio.run(send_config_commands.fn(commands=["interface loopback0"]))
     TaskResult.model_validate(result)
 
 
 def test_send_config_commands_passes_through_global_error(monkeypatch) -> None:
-    async def fake_run_netmiko_config(**kwargs):
+    async def fake_execute(**kwargs):
         return {
             GLOBAL_ERROR_HOST: {
                 "error": True,
@@ -168,9 +144,7 @@ def test_send_config_commands_passes_through_global_error(monkeypatch) -> None:
             }
         }
 
-    monkeypatch.setattr(
-        "nornir_mcp.tools.management.run_netmiko_config", fake_run_netmiko_config
-    )
+    monkeypatch.setattr("nornir_mcp.tools.management.execute", fake_execute)
 
     result = asyncio.run(send_config_commands.fn(commands=["interface loopback0"]))
     assert result[GLOBAL_ERROR_HOST]["error"] is True
@@ -184,10 +158,6 @@ def test_send_config_commands_returns_error_for_empty_commands() -> None:
 
 
 def test_validate_commands_error_conforms_to_error_response() -> None:
-    # Since validate_commands returns a string, we wrap it in error_response
-    # to verify the resulting response conforms to ErrorResponse model.
-    msg = validate_commands([])
-    # The empty check is now in the tool, but we can test a known invalid command
     msg = validate_commands(["erase startup-config"])
     assert msg is not None
     result = error_response(

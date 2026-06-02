@@ -2,8 +2,6 @@ import pytest
 from pydantic import ValidationError
 
 from nornir_mcp.models import (
-    BackupFileInfo,
-    BackupResult,
     ErrorResponse,
     HostTaskResult,
     TaskResult,
@@ -93,57 +91,3 @@ def test_task_result_round_trip():
 
     validated = TaskResult.model_validate(dumped)
     assert validated == model
-
-
-def test_task_result_dump_hosts():
-    """TaskResult.model_dump_hosts() returns a plain dict keyed by hostname."""
-    err_resp = ErrorResponse(code="err", message="msg")
-    model = TaskResult(
-        hosts={
-            "host-1": HostTaskResult(success=True, output="ok"),
-            "host-2": HostTaskResult(success=False, error=err_resp),
-        }
-    )
-    hosts_dict = model.model_dump_hosts()
-    assert "host-1" in hosts_dict
-    assert "host-2" in hosts_dict
-    assert hosts_dict["host-1"]["success"] is True
-    assert hosts_dict["host-2"]["success"] is False
-
-
-def test_backup_file_info_round_trip():
-    """BackupFileInfo with all fields round-trips correctly."""
-    data = {
-        "path": "/tmp/backup.cfg",
-        "size_bytes": 1024,
-        "written_at": "2026-05-11T12:00:00Z",
-        "status": "success",
-    }
-    model = BackupFileInfo(**data)
-    dumped = model.model_dump()
-    assert dumped == data
-
-    validated = BackupFileInfo.model_validate(dumped)
-    assert validated == model
-
-
-def test_backup_result_round_trip():
-    """BackupResult with mixed success/failure round-trips correctly."""
-    err_resp = ErrorResponse(code="err", message="msg")
-    file_info = BackupFileInfo(
-        path="/tmp/ok.cfg", size_bytes=500, written_at="2026-05-11T12:00:00Z"
-    )
-    data = {
-        "hosts": {
-            "host-ok": file_info.model_dump(),
-            "host-fail": err_resp.model_dump(),
-        }
-    }
-    model = BackupResult(**data)
-    dumped = model.model_dump()
-    assert dumped == data
-
-    validated = BackupResult.model_validate(dumped)
-    assert validated == model
-    assert isinstance(validated.hosts["host-ok"], BackupFileInfo)
-    assert isinstance(validated.hosts["host-fail"], ErrorResponse)

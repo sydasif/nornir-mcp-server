@@ -1,13 +1,12 @@
 import asyncio
 
-from nornir_mcp.models import DeviceFilters, TaskResult
+from nornir_mcp.models import TaskResult
 from nornir_mcp.services.runner import GLOBAL_ERROR_HOST
 from nornir_mcp.tools.monitoring import get_structured_data
 
 
 def test_get_structured_data_forwards_getters_and_options(monkeypatch) -> None:
     calls = []
-    filters = DeviceFilters(group="core")
     getters_options = {"interfaces": {"interface": "Ethernet1"}}
 
     async def fake_run_napalm_get(**kwargs):
@@ -33,7 +32,10 @@ def test_get_structured_data_forwards_getters_and_options(monkeypatch) -> None:
     assert calls == [
         {
             "getters": ["interfaces"],
-            "filters": filters,
+            "name": None,
+            "hostname": None,
+            "group": "core",
+            "platform": None,
             "getters_options": getters_options,
         }
     ]

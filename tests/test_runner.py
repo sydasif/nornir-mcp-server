@@ -31,7 +31,7 @@ class FakeMultiResult(list):
 
 
 def test_execute_returns_config_error_when_config_is_missing(monkeypatch) -> None:
-    def raise_config_error(filters=None) -> None:
+    def raise_config_error(**kwargs: Any) -> None:
         raise InventoryError("missing config", code="config_error")
 
     monkeypatch.setattr(
@@ -50,7 +50,7 @@ def test_execute_returns_config_error_when_config_is_missing(monkeypatch) -> Non
 
 
 def test_execute_returns_filter_error(monkeypatch) -> None:
-    def raise_filter_error(filters=None):
+    def raise_filter_error(**kwargs: Any):
         raise InventoryError("bad filters", code="filter_error")
 
     monkeypatch.setattr(
@@ -74,7 +74,7 @@ def test_execute_returns_execution_error(monkeypatch) -> None:
 
     monkeypatch.setattr(
         "nornir_mcp.services.runner.get_filtered_nornir",
-        lambda filters=None: FakeNornir(run_impl=raise_execution_error),
+        lambda **kwargs: FakeNornir(run_impl=raise_execution_error),
     )
 
     result = asyncio.run(execute(task=lambda **_: None))
@@ -88,7 +88,7 @@ def test_execute_returns_execution_error(monkeypatch) -> None:
 def test_execute_global_error_conforms_to_error_response_shape(monkeypatch) -> None:
     """Verify that global errors conform to the ErrorResponse shape."""
 
-    def raise_inventory_error(filters=None) -> None:
+    def raise_inventory_error(**kwargs: Any) -> None:
         raise InventoryError("missing config", code="config_error")
 
     monkeypatch.setattr(

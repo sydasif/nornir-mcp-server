@@ -10,7 +10,6 @@ from typing import Any
 from nornir.core.exceptions import NornirExecutionError
 from nornir.core.task import Result
 
-from ..models import DeviceFilters
 from ..utils.common import error_response, format_results
 from .inventory import (
     InventoryError,
@@ -29,23 +28,29 @@ def _global_error(message: str, code: str) -> dict[str, dict[str, Any]]:
 
 async def execute(
     task: Callable[..., Result],
-    filters: DeviceFilters | None = None,
+    name: str | None = None,
+    hostname: str | None = None,
+    group: str | None = None,
+    platform: str | None = None,
     **task_kwargs: Any,
 ) -> dict[str, dict[str, Any]]:
     """Execute a Nornir task and return formatted results.
-    Note: All per-host dicts in the returned value conform to either `HostTaskResult` or `ErrorResponse` shape (see models.py).
 
     Args:
         task: Nornir task function to execute
-        filters: Optional filters to select specific devices
+        name: Filter by device name
+        hostname: Filter by hostname
+        group: Filter by group
+        platform: Filter by platform
         **task_kwargs: Additional arguments passed to the task
 
     Returns:
         Dictionary mapping hostname to task results or error responses
     """
-    # 1. Setup & Filter
     try:
-        nr = get_filtered_nornir(filters)
+        nr = get_filtered_nornir(
+            name=name, hostname=hostname, group=group, platform=platform
+        )
         host_count = len(nr.inventory.hosts)
         logger.info(
             "Executing task %s.%s on %d hosts",
@@ -60,11 +65,6 @@ async def execute(
             code=exc.code,
         )
 
-    # 2. Execute in Thread (Non-blocking) with Timeout
-    # NOTE: asyncio.wait_for cancels the task on timeout, but since Nornir tasks
-    # run in a separate thread via to_thread, the underlying SSH connection
-    # remains open until it naturally errors or completes.
-    # This prevents the MCP server from blocking but does not kill the hung thread.
     start_time = time.perf_counter()
     try:
         result = await asyncio.wait_for(
@@ -91,7 +91,6 @@ async def execute(
             code="execution_error",
         )
 
-    # 3. Standardize Output (Simple extraction)
     return format_results(result)
 
 

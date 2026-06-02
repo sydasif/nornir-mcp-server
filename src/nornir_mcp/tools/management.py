@@ -5,27 +5,30 @@ from datetime import UTC, datetime
 from typing import Annotated, Any
 
 from mcp.types import ToolAnnotations
+from nornir.core.task import Result, Task
+from nornir_netmiko.tasks import netmiko_send_command, netmiko_send_config
 from pydantic import Field
 
 from ..application import mcp
-from ..models import (
-    BackupFileInfo,
-    BackupResult,
-    ErrorResponse,
-)
 from ..services.napalm import run_napalm_get
-from ..services.netmiko import run_netmiko_config
-from ..services.runner import GLOBAL_ERROR_HOST
+from ..services.runner import GLOBAL_ERROR_HOST, execute
 from ..utils.common import (
     ensure_backup_directory,
     error_response,
     wrap_task_result,
-    write_config_to_file,
 )
-from ..utils.filters import build_filters
 from ..utils.security import validate_commands
 
 logger = logging.getLogger(__name__)
+
+
+def _netmiko_send_commands(task: Task, commands: list[str]) -> Result:
+    """Send multiple show commands over a single SSH connection."""
+    output: dict[str, Any] = {}
+    for cmd in commands:
+        result = task.run(task=netmiko_send_command, command_string=cmd)
+        output[cmd] = result[0].result
+    return Result(host=task.host, result=output)
 
 
 @mcp.tool(
@@ -62,11 +65,9 @@ async def send_config_commands(
     Returns:
         Dictionary with 'hosts' key mapping hostname -> task result (success or error).
     """
-    # 1. Guard against empty commands
     if not commands:
         return error_response("Command list cannot be empty", code="empty_commands")
 
-    # 2. Validate commands against security rules
     validation_error = validate_commands(commands, read_only=False)
     if validation_error:
         return error_response(
@@ -75,11 +76,13 @@ async def send_config_commands(
             details={"validation_error": validation_error},
         )
 
-    filters = build_filters(filter_name, filter_hostname, filter_group, filter_platform)
-
-    raw = await run_netmiko_config(
-        commands=commands,
-        filters=filters,
+    raw = await execute(
+        task=netmiko_send_config,
+        name=filter_name,
+        hostname=filter_hostname,
+        group=filter_group,
+        platform=filter_platform,
+        config_commands=commands,
     )
 
     if GLOBAL_ERROR_HOST in raw:
@@ -119,56 +122,55 @@ async def backup_device_configs(
     Returns:
         Summary of saved file paths.
     """
-    # 1. Setup backup directory FIRST to avoid wasted network I/O
+
     try:
         backup_path = ensure_backup_directory(path)
     except ValueError as e:
         return error_response(str(e), code="security_error")
 
-    filters = build_filters(filter_name, filter_hostname, filter_group, filter_platform)
-
-    # 2. Get configurations
     result = await run_napalm_get(
         getters=["config"],
-        filters=filters,
+        name=filter_name,
+        hostname=filter_hostname,
+        group=filter_group,
+        platform=filter_platform,
         getters_options={"config": {"retrieve": "running"}},
     )
 
-    # 3. Guard against global errors (e.g., inventory not found)
     if GLOBAL_ERROR_HOST in result:
         return result
 
-    # Process results with guard clauses
-    hosts: dict[str, BackupFileInfo | ErrorResponse] = {}
+    hosts: dict[str, Any] = {}
     for hostname, data in result.items():
-        # Guard 1: Check for task execution errors
         if isinstance(data, dict) and not data.get("success", True):
             error_info = data.get("error", {})
-            hosts[hostname] = ErrorResponse(
-                code=error_info.get("code", "backup_failed"),
-                message=error_info.get("message", "Backup task failed"),
-                details=error_info.get("details"),
-            )
+            hosts[hostname] = {
+                "error": True,
+                "code": error_info.get("code", "backup_failed"),
+                "message": error_info.get("message", "Backup task failed"),
+            }
             continue
 
-        # Guard 2: Extract config from output
         output = data.get("output", {}) if isinstance(data, dict) else {}
         config_data = output.get("config", {})
         config = config_data.get("running", "") if isinstance(config_data, dict) else ""
 
         if not config:
-            hosts[hostname] = ErrorResponse(
-                code="no_config",
-                message="No config data returned",
-            )
+            hosts[hostname] = {
+                "error": True,
+                "code": "no_config",
+                "message": "No config data returned",
+            }
             continue
 
-        # Success case
-        file_path = write_config_to_file(hostname, config, backup_path)
-        hosts[hostname] = BackupFileInfo(
-            path=str(file_path),
-            size_bytes=file_path.stat().st_size,
-            written_at=datetime.now(UTC).isoformat(),
-        )
+        timestamp = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
+        file_path = backup_path / f"{hostname}_{timestamp}.cfg"
+        file_path.write_text(config, encoding="utf-8")
+        hosts[hostname] = {
+            "path": str(file_path),
+            "size_bytes": file_path.stat().st_size,
+            "written_at": datetime.now(UTC).isoformat(),
+            "status": "success",
+        }
 
-    return BackupResult(hosts=hosts).model_dump(exclude_none=True)
+    return {"hosts": hosts}

@@ -5,13 +5,15 @@ from typing import Any
 
 from nornir_napalm.plugins.tasks import napalm_get
 
-from ..models import DeviceFilters
 from .runner import execute
 
 
 async def run_napalm_get(
     getters: list[str],
-    filters: DeviceFilters | None = None,
+    name: str | None = None,
+    hostname: str | None = None,
+    group: str | None = None,
+    platform: str | None = None,
     getters_options: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Execute one or more NAPALM getters via the shared runner."""
@@ -21,7 +23,10 @@ async def run_napalm_get(
 
     return await execute(
         task=napalm_get,
-        filters=filters,
+        name=name,
+        hostname=hostname,
+        group=group,
+        platform=platform,
         **task_kwargs,
     )
 

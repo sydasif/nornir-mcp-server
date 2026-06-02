@@ -15,7 +15,8 @@ def test_get_filtered_nornir_reloads_inventory_on_every_call(monkeypatch) -> Non
 
     monkeypatch.setattr("nornir_mcp.services.inventory.get_nornir", fake_get_nornir)
     monkeypatch.setattr(
-        "nornir_mcp.services.inventory.apply_filters", lambda nr, filters: nr
+        "nornir_mcp.services.inventory.apply_filters",
+        lambda nr, **kwargs: nr,
     )
 
     first = get_filtered_nornir()
@@ -41,7 +42,7 @@ def test_get_filtered_nornir_wraps_config_errors(monkeypatch) -> None:
 def test_get_filtered_nornir_wraps_filter_errors(monkeypatch) -> None:
     monkeypatch.setattr("nornir_mcp.services.inventory.get_nornir", lambda: "nr")
 
-    def raise_filter_error(nr, filters):
+    def raise_filter_error(nr, **kwargs):
         raise ValueError("bad filters")
 
     monkeypatch.setattr(

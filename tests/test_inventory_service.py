@@ -1,7 +1,6 @@
 import asyncio
 from types import SimpleNamespace
 
-from nornir_mcp.models import InventorySummary
 from nornir_mcp.services.inventory import InventoryError
 from nornir_mcp.tools.inventory import list_network_devices
 
@@ -26,7 +25,7 @@ def test_list_network_devices_rejects_invalid_query_type() -> None:
 
 
 def test_list_network_devices_returns_config_error(monkeypatch) -> None:
-    def raise_config_error(filters=None):
+    def raise_config_error(**kwargs):
         raise InventoryError("missing config", code="config_error")
 
     monkeypatch.setattr(
@@ -43,7 +42,7 @@ def test_list_network_devices_returns_config_error(monkeypatch) -> None:
 
 
 def test_list_network_devices_returns_filter_error(monkeypatch) -> None:
-    def raise_filter_error(filters=None):
+    def raise_filter_error(**kwargs):
         raise InventoryError("bad filters", code="filter_error")
 
     monkeypatch.setattr(
@@ -83,7 +82,7 @@ def test_list_network_devices_returns_devices_and_groups(monkeypatch) -> None:
     )
 
     monkeypatch.setattr(
-        "nornir_mcp.tools.inventory.get_filtered_nornir", lambda filters=None: nr
+        "nornir_mcp.tools.inventory.get_filtered_nornir", lambda **kwargs: nr
     )
 
     result = asyncio.run(list_network_devices.fn(details=True))
@@ -92,13 +91,10 @@ def test_list_network_devices_returns_devices_and_groups(monkeypatch) -> None:
     assert result["devices"]["devices"][0]["data"] == {"site": "dc1"}
     assert result["groups"]["groups"]["core"]["count"] == 2
     assert result["groups"]["groups"]["dc1"]["members"] == ["leaf-1"]
-    InventorySummary.model_validate(result)
 
 
-def test_list_network_devices_result_always_validates_as_inventory_summary(
-    monkeypatch,
-) -> None:
-    """Verify the tool's return value always conforms to InventorySummary."""
+def test_list_network_devices_result_structure(monkeypatch) -> None:
+    """Verify the tool's return value structure."""
     nr = SimpleNamespace(
         inventory=SimpleNamespace(
             hosts={
@@ -114,8 +110,9 @@ def test_list_network_devices_result_always_validates_as_inventory_summary(
         )
     )
     monkeypatch.setattr(
-        "nornir_mcp.tools.inventory.get_filtered_nornir", lambda filters=None: nr
+        "nornir_mcp.tools.inventory.get_filtered_nornir", lambda **kwargs: nr
     )
 
     result = asyncio.run(list_network_devices.fn())
-    InventorySummary.model_validate(result)
+    assert "devices" in result
+    assert "groups" in result

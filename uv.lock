@@ -953,7 +953,6 @@ dependencies = [
     { name = "nornir-napalm" },
     { name = "nornir-netmiko" },
     { name = "pydantic" },
-    { name = "python-dotenv" },
     { name = "pyyaml" },
 ]
 
@@ -973,7 +972,6 @@ requires-dist = [
     { name = "nornir-napalm", specifier = ">=0.4.0" },
     { name = "nornir-netmiko", specifier = ">=1.0.0" },
     { name = "pydantic", specifier = ">=2.0.0" },
-    { name = "python-dotenv", specifier = ">=1.1.0" },
     { name = "pyyaml", specifier = ">=6.0" },
 ]
 

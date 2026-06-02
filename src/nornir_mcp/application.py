@@ -1,15 +1,10 @@
 """Nornir MCP Application Context - Shared application components."""
 
-import os
 from pathlib import Path
 
 from fastmcp import FastMCP
 from nornir import InitNornir
 from nornir.core import Nornir
-from dotenv import load_dotenv
-
-# Load .env file if present
-load_dotenv()
 
 # Initialize FastMCP with metadata
 mcp = FastMCP(
@@ -35,17 +30,4 @@ def get_nornir() -> Nornir:
             "No Nornir config found. Create config.yaml in current directory",
         )
 
-    nr = InitNornir(config_file=str(config_file))
-
-    username = os.getenv("NORNIR_USERNAME")
-    password = os.getenv("NORNIR_PASSWORD")
-
-    if username or password:
-        for host in nr.inventory.hosts.values():
-            if username and not host.username:
-                host.username = username
-
-            if password and not host.password:
-                host.password = password
-
-    return nr
+    return InitNornir(config_file=str(config_file))

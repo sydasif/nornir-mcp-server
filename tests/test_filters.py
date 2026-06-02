@@ -1,7 +1,6 @@
 from types import SimpleNamespace
 import pytest
 
-from nornir_mcp.models import DeviceFilters
 from nornir_mcp.utils.filters import apply_filters
 
 
@@ -20,7 +19,7 @@ class FakeNornir:
 def test_apply_filters_returns_original_when_filters_missing() -> None:
     nr = FakeNornir(host_count=2)
 
-    result = apply_filters(nr, None)
+    result = apply_filters(nr)
 
     assert result is nr
     assert nr.filter_calls == []
@@ -29,7 +28,7 @@ def test_apply_filters_returns_original_when_filters_missing() -> None:
 def test_apply_filters_returns_original_when_filter_fields_are_empty() -> None:
     nr = FakeNornir(host_count=2)
 
-    result = apply_filters(nr, DeviceFilters())
+    result = apply_filters(nr, name=None, hostname=None, group=None, platform=None)
 
     assert result is nr
     assert nr.filter_calls == []
@@ -37,19 +36,20 @@ def test_apply_filters_returns_original_when_filter_fields_are_empty() -> None:
 
 def test_apply_filters_uses_correct_filter_expressions() -> None:
     nr = FakeNornir(host_count=2)
-    filters = DeviceFilters(
-        name="leaf-1", hostname="10.0.0.1", group="spine", platform="ios"
+
+    apply_filters(
+        nr,
+        name="leaf-1",
+        hostname="10.0.0.1",
+        group="spine",
+        platform="ios",
     )
 
-    apply_filters(nr, filters)
-
-    # Check that filter() was called for each provided field
     assert len(nr.filter_calls) == 4
-    # We don't check the exact F objects because they are complex, but we check the count
 
 
 def test_apply_filters_raises_when_no_hosts_match() -> None:
     nr = FakeNornir(host_count=0)
 
     with pytest.raises(ValueError, match="No devices matched the provided filters"):
-        apply_filters(nr, DeviceFilters(hostname="leaf-1"))
+        apply_filters(nr, hostname="leaf-1")

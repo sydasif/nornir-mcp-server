@@ -4,15 +4,24 @@ from collections.abc import Mapping
 from typing import Annotated, Any
 
 from mcp.types import ToolAnnotations
+from nornir.core.task import Result, Task
+from nornir_netmiko.tasks import netmiko_send_command
 from pydantic import Field
 
 from ..application import mcp
 from ..services.napalm import run_napalm_get
-from ..services.netmiko import run_netmiko_commands
-from ..services.runner import GLOBAL_ERROR_HOST
+from ..services.runner import GLOBAL_ERROR_HOST, execute
 from ..utils.common import error_response, wrap_task_result
-from ..utils.filters import build_filters
 from ..utils.security import validate_commands
+
+
+def _netmiko_send_commands(task: Task, commands: list[str]) -> Result:
+    """Send multiple show commands over a single SSH connection."""
+    output: dict[str, Any] = {}
+    for cmd in commands:
+        result = task.run(task=netmiko_send_command, command_string=cmd)
+        output[cmd] = result[0].result
+    return Result(host=task.host, result=output)
 
 
 @mcp.tool(
@@ -53,11 +62,12 @@ async def get_structured_data(
     Returns:
         Structured data per host mapping hostname -> result
     """
-    filters = build_filters(filter_name, filter_hostname, filter_group, filter_platform)
-
     result = await run_napalm_get(
         getters=getters,
-        filters=filters,
+        name=filter_name,
+        hostname=filter_hostname,
+        group=filter_group,
+        platform=filter_platform,
         getters_options=getters_options,
     )
 
@@ -96,11 +106,9 @@ async def run_show_commands(
     Returns:
         Dictionary with 'hosts' key mapping hostname -> task result (success or error).
     """
-    # 1. Guard against empty commands
     if not commands:
         return error_response("Command list cannot be empty", code="empty_commands")
 
-    # 2. Validate commands against security rules
     validation_error = validate_commands(commands, read_only=True)
     if validation_error:
         return error_response(
@@ -109,11 +117,13 @@ async def run_show_commands(
             details={"validation_error": validation_error},
         )
 
-    filters = build_filters(filter_name, filter_hostname, filter_group, filter_platform)
-
-    raw = await run_netmiko_commands(
+    raw = await execute(
+        task=_netmiko_send_commands,
+        name=filter_name,
+        hostname=filter_hostname,
+        group=filter_group,
+        platform=filter_platform,
         commands=commands,
-        filters=filters,
     )
 
     if GLOBAL_ERROR_HOST in raw:
