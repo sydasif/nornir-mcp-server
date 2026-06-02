@@ -124,7 +124,7 @@ inventory:
 
 For a ready-to-use Containerlab lab with Cisco CSR1000v and Arista cEOS devices, see the companion repository: [nornir-mcp-lab](https://github.com/sydasif/nornir-mcp-lab)
 
-**Prerequisites**: Containerlab, Docker, Python 3.11+
+**Prerequisites**: Containerlab, Docker, Python 3.12+
 
 ---
 

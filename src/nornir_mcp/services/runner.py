@@ -94,4 +94,4 @@ async def execute(
     return format_results(result)
 
 
-__all__: list[str] = ["execute"]
+__all__: list[str] = ["GLOBAL_ERROR_HOST", "execute"]

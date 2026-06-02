@@ -1,6 +1,8 @@
 import asyncio
 
-from nornir_mcp.services.napalm import napalm_get, run_napalm_get
+from nornir_napalm.plugins.tasks import napalm_get
+
+from nornir_mcp.services.napalm import run_napalm_get
 
 
 def test_run_napalm_get_calls_runner_with_required_arguments(monkeypatch) -> None:

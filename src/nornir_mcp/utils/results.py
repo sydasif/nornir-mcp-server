@@ -93,8 +93,28 @@ def wrap_task_result(raw: dict[str, Any]) -> dict[str, Any]:
     ).model_dump(exclude_none=True)
 
 
+def wrap_or_passthrough(raw: dict[str, Any]) -> dict[str, Any]:
+    """Return global errors as-is, otherwise wrap into a TaskResult.
+
+    Tools share the pattern: if the runner surfaced a global error, return it
+    unchanged; otherwise wrap the per-host results in a TaskResult envelope.
+
+    Args:
+        raw: Raw runner output, possibly containing a GLOBAL_ERROR_HOST entry.
+
+    Returns:
+        Either the original error payload, or a TaskResult-shaped dict.
+    """
+    from ..services.runner import GLOBAL_ERROR_HOST
+
+    if GLOBAL_ERROR_HOST in raw:
+        return raw
+    return wrap_task_result(raw)
+
+
 __all__: list[str] = [
     "error_response",
     "format_results",
+    "wrap_or_passthrough",
     "wrap_task_result",
 ]

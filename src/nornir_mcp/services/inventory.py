@@ -7,6 +7,7 @@ Pydantic wrappers.
 
 from collections import defaultdict
 from pathlib import Path
+from typing import Any, Literal, TypedDict, cast
 
 from nornir import InitNornir
 from nornir.core import Nornir
@@ -20,6 +21,43 @@ class InventoryError(ValueError):
     def __init__(self, message: str, code: str):
         super().__init__(message)
         self.code = code
+
+
+class DeviceEntry(TypedDict):
+    """One device in the inventory summary."""
+
+    name: str
+    hostname: str
+    platform: str
+    groups: list[str]
+    data: dict[str, Any] | None
+
+
+class DevicesPayload(TypedDict):
+    """Top-level devices section of the inventory summary."""
+
+    total_devices: int
+    devices: list[DeviceEntry]
+
+
+class GroupPayload(TypedDict):
+    """One group with its member hostnames."""
+
+    count: int
+    members: list[str]
+
+
+class GroupsPayload(TypedDict):
+    """All groups keyed by name."""
+
+    groups: dict[str, GroupPayload]
+
+
+class InventorySummary(TypedDict, total=False):
+    """Combined inventory summary; either or both sections may be present."""
+
+    devices: DevicesPayload
+    groups: GroupsPayload
 
 
 def _get_nornir() -> Nornir:
@@ -65,8 +103,10 @@ def get_filtered_nornir(
 
 
 def get_inventory_summary(
-    nr: Nornir, details: bool = False, query_type: str = "all"
-) -> dict:
+    nr: Nornir,
+    details: bool = False,
+    query_type: Literal["devices", "groups", "all"] = "all",
+) -> InventorySummary:
     """Aggregate device and group information from the Nornir inventory.
 
     Args:
@@ -77,19 +117,22 @@ def get_inventory_summary(
     Returns:
         Dictionary with 'devices' and/or 'groups' summaries
     """
-    result: dict = {}
+    result: InventorySummary = {}
 
     if query_type in ("devices", "all"):
-        devices = [
-            {
-                "name": host_name,
-                "hostname": host.hostname,
-                "platform": host.platform,
-                "groups": [g.name for g in host.groups],
-                "data": host.data if details else None,
-            }
-            for host_name, host in nr.inventory.hosts.items()
-        ]
+        devices: list[DeviceEntry] = cast(
+            list[DeviceEntry],
+            [
+                {
+                    "name": host_name,
+                    "hostname": host.hostname,
+                    "platform": host.platform,
+                    "groups": [g.name for g in host.groups],
+                    "data": host.data if details else None,
+                }
+                for host_name, host in nr.inventory.hosts.items()
+            ],
+        )
         result["devices"] = {"total_devices": len(devices), "devices": devices}
 
     if query_type in ("groups", "all"):
@@ -98,12 +141,11 @@ def get_inventory_summary(
             for group in host.groups:
                 groups[group.name].append(host_name)
 
-        result["groups"] = {
-            "groups": {
-                name: {"count": len(members), "members": members}
-                for name, members in groups.items()
-            }
+        group_payloads: dict[str, GroupPayload] = {
+            name: {"count": len(members), "members": members}
+            for name, members in groups.items()
         }
+        result["groups"] = {"groups": group_payloads}
 
     return result
 

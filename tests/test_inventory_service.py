@@ -1,118 +1,53 @@
-import asyncio
-from types import SimpleNamespace
+import pytest
 
-from nornir_mcp.services.inventory import InventoryError
-from nornir_mcp.tools.inventory import list_network_devices
+from nornir_mcp.services.inventory import (
+    InventoryError,
+    get_filtered_nornir,
+)
 
 
-def _host(
-    name: str, hostname: str, platform: str, groups: list[str], data: dict
-) -> SimpleNamespace:
-    return SimpleNamespace(
-        name=name,
-        hostname=hostname,
-        platform=platform,
-        groups=[SimpleNamespace(name=group) for group in groups],
-        data=data,
+def test_get_filtered_nornir_reloads_inventory_on_every_call(monkeypatch) -> None:
+    calls = {"count": 0}
+
+    def fake_get_nornir():
+        calls["count"] += 1
+        return f"nr-{calls['count']}"
+
+    monkeypatch.setattr("nornir_mcp.services.inventory._get_nornir", fake_get_nornir)
+    monkeypatch.setattr(
+        "nornir_mcp.services.inventory.apply_filters",
+        lambda nr, **kwargs: nr,
     )
 
+    first = get_filtered_nornir()
+    second = get_filtered_nornir()
 
-def test_list_network_devices_rejects_invalid_query_type() -> None:
-    result = asyncio.run(list_network_devices.fn(query_type="invalid"))
-
-    assert result["error"] is True
-    assert result["code"] == "invalid_query_type"
+    assert first == "nr-1"
+    assert second == "nr-2"
+    assert calls["count"] == 2
 
 
-def test_list_network_devices_returns_config_error(monkeypatch) -> None:
-    def raise_config_error(**kwargs):
-        raise InventoryError("missing config", code="config_error")
+def test_get_filtered_nornir_wraps_config_errors(monkeypatch) -> None:
+    def raise_config_error():
+        raise ValueError("missing config")
+
+    monkeypatch.setattr("nornir_mcp.services.inventory._get_nornir", raise_config_error)
+
+    with pytest.raises(
+        InventoryError, match="Nornir initialization failed: missing config"
+    ):
+        get_filtered_nornir()
+
+
+def test_get_filtered_nornir_wraps_filter_errors(monkeypatch) -> None:
+    monkeypatch.setattr("nornir_mcp.services.inventory._get_nornir", lambda: "nr")
+
+    def raise_filter_error(nr, **kwargs):
+        raise ValueError("bad filters")
 
     monkeypatch.setattr(
-        "nornir_mcp.tools.inventory.get_filtered_nornir", raise_config_error
+        "nornir_mcp.services.inventory.apply_filters", raise_filter_error
     )
 
-    result = asyncio.run(list_network_devices.fn())
-
-    assert result == {
-        "error": True,
-        "code": "config_error",
-        "message": "missing config",
-    }
-
-
-def test_list_network_devices_returns_filter_error(monkeypatch) -> None:
-    def raise_filter_error(**kwargs):
-        raise InventoryError("bad filters", code="filter_error")
-
-    monkeypatch.setattr(
-        "nornir_mcp.tools.inventory.get_filtered_nornir", raise_filter_error
-    )
-
-    result = asyncio.run(list_network_devices.fn())
-
-    assert result == {
-        "error": True,
-        "code": "filter_error",
-        "message": "bad filters",
-    }
-
-
-def test_list_network_devices_returns_devices_and_groups(monkeypatch) -> None:
-    nr = SimpleNamespace(
-        inventory=SimpleNamespace(
-            hosts={
-                "leaf-1": _host(
-                    name="leaf-1",
-                    hostname="10.0.0.1",
-                    platform="ios",
-                    groups=["core", "dc1"],
-                    data={"site": "dc1"},
-                ),
-                "leaf-2": _host(
-                    name="leaf-2",
-                    hostname="10.0.0.2",
-                    platform="ios",
-                    groups=["core"],
-                    data={"site": "dc1"},
-                ),
-            },
-            groups={"core": object(), "dc1": object()},
-        )
-    )
-
-    monkeypatch.setattr(
-        "nornir_mcp.tools.inventory.get_filtered_nornir", lambda **kwargs: nr
-    )
-
-    result = asyncio.run(list_network_devices.fn(details=True))
-
-    assert result["devices"]["total_devices"] == 2
-    assert result["devices"]["devices"][0]["data"] == {"site": "dc1"}
-    assert result["groups"]["groups"]["core"]["count"] == 2
-    assert result["groups"]["groups"]["dc1"]["members"] == ["leaf-1"]
-
-
-def test_list_network_devices_result_structure(monkeypatch) -> None:
-    """Verify the tool's return value structure."""
-    nr = SimpleNamespace(
-        inventory=SimpleNamespace(
-            hosts={
-                "leaf-1": _host(
-                    name="leaf-1",
-                    hostname="10.0.0.1",
-                    platform="ios",
-                    groups=["core"],
-                    data={},
-                ),
-            },
-            groups={"core": object()},
-        )
-    )
-    monkeypatch.setattr(
-        "nornir_mcp.tools.inventory.get_filtered_nornir", lambda **kwargs: nr
-    )
-
-    result = asyncio.run(list_network_devices.fn())
-    assert "devices" in result
-    assert "groups" in result
+    with pytest.raises(InventoryError, match="bad filters"):
+        get_filtered_nornir()

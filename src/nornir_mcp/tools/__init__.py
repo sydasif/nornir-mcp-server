@@ -1,9 +1,9 @@
 """Nornir MCP Server tools package.
 
-This module contains the core MCP tools for network automation:
-- Inventory tools: Device listing and group management
-- Operational tools: Read-only commands for network devices
-- Configuration tools: Tools that modify device state
+This module exposes the MCP tools grouped by operational intent:
+- inventory: Read-only device and group listing from the Nornir inventory.
+- monitoring: Read-only observability (show commands, NAPALM getters).
+- management: State-changing operations (config push, backup, restore).
 """
 
 from . import (  # noqa: F401

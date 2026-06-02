@@ -1,6 +1,5 @@
 """Netmiko Tools - CLI commands and file operations for network devices."""
 
-import logging
 from typing import Annotated, Any
 
 from mcp.types import ToolAnnotations
@@ -9,11 +8,9 @@ from pydantic import Field
 
 from ..server import mcp
 from ..services.backup import backup_device_configs as run_backup
-from ..services.runner import GLOBAL_ERROR_HOST, execute
-from ..utils.results import error_response, wrap_task_result
+from ..services.runner import execute
+from ..utils.results import error_response, wrap_or_passthrough
 from ..utils.security import validate_commands
-
-logger = logging.getLogger(__name__)
 
 
 @mcp.tool(
@@ -33,10 +30,22 @@ async def send_config_commands(
             description="Configuration commands to apply (e.g., ['int lo0', 'ip addr 10.0.0.1/24'])"
         ),
     ],
-    filter_name: str | None = None,
-    filter_hostname: str | None = None,
-    filter_group: str | None = None,
-    filter_platform: str | None = None,
+    filter_name: Annotated[
+        str | None,
+        Field(description="Filter by device name in inventory"),
+    ] = None,
+    filter_hostname: Annotated[
+        str | None,
+        Field(description="Filter by specific hostname or IP"),
+    ] = None,
+    filter_group: Annotated[
+        str | None,
+        Field(description="Filter by group membership"),
+    ] = None,
+    filter_platform: Annotated[
+        str | None,
+        Field(description="Filter by platform (e.g., 'cisco_ios', 'arista_eos')"),
+    ] = None,
 ) -> dict[str, Any]:
     """Send configuration commands to network devices.
 
@@ -70,10 +79,7 @@ async def send_config_commands(
         config_commands=commands,
     )
 
-    if GLOBAL_ERROR_HOST in raw:
-        return raw
-
-    return wrap_task_result(raw)
+    return wrap_or_passthrough(raw)
 
 
 @mcp.tool(
@@ -90,10 +96,22 @@ async def backup_device_configs(
     path: Annotated[
         str, Field(description="Directory path to save backup files")
     ] = "./backups",
-    filter_name: str | None = None,
-    filter_hostname: str | None = None,
-    filter_group: str | None = None,
-    filter_platform: str | None = None,
+    filter_name: Annotated[
+        str | None,
+        Field(description="Filter by device name in inventory"),
+    ] = None,
+    filter_hostname: Annotated[
+        str | None,
+        Field(description="Filter by specific hostname or IP"),
+    ] = None,
+    filter_group: Annotated[
+        str | None,
+        Field(description="Filter by group membership"),
+    ] = None,
+    filter_platform: Annotated[
+        str | None,
+        Field(description="Filter by platform (e.g., 'cisco_ios', 'arista_eos')"),
+    ] = None,
 ) -> dict[str, Any]:
     """Save device configuration to the local disk.
 

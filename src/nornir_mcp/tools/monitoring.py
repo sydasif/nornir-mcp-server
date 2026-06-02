@@ -9,8 +9,8 @@ from pydantic import Field
 from ..server import mcp
 from ..services.netmiko import send_commands
 from ..services.napalm import run_napalm_get
-from ..services.runner import GLOBAL_ERROR_HOST, execute
-from ..utils.results import error_response, wrap_task_result
+from ..services.runner import execute
+from ..utils.results import error_response, wrap_or_passthrough
 from ..utils.security import validate_commands
 
 
@@ -27,10 +27,22 @@ async def get_structured_data(
         ),
     ],
     getters_options: Mapping[str, Any] | None = None,
-    filter_name: str | None = None,
-    filter_hostname: str | None = None,
-    filter_group: str | None = None,
-    filter_platform: str | None = None,
+    filter_name: Annotated[
+        str | None,
+        Field(description="Filter by device name in inventory"),
+    ] = None,
+    filter_hostname: Annotated[
+        str | None,
+        Field(description="Filter by specific hostname or IP"),
+    ] = None,
+    filter_group: Annotated[
+        str | None,
+        Field(description="Filter by group membership"),
+    ] = None,
+    filter_platform: Annotated[
+        str | None,
+        Field(description="Filter by platform (e.g., 'cisco_ios', 'arista_eos')"),
+    ] = None,
 ) -> dict[str, Any]:
     """Execute one or more NAPALM getters to retrieve structured data from network devices.
 
@@ -61,10 +73,7 @@ async def get_structured_data(
         getters_options=getters_options,
     )
 
-    if GLOBAL_ERROR_HOST in result:
-        return result
-
-    return wrap_task_result(result)
+    return wrap_or_passthrough(result)
 
 
 @mcp.tool(
@@ -79,10 +88,22 @@ async def run_show_commands(
             description="Show commands to execute (e.g., ['show version', 'show ip interface brief'])"
         ),
     ],
-    filter_name: str | None = None,
-    filter_hostname: str | None = None,
-    filter_group: str | None = None,
-    filter_platform: str | None = None,
+    filter_name: Annotated[
+        str | None,
+        Field(description="Filter by device name in inventory"),
+    ] = None,
+    filter_hostname: Annotated[
+        str | None,
+        Field(description="Filter by specific hostname or IP"),
+    ] = None,
+    filter_group: Annotated[
+        str | None,
+        Field(description="Filter by group membership"),
+    ] = None,
+    filter_platform: Annotated[
+        str | None,
+        Field(description="Filter by platform (e.g., 'cisco_ios', 'arista_eos')"),
+    ] = None,
 ) -> dict[str, Any]:
     """Execute raw CLI show commands via SSH.
 
@@ -116,7 +137,4 @@ async def run_show_commands(
         commands=commands,
     )
 
-    if GLOBAL_ERROR_HOST in raw:
-        return raw
-
-    return wrap_task_result(raw)
+    return wrap_or_passthrough(raw)
