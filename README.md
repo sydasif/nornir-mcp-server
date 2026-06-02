@@ -166,25 +166,6 @@ logging:
   level: INFO
 ```
 
-### Credential Management
-
-To avoid storing plain-text passwords in inventory files, you can provide credentials via environment variables or a `.env` file in the current working directory.
-
-**Supported Variables:**
-
-- `NORNIR_USERNAME`: Default username for all hosts.
-- `NORNIR_PASSWORD`: Default password for all hosts.
-
-These variables will only be applied to hosts that do not have a username or password explicitly defined in the inventory.
-
-**Using a `.env` file:**
-Create a `.env` file in your project root:
-
-```env
-NORNIR_USERNAME=admin
-NORNIR_PASSWORD=your_secure_password
-```
-
 ### Command Security
 
 The server includes a built-in security engine that validates all CLI commands against a multi-stage validation system before execution. This prevents accidental or malicious use of destructive commands while minimizing false positives for read-only operations.
@@ -238,7 +219,6 @@ Add the following to your opencode config:
 ## 🔒 Security
 
 - **Command Validation**: All CLI inputs pass through a multi-stage built-in denylist filter (Keywords and Patterns).
-- **Credential Management**: Supports environment variables and Nornir's native secure handling.
 - **Path Sandboxing**: Configuration backups are restricted to the defined root directory to prevent traversal.
 
 ---
@@ -263,10 +243,11 @@ If `uv run` is unstable in the local environment, use `.venv/bin/pytest` and `.v
 
 Relevant internal paths:
 
-- `src/nornir_mcp/services/runner.py`: shared task execution.
-- `src/nornir_mcp/services/inventory.py`: shared inventory loading and filtering helper. This helper still reloads inventory from disk on every call.
-- `src/nornir_mcp/services/napalm.py`: shared NAPALM getter execution helper used by monitoring and backup tools.
-- `src/nornir_mcp/tools/monitoring.py`: monitoring tools for generic getters.
+- `src/nornir_mcp/services/runner.py`: shared async task execution. Mandatory entry point for all network tasks; accepts filter kwargs (`name`, `hostname`, `group`, `platform`).
+- `src/nornir_mcp/services/inventory.py`: shared inventory loading and filtering helper. Reloads `config.yaml` from disk on every call. Accepts filter kwargs directly.
+- `src/nornir_mcp/services/napalm.py`: shared NAPALM getter execution helper used by monitoring and backup tools. Accepts filter kwargs directly.
+- `src/nornir_mcp/tools/monitoring.py`: monitoring tools for NAPALM getters and Netmiko show commands.
+- `src/nornir_mcp/tools/management.py`: management tools for configuration deployment and backups.
 
 ---
 
