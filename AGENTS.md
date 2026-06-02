@@ -17,7 +17,7 @@
 ## Conventions
 
 - **Naming**: `snake_case` tools, `@mcp.tool()` decoration.
-- **Errors**: Return standardized dict via `src/nornir_mcp/utils/common.py:error_response()`.
+- **Errors**: Return standardized dict via `src/nornir_mcp/utils/results.py:error_response()`.
 - **Filters**: Pass individual kwargs (`name`, `hostname`, `group`, `platform`) to services. No `DeviceFilters` wrapper.
 - **Commit**: Short, imperative messages.
 

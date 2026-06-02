@@ -7,7 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ### Testing
 
 - Run all tests: `uv run pytest`
-- Run specific test file: `uv run pytest tests/test_inventory.py`
+- Run specific test file: `uv run pytest tests/test_inventory_service.py`
 - Run with coverage: `uv run pytest --cov=src --cov-branch --cov-fail-under=90`
 
 ### Linting & Formatting
