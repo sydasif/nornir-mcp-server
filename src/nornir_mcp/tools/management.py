@@ -1,34 +1,19 @@
 """Netmiko Tools - CLI commands and file operations for network devices."""
 
 import logging
-from datetime import UTC, datetime
 from typing import Annotated, Any
 
 from mcp.types import ToolAnnotations
-from nornir.core.task import Result, Task
-from nornir_netmiko.tasks import netmiko_send_command, netmiko_send_config
+from nornir_netmiko.tasks import netmiko_send_config
 from pydantic import Field
 
 from ..server import mcp
-from ..services.napalm import run_napalm_get
+from ..services.backup import backup_device_configs as run_backup
 from ..services.runner import GLOBAL_ERROR_HOST, execute
-from ..utils.common import (
-    ensure_backup_directory,
-    error_response,
-    wrap_task_result,
-)
+from ..utils.results import error_response, wrap_task_result
 from ..utils.security import validate_commands
 
 logger = logging.getLogger(__name__)
-
-
-def _netmiko_send_commands(task: Task, commands: list[str]) -> Result:
-    """Send multiple show commands over a single SSH connection."""
-    output: dict[str, Any] = {}
-    for cmd in commands:
-        result = task.run(task=netmiko_send_command, command_string=cmd)
-        output[cmd] = result[0].result
-    return Result(host=task.host, result=output)
 
 
 @mcp.tool(
@@ -122,55 +107,13 @@ async def backup_device_configs(
     Returns:
         Summary of saved file paths.
     """
-
     try:
-        backup_path = ensure_backup_directory(path)
-    except ValueError as e:
-        return error_response(str(e), code="security_error")
-
-    result = await run_napalm_get(
-        getters=["config"],
-        name=filter_name,
-        hostname=filter_hostname,
-        group=filter_group,
-        platform=filter_platform,
-        getters_options={"config": {"retrieve": "running"}},
-    )
-
-    if GLOBAL_ERROR_HOST in result:
-        return result
-
-    hosts: dict[str, Any] = {}
-    for hostname, data in result.items():
-        if isinstance(data, dict) and not data.get("success", True):
-            error_info = data.get("error", {})
-            hosts[hostname] = {
-                "error": True,
-                "code": error_info.get("code", "backup_failed"),
-                "message": error_info.get("message", "Backup task failed"),
-            }
-            continue
-
-        output = data.get("output", {}) if isinstance(data, dict) else {}
-        config_data = output.get("config", {})
-        config = config_data.get("running", "") if isinstance(config_data, dict) else ""
-
-        if not config:
-            hosts[hostname] = {
-                "error": True,
-                "code": "no_config",
-                "message": "No config data returned",
-            }
-            continue
-
-        timestamp = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
-        file_path = backup_path / f"{hostname}_{timestamp}.cfg"
-        file_path.write_text(config, encoding="utf-8")
-        hosts[hostname] = {
-            "path": str(file_path),
-            "size_bytes": file_path.stat().st_size,
-            "written_at": datetime.now(UTC).isoformat(),
-            "status": "success",
-        }
-
-    return {"hosts": hosts}
+        return await run_backup(
+            path=path,
+            name=filter_name,
+            hostname=filter_hostname,
+            group=filter_group,
+            platform=filter_platform,
+        )
+    except ValueError as exc:
+        return error_response(str(exc), code="security_error")

@@ -108,7 +108,7 @@ def get_inventory_summary(
     return result
 
 
-__all__ = [
+__all__: list[str] = [
     "InventoryError",
     "get_filtered_nornir",
     "get_inventory_summary",

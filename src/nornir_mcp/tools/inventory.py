@@ -11,7 +11,7 @@ from ..services.inventory import (
     get_filtered_nornir,
     get_inventory_summary,
 )
-from ..utils.common import error_response
+from ..utils.results import error_response
 
 
 @mcp.tool(

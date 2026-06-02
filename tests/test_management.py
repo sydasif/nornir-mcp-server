@@ -8,7 +8,7 @@ from nornir_mcp.tools.management import (
     send_config_commands,
 )
 from nornir_mcp.tools.monitoring import run_show_commands
-from nornir_mcp.utils.common import error_response
+from nornir_mcp.utils.results import error_response
 from nornir_mcp.utils.security import validate_commands
 
 

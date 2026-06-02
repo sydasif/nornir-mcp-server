@@ -79,7 +79,7 @@ def test_backup_device_configs_returns_hosts_dict(monkeypatch):
         }
 
     monkeypatch.setattr(
-        "nornir_mcp.tools.management.run_napalm_get", fake_run_napalm_get
+        "nornir_mcp.services.backup.run_napalm_get", fake_run_napalm_get
     )
 
     result = asyncio.run(backup_device_configs.fn())

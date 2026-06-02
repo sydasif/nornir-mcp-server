@@ -31,4 +31,4 @@ async def run_napalm_get(
     )
 
 
-__all__ = ["run_napalm_get"]
+__all__: list[str] = ["run_napalm_get"]

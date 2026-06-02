@@ -4,24 +4,14 @@ from collections.abc import Mapping
 from typing import Annotated, Any
 
 from mcp.types import ToolAnnotations
-from nornir.core.task import Result, Task
-from nornir_netmiko.tasks import netmiko_send_command
 from pydantic import Field
 
 from ..server import mcp
+from ..services.netmiko import send_commands
 from ..services.napalm import run_napalm_get
 from ..services.runner import GLOBAL_ERROR_HOST, execute
-from ..utils.common import error_response, wrap_task_result
+from ..utils.results import error_response, wrap_task_result
 from ..utils.security import validate_commands
-
-
-def _netmiko_send_commands(task: Task, commands: list[str]) -> Result:
-    """Send multiple show commands over a single SSH connection."""
-    output: dict[str, Any] = {}
-    for cmd in commands:
-        result = task.run(task=netmiko_send_command, command_string=cmd)
-        output[cmd] = result[0].result
-    return Result(host=task.host, result=output)
 
 
 @mcp.tool(
@@ -118,7 +108,7 @@ async def run_show_commands(
         )
 
     raw = await execute(
-        task=_netmiko_send_commands,
+        task=send_commands,
         name=filter_name,
         hostname=filter_hostname,
         group=filter_group,

@@ -10,7 +10,7 @@ from typing import Any
 from nornir.core.exceptions import NornirExecutionError
 from nornir.core.task import Result
 
-from ..utils.common import error_response, format_results
+from ..utils.results import error_response, format_results
 from .inventory import (
     InventoryError,
     get_filtered_nornir,
@@ -94,4 +94,4 @@ async def execute(
     return format_results(result)
 
 
-__all__ = ["execute"]
+__all__: list[str] = ["execute"]
